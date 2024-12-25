@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Danyela June Brown - CV</title>
+ 
+<style>
+body {
+    margin: 0;
+    padding: 0;
+    font-family: Arial, sans-serif;
+    background-color: #1a1a1a;
+    color: white;
+    cursor: none;
+    line-height: 1.6;
+}
+
+.custom-cursor {
+    width: 32px;
+    height: 32px;
+    position: fixed;
+    pointer-events: none;
+    z-index: 9999;
+    mix-blend-mode: difference;
+}
+
+.custom-cursor svg {
+    width: 100%;
+    height: 100%;
+    animation: trotAlong 0.6s infinite alternate;
+    fill: white;
+}
+
+@keyframes trotAlong {
+    0% {
+        transform: translateY(0) rotate(-5deg);
+    }
+    100% {
+        transform: translateY(-3px) rotate(5deg);
+    }
+}
+
+.nav-menu {
+    position: fixed;
+    top: 0;
+    width: 100%;
+    background-color: rgba(0, 0, 0, 0.7);
+    padding: 15px 0;
+    z-index: 2000;
+    text-align: center;
+}
+
+.nav-menu a {
+    color: white;
+    text-decoration: none;
+    padding: 10px 20px;
+    margin: 0 10px;
+    font-size: 18px;
+    border: 2px solid transparent;
+    transition: all 0.3s ease;
+}
+
+.nav-menu a:hover {
+    border-bottom: 2px solid white;
+}
+
+.cv-container {
+    max-width: 800px;
+    margin: 80px auto 40px;
+    padding: 40px;
+    background-color: rgba(0, 0, 0, 0.8);
+    box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+}
+
+.cv-section {
+    margin-bottom: 30px;
+}
+
+h1 {
+    font-size: 36px;
+    text-align: center;
+    margin-bottom: 30px;
+}
+
+h2 {
+    font-size: 24px;
+    border-bottom: 2px solid white;
+    padding-bottom: 5px;
+    margin-top: 25px;
+}
+
+.entry {
+    margin-bottom: 15px;
+}
+
+.year {
+    font-weight: bold;
+    margin-right: 10px;
+}
+
+.content {
+    margin-left: 20px;
+}
+</style>
+</head>
+ 
+<body>
+<div class="custom-cursor">
+    <svg viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
+        <path d="M16 4C14 4 12 5 11 7L8 12L6 14C5 15 5 17 6 18C7 19 9 19 10 18L12 16V24C12 26.2 13.8 28 16 28C18.2 28 20 26.2 20 24V16L22 18C23 19 25 19 26 18C27 17 27 15 26 14L24 12L21 7C20 5 18 4 16 4Z"/>
+    </svg>
+</div>
+
+<nav class="nav-menu">
+    <a href="/bio">BIO</a>
+    <a href="/cv">CV</a>
+    <a href="/projects">PROJECTS</a>
+    <a href="/contact">CONTACT</a>
+</nav>
+
+<div class="cv-container">
+    <h1>DANYELA JUNE BROWN</h1>
+    <p>Born 1996 in San Diego, CA. Lives in VA and works in DC.</p>
+
+    <div class="cv-section">
+        <h2>EDUCATION</h2>
+        <div class="entry">
+            <span class="year">2024</span>
+            <div class="content">Peer Case Management Certificate, DHS at Howard University School of Social Work, Washington DC</div>
+        </div>
+        <div class="entry">
+            <span class="year">2019</span>
+            <div class="content">B.A., African and African American Studies, Stanford University, Stanford CA</div>
+        </div>
+    </div>
+
+    <div class="cv-section">
+        <h2>GROUP EXHIBITIONS</h2>
+        <div class="entry">
+            <span class="year">2025</span>
+            <div class="content">Matriculture, Tephra ICA, Reston VA</div>
+        </div>
+        <div class="entry">
+            <span class="year">2024</span>
+            <div class="content">figure, Touchstone Gallery, Washington DC</div>
+        </div>
+        <div class="entry">
+            <span class="year">2022</span>
+            <div class="content">LES Young Artists of Color Group Show, FABnyc, New York NY</div>
+        </div>
+        <div class="entry">
+            <span class="year">2020</span>
+            <div class="content">The Life Instinct, artatatimelikethis.com (curated by Diya Vij)</div>
+        </div>
+        <div class="entry">
+            <span class="year">2020</span>
+            <div class="content">TOUCHY SUBJECTS, EmergeNYC, Zoom</div>
+        </div>
+    </div>
+
+    <!-- Continue with remaining sections -->
+    <div class="cv-section">
+        <h2>AWARDS</h2>
+        <!-- Awards entries -->
+    </div>
+
+    <div class="cv-section">
+        <h2>COMMISSIONS</h2>
+        <!-- Commissions entries -->
+    </div>
+
+    <div class="cv-section">
+        <h2>RESIDENCIES</h2>
+        <!-- Residencies entries -->
+    </div>
+
+    <div class="cv-section">
+        <h2>CRITICAL WRITINGS</h2>
+        <!-- Critical Writings entries -->
+    </div>
+
+    <div class="cv-section">
+        <h2>CURATORIAL PROJECTS</h2>
+        <!-- Curatorial Projects entries -->
+    </div>
+
+    <div class="cv-section">
+        <h2>PERFORMANCE</h2>
+        <!-- Performance entries -->
+    </div>
+
+    <div class="cv-section">
+        <h2>COLLABORATIVE PROJECTS</h2>
+        <!-- Collaborative Projects entries -->
+    </div>
+
+    <div class="cv-section">
+        <h2>WORKSHOPS</h2>
+        <!-- Workshops entries -->
+    </div>
+
+    <div class="cv-section">
+        <h2>PROFESSIONAL EXPERIENCE</h2>
+        <!-- Professional Experience entries -->
+    </div>
+</div>
+
+<script>
+// Custom cursor movement
+document.addEventListener('mousemove', function(e) {
+    const cursor = document.querySelector('.custom-cursor');
+    cursor.style.left = e.clientX - 16 + 'px';
+    cursor.style.top = e.clientY - 16 + 'px';
+});
+</script>
+</body>
+</html>
