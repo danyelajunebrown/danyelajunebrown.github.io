@@ -10,14 +10,14 @@
     width: 100%;
     height: 100%;
     border: 10px #333 solid;
-    position: relative;
+    position: relative; /* This is crucial for absolute positioning of child elements */
 }
 #videoElement {
     width: 100%;
     height: 100%;
     background-color: #666;
 }
-#nameOverlay {
+.name-overlay { /* Changed to class instead of ID for better compatibility */
     position: absolute;
     top: 50%;
     left: 50%;
@@ -39,10 +39,12 @@
 <div id="container">
     <video autoplay="true" id="videoElement">
     </video>
-    <div id="nameOverlay">DANYELA JUNE BROWN</div>
+    <div class="name-overlay">DANYELA JUNE BROWN</div> <!-- Changed to use class instead of ID -->
 </div>
+
 <script>
 var video = document.querySelector("#videoElement");
+
 if (navigator.mediaDevices.getUserMedia) {
     navigator.mediaDevices.getUserMedia({ video: true })
         .then(function (stream) {
