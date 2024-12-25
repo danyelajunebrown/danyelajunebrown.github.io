@@ -2,6 +2,7 @@
 <html>
 <head>
 <meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Display Webcam Stream</title>
  
 <style>
@@ -10,6 +11,9 @@ body {
     padding: 0;
     font-family: Arial, sans-serif;
     cursor: none; /* Hide the default cursor */
+    height: 100vh;
+    width: 100vw;
+    overflow: hidden;
 }
 .custom-cursor {
     width: 32px;
@@ -18,6 +22,12 @@ body {
     pointer-events: none;
     z-index: 9999;
     mix-blend-mode: difference;
+    display: none; /* Hide on mobile by default */
+}
+@media (pointer: fine) {
+    .custom-cursor {
+        display: block; /* Show only on devices with mouse */
+    }
 }
 .custom-cursor svg {
     width: 100%;
@@ -56,15 +66,17 @@ body {
 }
 #container {
     margin: 0px auto;
-    width: 100%;
-    height: 100%;
+    width: 100vw;
+    height: 100vh;
     border: 10px #333 solid;
     position: relative;
+    box-sizing: border-box;
 }
 #videoElement {
     width: 100%;
     height: 100%;
     background-color: #666;
+    object-fit: cover;
 }
 .name-overlay {
     position: absolute;
@@ -80,6 +92,30 @@ body {
     pointer-events: none;
     text-align: center;
     width: 100%;
+}
+.error-message {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background-color: rgba(0, 0, 0, 0.8);
+    color: white;
+    padding: 20px;
+    border-radius: 8px;
+    text-align: center;
+    display: none;
+    z-index: 2001;
+}
+@media (max-width: 768px) {
+    .name-overlay {
+        font-size: 32px;
+        padding: 0 20px;
+    }
+    .nav-menu a {
+        padding: 8px 12px;
+        margin: 0 5px;
+        font-size: 16px;
+    }
 }
 </style>
 </head>
@@ -97,27 +133,86 @@ body {
     <a href="/contact">CONTACT</a>
 </nav>
 <div id="container">
-    <video autoplay="true" id="videoElement">
+    <video autoplay playsinline muted id="videoElement">
     </video>
     <div class="name-overlay">DANYELA JUNE BROWN</div>
 </div>
+<div class="error-message">
+    Please allow camera access to view this content
+</div>
 <script>
 // Webcam initialization
-var video = document.querySelector("#videoElement");
-if (navigator.mediaDevices.getUserMedia) {
-    navigator.mediaDevices.getUserMedia({ video: true })
-        .then(function (stream) {
-            video.srcObject = stream;
-        })
-        .catch(function (error) {
-            console.log("Something went wrong!", error);
+async function initCamera() {
+    const video = document.querySelector("#videoElement");
+    const errorMessage = document.querySelector(".error-message");
+    
+    try {
+        // Try to get both front and back cameras
+        const stream = await navigator.mediaDevices.getUserMedia({
+            video: {
+                facingMode: { ideal: "user" }, // Prefer front camera
+                width: { ideal: window.innerWidth },
+                height: { ideal: window.innerHeight }
+            }
         });
+        
+        video.srcObject = stream;
+        
+        // Ensure video plays on iOS
+        video.play().catch(function(e) {
+            console.log("Video play error:", e);
+        });
+        
+        errorMessage.style.display = 'none';
+    } catch (error) {
+        console.log("Camera error:", error);
+        errorMessage.style.display = 'block';
+        
+        // If front camera fails, try back camera
+        if (error.name === 'NotAllowedError' || error.name === 'NotFoundError') {
+            try {
+                const backStream = await navigator.mediaDevices.getUserMedia({
+                    video: {
+                        facingMode: { exact: "environment" }, // Force back camera
+                        width: { ideal: window.innerWidth },
+                        height: { ideal: window.innerHeight }
+                    }
+                });
+                
+                video.srcObject = backStream;
+                video.play().catch(function(e) {
+                    console.log("Video play error:", e);
+                });
+                
+                errorMessage.style.display = 'none';
+            } catch (backError) {
+                console.log("Back camera error:", backError);
+                errorMessage.style.display = 'block';
+            }
+        }
+    }
 }
-// Custom cursor movement
-document.addEventListener('mousemove', function(e) {
-    const cursor = document.querySelector('.custom-cursor');
-    cursor.style.left = e.clientX - 16 + 'px';
-    cursor.style.top = e.clientY - 16 + 'px';
+
+// Initialize camera when page loads
+if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+    initCamera();
+} else {
+    document.querySelector(".error-message").style.display = 'block';
+}
+
+// Custom cursor movement (only on desktop)
+if (window.matchMedia("(pointer: fine)").matches) {
+    document.addEventListener('mousemove', function(e) {
+        const cursor = document.querySelector('.custom-cursor');
+        cursor.style.left = e.clientX - 16 + 'px';
+        cursor.style.top = e.clientY - 16 + 'px';
+    });
+}
+
+// Handle orientation changes
+window.addEventListener('orientationchange', function() {
+    // Reinitialize camera after orientation change
+    setTimeout(initCamera, 500);
 });
 </script>
 </body>
