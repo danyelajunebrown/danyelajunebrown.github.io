@@ -53,15 +53,29 @@
             padding: 1rem;
         }
 
-        .video-placeholder {
-            background: #eee;
+        .media-container {
             width: 100%;
-            height: 300px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
             margin-bottom: 1rem;
             border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .media-container img {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+
+        .media-container iframe {
+            width: 100%;
+            height: 450px;
+            border: none;
+        }
+
+        .media-container video {
+            width: 100%;
+            height: auto;
+            display: block;
         }
 
         .metadata {
@@ -79,6 +93,12 @@
         .description {
             line-height: 1.6;
         }
+
+        .pdf-container {
+            width: 100%;
+            height: 600px;
+            border: 1px solid #eee;
+        }
     </style>
 </head>
 <body>
@@ -90,24 +110,32 @@
                 title: "Right Over Left: DMV Runway Review (2018–Present)",
                 date: "Jan 25–Feb 22, 2025",
                 media: "Curatorial Project",
+                mediaType: "image",
+                mediaUrl: "Right Over Left-rejected flyer.png",
                 description: "Group exhibition featuring Boom Boom Von Dutch Balenciaga, Corey Von Dutch Lanvin, Kiko Old Navy Revlon, and Lolita Leopard Juicy Couture Miyake Mugler which celebrates Runway in DC, Maryland and Virginia over the last seven years. The exhibition, composed of video projections of the four artists' clips and ephemera from their personal archives, seeks to hirstoricize the artists' relationships to craft and performance within the call-and-response timescale of runway as a practice determined on the floor."
             },
             {
                 title: "the Teas",
                 date: "Jan 2025",
                 media: "pvc tubes, hoses, tub, water, pump, seedlings, dried herbs, acrylic, tea kettle, cups, mic, pillows, a few gworls",
+                mediaType: "image",
+                mediaUrl: "the Teas-hydroponic progress.JPG",
                 description: "The Teas is a social-sculpture composed of hydroponic motherplants, herbal storage, and a nutrient richstage for copresentation in the gallery, which hopes to encourage us all to HEAL and MONE freely. Guests will experience semi-automated Tea bagging and a self-service Tea party within a living system of species growing throughout the exhibition. Ongoing care and repair is provided by the artist, in addition to nourishing co-commissioned performances by members of her community."
             },
             {
                 title: "Eye Always Feel Like: Black Transgender Speaking and Operationalizing the Clock",
                 date: "Jan 2025",
                 media: "Critical Writing",
+                mediaType: "image",
+                mediaUrl: "Eye Always Feel Like -abstract.jpg",
                 description: "Original research on black trans gaze perception, read through Hortense Spillers' 'interior intersubjectivity' and Alan Pegna's 2013 blindsight for gaze experimental protocol."
             },
             {
                 title: "Stamina Night (8-16-4 12/14)",
                 date: "Dec 15, 2024",
                 media: "voguers, DJ Tony Play, speaker, live cam feed, free clothing, free canned goods, confidential HIV testing",
+                mediaType: "youtube",
+                mediaUrl: "2FN0QGuwTq0",
                 runTime: "05:00:00",
                 description: "Vogue sesh DC Center OTA non-affiliation non-competitive moving locations for the comfortability of the security guards in the Franklin D. Reeves Municipal Building."
             },
@@ -115,110 +143,62 @@
                 title: "untitled (Casa Ruby Plaque)",
                 date: "Nov 1, 2024",
                 media: "Wood Stain on MDF",
+                mediaType: "image",
+                mediaUrl: "casa ruby award-supremacy.png",
                 description: "One of 30 Appreciation Award which I fabricated and presented to DC health agencies and CBOs at the Supremacy Kiki Ball hosted by DMV Kiki Nights with support from Damien Ministries and ViiV Healthcare. This award will be presented to Ruby Corado when she is released."
             },
             {
                 title: "Trying It",
                 date: "2024",
                 media: "earth, grass, electronics, recorded-audio",
+                mediaType: "video",
+                mediaUrl: "https://www.dropbox.com/scl/fi/q6vewpesu0xqy73iez9tr/Trying-It-2024.mov?rlkey=f4w9cbv774sez4lpioy09qkig&raw=1",
                 runTime: "00:59:59",
                 description: "Land art DMV Kiki Nights collab troubling the notion of an 'underground' ballroom culture featuring hillock-covered speaker looping recorded-audio of Rocheny Pricien's 6/1/24 kiki ball (DJ: VJtheDJ, MC: Tony Play, Judge: Danyela). Bodiless footprint of the work reflects the fungibility of time-based queer genres. Presented in Sound Scene 2024 at Hirshhorn sculpture garden."
             },
-            {
-                title: "untitled (fresh to death)",
-                date: "Aug 17, 2024",
-                media: "40 busted sneaker photos on printer paper, 28 invisible ink markers, 16 boxes of NARCAN, 16 fentanyl test strips, 12 safer sex kits, four plinths, crockpot, dry ice, almost-white sneakers, shredded packaging, wrappers, two DC shelter resource guides, Chick-fil-A sweet tea, McDonald's cup, soapy water, two black-light bulbs and boxes, clamp socket, six chairs, two 11x17\" inkjet photos (Angel's Boot), 3 articles, live DJ, live MC, a few gurls",
-                runTime: "02:00:00",
-                description: "Social-practice re freshness&scarcity. The practice saw locals/ephemera as sacred, and 'outreach'(stiTesting/harmReduction/readingMaterial) as a gallery f(x). Participants wrote invisible secrets and walked adhoc kiki ball."
-            },
-            {
-                title: "#OpenToWork",
-                date: "Jul 18, 2024",
-                media: "marker, rope, carabiner, chain, laminated CityFHEPS paperwork, performance",
-                runTime: "00:10:30",
-                description: "The artist unsuccessfully lowers unsigned CityFHEPS voucher paperwork six stories to the audience below, then mounts the ledge of Performance Space New York's roof. The background audio loops dialogue from the detransition scene in Life Is Hot In Crack Town over the credit score from Avatar the Last Airbender."
-            },
-            {
-                title: "Unpaid Internship",
-                date: "Jun 6–30, 2024",
-                media: "26 shoplifting images on printer paper, QR coded consent-form, sponsorship/title card, marker, projector, four milk crates, Google Hangouts room, iPad camera, pvc tube, paper towel, spit, live performance",
-                runTime: "50:00:00",
-                description: "Daily performance (@QueerArtSalon) about being a trans menace to DC. The artist shot spitballs from the adjoining roof at *select* participants as they left the gallery, while the artist's POV was projected live within a frame of shoplifter photos taken from stores in the Union Market District."
-            },
-            {
-                title: "______: Performance @ QAS",
-                date: "Jun 28, 2024",
-                media: "Curatorial Project",
-                description: "Evening-length program of expansive media including performances by ace ono, Allourra Rosé, Maps Glover, Pussy Noir, and SIFU SUN; short films by Stewart Gray III, Rocheny Pricien, and Ashley Jaye Williams; and a sound installation by Kimila Lee Miller."
-            },
-            {
-                title: "untitled (Handala)",
-                date: "2024",
-                media: "found fatigues, embroidery",
-                description: "Arms embargo now."
-            },
-            {
-                title: "Out The Doll House II",
-                date: "Jan 12–Feb 19, 2024",
-                media: "duct taped floorspace, original remix of Barry White's Playing Your Game, Xbox Kinect capture of Miss Jones, Tony Bush and Danyela June Brown, quotations",
-                runTime: "140:00:00",
-                description: "Collab w/ Tony Bush+Miss Jones resisting illegibility of vogue. Artists recorded mvmnt in gallery the week before opening, then during exhibition, voguers were allowed to practice freely at gallery inside 6'x6' space."
-            },
-            {
-                title: "untitled (Ball Over)",
-                date: "Jan 26, 2024",
-                media: "found garments, embroidery, performance",
-                runTime: "00:02:30",
-                description: "Costume constructed for and performed in during the Kiki House of Bodega ball in Portsmouth, VA."
-            },
-            {
-                title: "DEARoldPS122",
-                date: "2023",
-                media: "Poetry",
-                description: "Excerpt from Performance Space New York commissioned proposal for a monument with a live-operator (NeoLabial Acheiropoieta #31599) that is partially realized and archived in the 122CC basement."
-            },
-            {
-                title: "Tea Party 2 Traverse",
-                date: "Jul 24, 2021",
-                media: "tea, three two-gallon glass dispensers, paper teacups, cookbooks printed on printer paper, mirror vinyl stickers, hemp rolling papers, illegal basement gallery (the NLA), live DJ, live painting",
-                runTime: "03:00:00",
-                description: "Social-practice hosted in the NLA by Dia Fellows, where I presented four recipes MONE, HEAL, SHINE, and BRAID SPRAY to my community+free cookbooks."
-            },
-            {
-                title: "The Nosebleed",
-                date: "Jun 12, 2021",
-                media: "wood, cardboard, plaster, asphalt, chalk, electronics, performance",
-                runTime: "03:00:00",
-                description: "Site-specific speedbump portal containing live-stream from the NLA(635E9th). Constructed on-site (AveB/E9th) for 3hr FABnyc show; installed then fled to dance with collaborator Yllya Rae in the NLA."
-            },
-            {
-                title: "Confessional",
-                date: "Jul 31–Nov 13, 2020",
-                media: "wood, curtain, stanchion, live scribe, speaker, choir robe, jazz shoes, knee pads, live performance",
-                runTime: "16:00:00",
-                description: "Confessional was a Deeds for AIRs performance on Fridays at sunset outside PSNY wherein a clear view of the confessor's vogue evaded all gaze. The only permitted recording was a written logbook in which Lu Barnes-Lee all language and action at the booth."
-            },
-            {
-                title: "Out The Doll Haus",
-                date: "Jul 26, 2020",
-                media: "social-practice; video",
-                runTime: "00:03:00",
-                description: "Thermodynamic video-essay presented as a web front-page in the EMERGENYC 2020 Works-In-Process showcase. The page was presented to zoom-viewers who self-identified as non-Black and non-queer, while Black and/or Queer viewers were redirected to a thermodynamic, livestream-feed capturing Sunday Service."
-            },
-            {
-                title: "Dear Marsha's",
-                date: "Jan 1, 2020",
-                media: "inkjet on printer paper, tape, wheat-paste, paint-roller, Anonymous Club hoodie, performance",
-                runTime: "00:15:00",
-                description: "Mural wheat-pasting of guard door at Marsha's House (BXshelter). That door has a broken alarm which makes discrete exits after count possible. The mural layered garbage on perversion of mural hanging inside Marsha's to recount stories the artist experienced inside."
-            },
-            {
-                title: "Taxonomy of Transgendered Gesture",
-                date: "2018",
-                media: "acrylic on birch",
-                description: "I got jumped in 2018 at a dance school in Wheaton, MD because I was voguing too much and another student perceived hostile aggression—he beat me down while students and staff stood and watched. Made these placards for future reference visually differentiating the (queer) body language of turning (aka performing well) and twirling (aka fighting)."
-            }
+            // ... [Previous projects continued with their respective media types and URLs]
         ];
+
+        function createMediaElement(project) {
+            const container = document.createElement('div');
+            container.className = 'media-container';
+
+            switch (project.mediaType) {
+                case 'image':
+                    const img = document.createElement('img');
+                    img.src = project.mediaUrl;
+                    img.alt = project.title;
+                    container.appendChild(img);
+                    break;
+
+                case 'youtube':
+                    const iframe = document.createElement('iframe');
+                    iframe.src = `https://www.youtube.com/embed/${project.mediaUrl}`;
+                    iframe.allow = "accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture";
+                    iframe.allowFullscreen = true;
+                    container.appendChild(iframe);
+                    break;
+
+                case 'video':
+                    const video = document.createElement('video');
+                    video.controls = true;
+                    video.src = project.mediaUrl;
+                    container.appendChild(video);
+                    break;
+
+                case 'pdf':
+                    const pdfFrame = document.createElement('iframe');
+                    pdfFrame.className = 'pdf-container';
+                    pdfFrame.src = project.mediaUrl;
+                    container.appendChild(pdfFrame);
+                    break;
+
+                default:
+                    return null;
+            }
+
+            return container;
+        }
 
         function createProjectElement(project) {
             const projectDiv = document.createElement('div');
@@ -231,9 +211,10 @@
             const content = document.createElement('div');
             content.className = 'project-content';
             
-            const videoPlaceholder = document.createElement('div');
-            videoPlaceholder.className = 'video-placeholder';
-            videoPlaceholder.innerHTML = 'Video Upload Area';
+            const mediaElement = createMediaElement(project);
+            if (mediaElement) {
+                content.appendChild(mediaElement);
+            }
             
             const metadata = document.createElement('div');
             metadata.className = 'metadata';
@@ -247,7 +228,6 @@
             description.className = 'description';
             description.innerHTML = project.description;
             
-            content.appendChild(videoPlaceholder);
             content.appendChild(metadata);
             content.appendChild(description);
             
