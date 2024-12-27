@@ -214,17 +214,20 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    async function setBackgroundFromReferrer() {
+    async function setBackground() {
         const referrer = document.referrer;
-        debug.textContent = `Referrer: ${referrer || 'None'}`;
+        const lastVisitedPage = localStorage.getItem('lastVisitedPage');
+        const sourceUrl = referrer || lastVisitedPage;
         
-        if (referrer) {
+        debug.textContent = `Referrer: ${referrer || 'None'}\nLast visited page: ${lastVisitedPage || 'None'}`;
+        
+        if (sourceUrl) {
             try {
                 loading.style.display = 'block';
-                const referrerURL = new URL(referrer);
-                debug.textContent += `\nParsed referrer URL: ${referrerURL.href}`;
+                const url = new URL(sourceUrl);
+                debug.textContent += `\nUsing URL: ${url.href}`;
                 
-                const screenshotUrl = await getWaybackScreenshot(referrerURL.href);
+                const screenshotUrl = await getWaybackScreenshot(url.href);
                 
                 if (screenshotUrl) {
                     await new Promise((resolve, reject) => {
@@ -258,10 +261,13 @@ document.addEventListener('DOMContentLoaded', function() {
                 loading.style.display = 'none';
             }
         } else {
-            debug.textContent += '\nNo referrer, using default background';
+            debug.textContent += '\nNo source URL available, using default background';
             setDefaultBackground();
             loading.style.display = 'none';
         }
+        
+        // Clear the last visited page after attempting to use it
+        localStorage.removeItem('lastVisitedPage');
     }
 
     function setDefaultBackground() {
@@ -272,7 +278,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // Initialize the background
-    setBackgroundFromReferrer();
+    setBackground();
 });
 </script>
 </head>
