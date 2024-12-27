@@ -130,4 +130,9 @@ function linkToCV() {
 </div>
 
 </body>
+ // Add this code to your main site pages (not the CV page)
+// This will store the current page URL before navigation
+window.addEventListener('beforeunload', function() {
+    localStorage.setItem('lastVisitedPage', window.location.href);
+});
 </html>
