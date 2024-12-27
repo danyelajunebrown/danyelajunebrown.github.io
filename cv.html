@@ -5,7 +5,97 @@
 <title>Danyela June Brown - CV</title>
  
 <style>
-body {
+/* ... existing styles ... */
+
+.popup {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: rgba(0, 0, 0, 0.9);
+    padding: 20px 40px;
+    border: 2px solid white;
+    border-radius: 10px;
+    z-index: 3000;
+    animation: fadeIn 0.3s ease-in;
+    display: none;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+.background-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: -1;
+    opacity: 0.2;
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    filter: grayscale(50%);
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const overlay = document.createElement('div');
+    overlay.className = 'background-overlay';
+    document.body.appendChild(overlay);
+
+    const popup = document.createElement('div');
+    popup.className = 'popup';
+    popup.innerHTML = '<h2 style="color: white; text-align: center;">google me</h2>';
+
+    function showPopup() {
+        popup.style.display = 'block';
+        document.body.appendChild(popup);
+        setTimeout(() => {
+            popup.style.display = 'none';
+            document.body.removeChild(popup);
+        }, 2000);
+    }
+
+    async function checkHistory() {
+        try {
+            // Request permission to access browser history
+            const result = await navigator.permissions.query({ name: 'history' });
+            
+            if (result.state === 'granted') {
+                // Get the most recent history entry before current page
+                const entries = await chrome.history.search({
+                    text: '',
+                    maxResults: 2,
+                    startTime: 0
+                });
+                
+                const previousPage = entries.find(entry => 
+                    !entry.url.includes('danyelajunebrown.github.io'));
+                
+                if (previousPage && previousPage.url) {
+                    overlay.style.backgroundImage = `url(${previousPage.url})`;
+                } else {
+                    showPopup();
+                }
+            } else {
+                showPopup();
+            }
+        } catch (error) {
+            showPopup();
+        }
+    }
+
+    // Initiate the history check when page loads
+    checkHistory();
+});
+</script>
+</head>
+
+<body>
     margin: 0;
     padding: 0;
     font-family: Arial, sans-serif;
@@ -337,3 +427,5 @@ h2 {
             <div class="content">Out the Doll Haus, Performance Space New York, New York NY (9/7)</div>
         </div>
         <div class="entry">
+</body>
+</html>
