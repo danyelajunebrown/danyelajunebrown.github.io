@@ -170,59 +170,95 @@ document.addEventListener('DOMContentLoaded', function() {
     loading.textContent = 'Loading background';
     document.body.appendChild(loading);
 
+    // Add debug info display
+    const debug = document.createElement('div');
+    debug.style.position = 'fixed';
+    debug.style.bottom = '10px';
+    debug.style.left = '10px';
+    debug.style.color = 'white';
+    debug.style.backgroundColor = 'rgba(0,0,0,0.7)';
+    debug.style.padding = '10px';
+    debug.style.fontSize = '12px';
+    debug.style.zIndex = '9999';
+    document.body.appendChild(debug);
+
     async function getWaybackScreenshot(url) {
+        debug.textContent = `Attempting to get screenshot for: ${url}`;
+        
         try {
-            const timestamp = new Date().toISOString().slice(0, 10).replace(/-/g, '');
-            const availabilityUrl = `https://archive.org/wayback/available?url=${encodeURIComponent(url)}`;
+            const proxyUrl = 'https://api.allorigins.win/get?url=';
+            const encodedUrl = encodeURIComponent(`https://archive.org/wayback/available?url=${encodeURIComponent(url)}`);
+            const response = await fetch(proxyUrl + encodedUrl);
             
-            const response = await fetch(availabilityUrl);
-            if (!response.ok) throw new Error('Wayback Machine API request failed');
+            if (!response.ok) {
+                debug.textContent += '\nWayback API request failed';
+                throw new Error('Wayback Machine API request failed');
+            }
             
-            const data = await response.json();
+            const data = JSON.parse(JSON.parse(response.json()).contents);
+            debug.textContent += '\nReceived response from Wayback API';
             
             if (data.archived_snapshots && data.archived_snapshots.closest) {
                 const timestamp = data.archived_snapshots.closest.timestamp;
-                return `https://web.archive.org/screenshot/${timestamp}/${url}`;
+                const screenshotUrl = `https://web.archive.org/screenshot/${timestamp}/${url}`;
+                debug.textContent += `\nFound screenshot URL: ${screenshotUrl}`;
+                return screenshotUrl;
             }
+            
+            debug.textContent += '\nNo snapshots found';
             throw new Error('No snapshots found');
         } catch (e) {
+            debug.textContent += `\nError: ${e.message}`;
             console.error('Wayback Machine error:', e);
             return null;
         }
     }
 
     async function setBackgroundFromReferrer() {
-        if (document.referrer) {
+        const referrer = document.referrer;
+        debug.textContent = `Referrer: ${referrer || 'None'}`;
+        
+        if (referrer) {
             try {
                 loading.style.display = 'block';
-                const referrerURL = new URL(document.referrer);
+                const referrerURL = new URL(referrer);
+                debug.textContent += `\nParsed referrer URL: ${referrerURL.href}`;
+                
                 const screenshotUrl = await getWaybackScreenshot(referrerURL.href);
                 
                 if (screenshotUrl) {
                     return new Promise((resolve, reject) => {
                         const img = new Image();
+                        img.crossOrigin = "anonymous";
+                        
                         img.onload = () => {
                             overlay.style.backgroundImage = `linear-gradient(rgba(26, 26, 26, 0.7), rgba(26, 26, 26, 0.7)), url('${screenshotUrl}')`;
                             loading.style.display = 'none';
+                            debug.textContent += '\nBackground image loaded successfully';
                             resolve();
                         };
+                        
                         img.onerror = () => {
+                            debug.textContent += '\nFailed to load background image';
                             console.error('Failed to load Wayback screenshot');
                             setDefaultBackground();
                             loading.style.display = 'none';
                             reject();
                         };
+                        
                         img.src = screenshotUrl;
                     });
                 } else {
                     throw new Error('No screenshot URL available');
                 }
             } catch (e) {
+                debug.textContent += `\nError setting background: ${e.message}`;
                 console.error('Error setting background:', e);
                 setDefaultBackground();
                 loading.style.display = 'none';
             }
         } else {
+            debug.textContent += '\nNo referrer, using default background';
             setDefaultBackground();
             loading.style.display = 'none';
         }
