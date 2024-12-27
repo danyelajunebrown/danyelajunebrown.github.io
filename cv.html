@@ -5,7 +5,7 @@
 <title>Danyela June Brown - CV</title>
  
 <style>
-body {
+<body>
     margin: 0;
     padding: 0;
     font-family: Arial, sans-serif;
@@ -13,6 +13,40 @@ body {
     color: white;
     cursor: none;
     line-height: 1.6;
+    <div class="custom-cursor">
+        <svg viewBox="0 0 32 32">
+            <circle cx="16" cy="16" r="8"/>
+        </svg>
+    </div>
+
+    <nav class="nav-menu">
+        <a href="#education">Education</a>
+        <a href="#exhibitions">Exhibitions</a>
+        <a href="#experience">Experience</a>
+    </nav>
+
+    <div class="cv-container">
+        <div class="contact-info">
+            <h1>DANYELA JUNE BROWN</h1>
+            <p>(571) 286-5029 • holler@danyelica.fish</p>
+            <p>Born 1996 in San Diego, CA. Lives in VA and works in DC.</p>
+        </div>
+
+        <section id="education" class="cv-section">
+            <h2>EDUCATION</h2>
+            <div class="entry">
+                <span class="year">2024</span>
+                <div class="content">Peer Case Management Certificate, DHS at Howard University School of Social Work, Washington DC</div>
+            </div>
+            <div class="entry">
+                <span class="year">2019</span>
+                <div class="content">B.A., African and African American Studies, Stanford University, Stanford CA</div>
+            </div>
+        </section>
+
+        <!-- Continue with other sections (Exhibitions, Awards, etc.) following the same pattern -->
+    </div>
+</body>
 }
 
 .custom-cursor {
@@ -167,37 +201,15 @@ document.addEventListener('DOMContentLoaded', function() {
     overlay.className = 'background-overlay';
     document.body.insertBefore(overlay, document.body.firstChild);
 
-    // Create loading indicator
-    const loading = document.createElement('div');
-    loading.className = 'loading';
-    loading.textContent = 'Loading background';
-    document.body.appendChild(loading);
-
-    // Get the 'from' parameter from URL
-    const urlParams = new URLSearchParams(window.location.search);
-    const fromPage = urlParams.get('from');
-    
-    if (fromPage) {
-        // Create an image to preload the background
-        const img = new Image();
-        
-        img.onload = function() {
-            // Once image is loaded, set it as background and fade out loading
-            overlay.style.backgroundImage = `linear-gradient(rgba(26, 26, 26, 0.7), rgba(26, 26, 26, 0.7)), url(${fromPage})`;
-            loading.style.display = 'none';
-            overlay.style.opacity = '0.2';
-        };
-
-        img.onerror = function() {
-            // If image fails to load, remove loading indicator and show default background
-            loading.style.display = 'none';
+    // Get last visited page from history API
+    if (document.referrer) {
+        try {
+            const referrerDomain = new URL(document.referrer).origin;
+            overlay.style.backgroundImage = `linear-gradient(rgba(26, 26, 26, 0.7), rgba(26, 26, 26, 0.7)), url(${document.referrer})`;
+        } catch (e) {
             setDefaultBackground();
-        };
-
-        img.src = fromPage;
+        }
     } else {
-        // No 'from' parameter, show default background
-        loading.style.display = 'none';
         setDefaultBackground();
     }
 
