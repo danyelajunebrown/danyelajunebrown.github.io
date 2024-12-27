@@ -164,18 +164,53 @@ document.addEventListener('DOMContentLoaded', function() {
     overlay.className = 'background-overlay';
     document.body.insertBefore(overlay, document.body.firstChild);
 
-    function setBackgroundFromReferrer() {
+    async function getWaybackScreenshot(url) {
+        try {
+            // First, get the closest snapshot to current date
+            const timestamp = new Date().toISOString().replace(/[-T:]/g, '').split('.')[0] + 'Z';
+            const availabilityUrl = `https://archive.org/wayback/available?url=${encodeURIComponent(url)}&timestamp=${timestamp}`;
+            
+            const response = await fetch(availabilityUrl);
+            const data = await response.json();
+            
+            if (data.archived_snapshots.closest) {
+                // Get the timestamp of the closest snapshot
+                const snapshot = data.archived_snapshots.closest.timestamp;
+                
+                // Construct the screenshot URL
+                // Note: This uses Wayback Machine's screenshot API
+                const screenshotUrl = `https://web.archive.org/screenshot/${snapshot}/${url}`;
+                
+                return screenshotUrl;
+            }
+            return null;
+        } catch (e) {
+            console.error('Error fetching Wayback Machine data:', e);
+            return null;
+        }
+    }
+
+    async function setBackgroundFromReferrer() {
         if (document.referrer) {
             try {
                 const referrerURL = new URL(document.referrer);
-                // Create a safe background image URL from the referrer
-                overlay.style.backgroundImage = `linear-gradient(rgba(26, 26, 26, 0.7), rgba(26, 26, 26, 0.7)), url('${document.referrer}')`;
+                const screenshotUrl = await getWaybackScreenshot(referrerURL.href);
                 
-                // Add error handling for the background image
-                overlay.addEventListener('error', () => {
+                if (screenshotUrl) {
+                    // Create and load a temporary image to test if the screenshot exists
+                    const tempImage = new Image();
+                    tempImage.onload = () => {
+                        overlay.style.backgroundImage = `linear-gradient(rgba(26, 26, 26, 0.7), rgba(26, 26, 26, 0.7)), url('${screenshotUrl}')`;
+                    };
+                    tempImage.onerror = () => {
+                        setDefaultBackground();
+                    };
+                    tempImage.src = screenshotUrl;
+                } else {
                     setDefaultBackground();
-                });
+                }
             } catch (e) {
+                console.error('Error setting background:', e);
                 setDefaultBackground();
             }
         } else {
@@ -190,8 +225,7 @@ document.addEventListener('DOMContentLoaded', function() {
         overlay.style.opacity = '0.1';
     }
 
-    // Instead of requesting permissions (which isn't possible for browsing history),
-    // we'll directly try to use the referrer
+    // Initialize the background
     setBackgroundFromReferrer();
 });
 </script>
