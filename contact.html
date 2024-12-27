@@ -6,6 +6,7 @@
     <title>Contact & Events</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/lucide/0.263.1/umd/lucide.min.js"></script>
     <style>
+        /* Existing styles */
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
             max-width: 800px;
@@ -16,23 +17,48 @@
             line-height: 1.6;
         }
 
+        /* Navigation menu styles */
+        .nav-menu {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+            padding: 15px 0;
+            z-index: 2000;
+            text-align: center;
+        }
+        .nav-menu a {
+            color: white;
+            text-decoration: none;
+            padding: 10px 20px;
+            margin: 0 10px;
+            font-size: 18px;
+            border: 2px solid transparent;
+            transition: all 0.3s ease;
+        }
+        .nav-menu a:hover {
+            border-bottom: 2px solid white;
+        }
+
+        /* Adjust main content to account for fixed nav */
         .section {
             background: white;
             border-radius: 8px;
             padding: 2rem;
             margin-bottom: 2rem;
             box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            margin-top: 60px; /* Add space for fixed nav */
         }
 
+        /* Rest of your existing styles */
         h1, h2 {
             margin-top: 0;
             color: #1a1a1a;
         }
-
         .calendar {
             margin-bottom: 2rem;
         }
-
         .event {
             padding: 1rem;
             background: #f8f8f8;
@@ -40,22 +66,18 @@
             margin-bottom: 1rem;
             border-radius: 0 4px 4px 0;
         }
-
         .event-title {
             font-weight: 600;
             margin-bottom: 0.5rem;
         }
-
         .event-details {
             color: #666;
         }
-
         .social-links {
             display: flex;
             gap: 1rem;
             flex-wrap: wrap;
         }
-
         .social-button {
             display: inline-flex;
             align-items: center;
@@ -69,27 +91,22 @@
             cursor: pointer;
             transition: transform 0.2s, box-shadow 0.2s;
         }
-
         .social-button:hover {
             transform: translateY(-2px);
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
-
         .instagram {
             background: linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%);
             color: white;
         }
-
         .linkedin {
             background: #0077b5;
             color: white;
         }
-
         .email {
             background: #4CAF50;
             color: white;
         }
-
         .event-map {
             margin-top: 1rem;
             width: 100%;
@@ -100,6 +117,14 @@
     </style>
 </head>
 <body>
+    <!-- Add navigation menu -->
+    <nav class="nav-menu">
+        <a href="bio.html">BIO</a>
+        <a href="cv.html">CV</a>
+        <a href="projects.html">PROJECTS</a>
+        <a href="contact.html">CONTACT</a>
+    </nav>
+
     <div class="section">
         <h1>Contact & Events</h1>
         
@@ -118,7 +143,6 @@
                 ></iframe>
             </div>
         </div>
-
         <div class="social-links">
             <a href="https://instagram.com/se3ingth1ngs" class="social-button instagram" target="_blank">
                 <i data-lucide="instagram"></i>
@@ -136,7 +160,6 @@
             </a>
         </div>
     </div>
-
     <script>
         // Initialize Lucide icons
         lucide.createIcons();
