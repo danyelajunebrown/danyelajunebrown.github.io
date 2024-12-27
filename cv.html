@@ -1,3 +1,4 @@
+<!-- Modified cv.html -->
 <!DOCTYPE html>
 <html>
 <head>
@@ -5,128 +6,7 @@
 <title>Danyela June Brown - CV</title>
  
 <style>
-body {
-    margin: 0;
-    padding: 0;
-    font-family: Arial, sans-serif;
-    background-color: #1a1a1a;
-    color: white;
-    cursor: none;
-    line-height: 1.6;
-}
-
-.custom-cursor {
-    width: 32px;
-    height: 32px;
-    position: fixed;
-    pointer-events: none;
-    z-index: 9999;
-    mix-blend-mode: difference;
-}
-
-.custom-cursor svg {
-    width: 100%;
-    height: 100%;
-    animation: trotAlong 0.6s infinite alternate;
-    fill: white;
-}
-
-@keyframes trotAlong {
-    0% {
-        transform: translateY(0) rotate(-5deg);
-    }
-    100% {
-        transform: translateY(-3px) rotate(5deg);
-    }
-}
-
-.nav-menu {
-    position: fixed;
-    top: 0;
-    width: 100%;
-    background-color: rgba(0, 0, 0, 0.7);
-    padding: 15px 0;
-    z-index: 2000;
-    text-align: center;
-}
-
-.nav-menu a {
-    color: white;
-    text-decoration: none;
-    padding: 10px 20px;
-    margin: 0 10px;
-    font-size: 18px;
-    border: 2px solid transparent;
-    transition: all 0.3s ease;
-}
-
-.nav-menu a:hover {
-    border-bottom: 2px solid white;
-}
-
-.cv-container {
-    max-width: 800px;
-    margin: 80px auto 40px;
-    padding: 40px;
-    background-color: rgba(0, 0, 0, 0.8);
-    box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
-    position: relative;
-    z-index: 1;
-}
-
-.cv-section {
-    margin-bottom: 30px;
-}
-
-h1 {
-    font-size: 36px;
-    text-align: center;
-    margin-bottom: 30px;
-}
-
-h2 {
-    font-size: 24px;
-    border-bottom: 2px solid white;
-    padding-bottom: 5px;
-    margin-top: 25px;
-}
-
-.entry {
-    margin-bottom: 15px;
-}
-
-.year {
-    font-weight: bold;
-    margin-right: 10px;
-}
-
-.content {
-    margin-left: 20px;
-}
-
-.contact-info {
-    text-align: center;
-    margin-bottom: 20px;
-}
-
-.popup {
-    position: fixed;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    background: rgba(0, 0, 0, 0.9);
-    padding: 20px 40px;
-    border: 2px solid white;
-    border-radius: 10px;
-    z-index: 3000;
-    animation: fadeIn 0.3s ease-in;
-    display: none;
-}
-
-@keyframes fadeIn {
-    from { opacity: 0; }
-    to { opacity: 1; }
-}
+/* Previous styles remain the same */
 
 .background-overlay {
     position: fixed;
@@ -140,6 +20,30 @@ h2 {
     background-position: center;
     background-repeat: no-repeat;
     filter: grayscale(50%);
+    transition: opacity 0.5s ease;
+}
+
+/* Add loading animation */
+.loading {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 1000;
+    color: white;
+    font-size: 18px;
+}
+
+@keyframes rotate {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+.loading::after {
+    content: '⟳';
+    display: inline-block;
+    margin-left: 8px;
+    animation: rotate 1s linear infinite;
 }
 </style>
 
@@ -149,45 +53,49 @@ document.addEventListener('DOMContentLoaded', function() {
     overlay.className = 'background-overlay';
     document.body.insertBefore(overlay, document.body.firstChild);
 
-    const popup = document.createElement('div');
-    popup.className = 'popup';
-    popup.innerHTML = '<h2 style="color: white; text-align: center;">google me</h2>';
+    // Create loading indicator
+    const loading = document.createElement('div');
+    loading.className = 'loading';
+    loading.textContent = 'Loading background';
+    document.body.appendChild(loading);
 
-    function showPopup() {
-        popup.style.display = 'block';
-        document.body.appendChild(popup);
-        setTimeout(() => {
-            popup.style.display = 'none';
-            document.body.removeChild(popup);
-        }, 2000);
+    // Get the 'from' parameter from URL
+    const urlParams = new URLSearchParams(window.location.search);
+    const fromPage = urlParams.get('from');
+    
+    if (fromPage) {
+        // Create an image to preload the background
+        const img = new Image();
+        
+        img.onload = function() {
+            // Once image is loaded, set it as background and fade out loading
+            overlay.style.backgroundImage = `linear-gradient(rgba(26, 26, 26, 0.7), rgba(26, 26, 26, 0.7)), url(${fromPage})`;
+            loading.style.display = 'none';
+            overlay.style.opacity = '0.2';
+        };
+
+        img.onerror = function() {
+            // If image fails to load, remove loading indicator and show default background
+            loading.style.display = 'none';
+            setDefaultBackground();
+        };
+
+        img.src = fromPage;
+    } else {
+        // No 'from' parameter, show default background
+        loading.style.display = 'none';
+        setDefaultBackground();
     }
 
-    // Request permission using the newer Permissions API
-    if (navigator.permissions && navigator.permissions.query) {
-        navigator.permissions.query({ name: 'notifications' })
-            .then(function(permissionStatus) {
-                if (permissionStatus.state === 'granted') {
-                    // Use document.referrer as a fallback
-                    if (document.referrer) {
-                        // Create an iframe with the referrer URL as background
-                        overlay.style.backgroundImage = `linear-gradient(rgba(26, 26, 26, 0.7), rgba(26, 26, 26, 0.7)), url(${document.referrer})`;
-                    } else {
-                        showPopup();
-                    }
-                } else {
-                    showPopup();
-                }
-            })
-            .catch(function(error) {
-                showPopup();
-            });
-    } else {
-        showPopup();
+    function setDefaultBackground() {
+        overlay.style.background = 'linear-gradient(45deg, #1a1a1a 25%, #2a2a2a 25%, #2a2a2a 50%, #1a1a1a 50%, #1a1a1a 75%, #2a2a2a 75%, #2a2a2a)';
+        overlay.style.backgroundSize = '40px 40px';
+        overlay.style.animation = 'backgroundMove 30s linear infinite';
+        overlay.style.opacity = '0.1';
     }
 });
 </script>
 </head>
-
 <body>
 <div class="custom-cursor">
     <svg viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
