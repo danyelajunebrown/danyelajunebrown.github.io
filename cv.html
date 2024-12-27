@@ -5,97 +5,7 @@
 <title>Danyela June Brown - CV</title>
  
 <style>
-/* ... existing styles ... */
-
-.popup {
-    position: fixed;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    background: rgba(0, 0, 0, 0.9);
-    padding: 20px 40px;
-    border: 2px solid white;
-    border-radius: 10px;
-    z-index: 3000;
-    animation: fadeIn 0.3s ease-in;
-    display: none;
-}
-
-@keyframes fadeIn {
-    from { opacity: 0; }
-    to { opacity: 1; }
-}
-
-.background-overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    z-index: -1;
-    opacity: 0.2;
-    background-size: cover;
-    background-position: center;
-    background-repeat: no-repeat;
-    filter: grayscale(50%);
-}
-</style>
-
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    const overlay = document.createElement('div');
-    overlay.className = 'background-overlay';
-    document.body.appendChild(overlay);
-
-    const popup = document.createElement('div');
-    popup.className = 'popup';
-    popup.innerHTML = '<h2 style="color: white; text-align: center;">google me</h2>';
-
-    function showPopup() {
-        popup.style.display = 'block';
-        document.body.appendChild(popup);
-        setTimeout(() => {
-            popup.style.display = 'none';
-            document.body.removeChild(popup);
-        }, 2000);
-    }
-
-    async function checkHistory() {
-        try {
-            // Request permission to access browser history
-            const result = await navigator.permissions.query({ name: 'history' });
-            
-            if (result.state === 'granted') {
-                // Get the most recent history entry before current page
-                const entries = await chrome.history.search({
-                    text: '',
-                    maxResults: 2,
-                    startTime: 0
-                });
-                
-                const previousPage = entries.find(entry => 
-                    !entry.url.includes('danyelajunebrown.github.io'));
-                
-                if (previousPage && previousPage.url) {
-                    overlay.style.backgroundImage = `url(${previousPage.url})`;
-                } else {
-                    showPopup();
-                }
-            } else {
-                showPopup();
-            }
-        } catch (error) {
-            showPopup();
-        }
-    }
-
-    // Initiate the history check when page loads
-    checkHistory();
-});
-</script>
-</head>
-
-<body>
+body {
     margin: 0;
     padding: 0;
     font-family: Arial, sans-serif;
@@ -160,6 +70,8 @@ document.addEventListener('DOMContentLoaded', function() {
     padding: 40px;
     background-color: rgba(0, 0, 0, 0.8);
     box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+    position: relative;
+    z-index: 1;
 }
 
 .cv-section {
@@ -196,9 +108,86 @@ h2 {
     text-align: center;
     margin-bottom: 20px;
 }
+
+.popup {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: rgba(0, 0, 0, 0.9);
+    padding: 20px 40px;
+    border: 2px solid white;
+    border-radius: 10px;
+    z-index: 3000;
+    animation: fadeIn 0.3s ease-in;
+    display: none;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+.background-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 0;
+    opacity: 0.2;
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    filter: grayscale(50%);
+}
 </style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const overlay = document.createElement('div');
+    overlay.className = 'background-overlay';
+    document.body.insertBefore(overlay, document.body.firstChild);
+
+    const popup = document.createElement('div');
+    popup.className = 'popup';
+    popup.innerHTML = '<h2 style="color: white; text-align: center;">google me</h2>';
+
+    function showPopup() {
+        popup.style.display = 'block';
+        document.body.appendChild(popup);
+        setTimeout(() => {
+            popup.style.display = 'none';
+            document.body.removeChild(popup);
+        }, 2000);
+    }
+
+    // Request permission using the newer Permissions API
+    if (navigator.permissions && navigator.permissions.query) {
+        navigator.permissions.query({ name: 'notifications' })
+            .then(function(permissionStatus) {
+                if (permissionStatus.state === 'granted') {
+                    // Use document.referrer as a fallback
+                    if (document.referrer) {
+                        // Create an iframe with the referrer URL as background
+                        overlay.style.backgroundImage = `linear-gradient(rgba(26, 26, 26, 0.7), rgba(26, 26, 26, 0.7)), url(${document.referrer})`;
+                    } else {
+                        showPopup();
+                    }
+                } else {
+                    showPopup();
+                }
+            })
+            .catch(function(error) {
+                showPopup();
+            });
+    } else {
+        showPopup();
+    }
+});
+</script>
 </head>
- 
+
 <body>
 <div class="custom-cursor">
     <svg viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
@@ -206,7 +195,7 @@ h2 {
     </svg>
 </div>
 
- <nav class="nav-menu">
+<nav class="nav-menu">
     <a href="bio.html">BIO</a>
     <a href="cv.html">CV</a>
     <a href="projects.html">PROJECTS</a>
@@ -214,6 +203,7 @@ h2 {
 </nav>
 
 <div class="cv-container">
+    <!-- Your existing CV content here -->
     <h1>DANYELA JUNE BROWN</h1>
     <div class="contact-info">
         <p>(571) 286-5029 • holler@danyelica.fish</p>
@@ -427,5 +417,8 @@ h2 {
             <div class="content">Out the Doll Haus, Performance Space New York, New York NY (9/7)</div>
         </div>
         <div class="entry">
+         
+        </div>
+
 </body>
 </html>
