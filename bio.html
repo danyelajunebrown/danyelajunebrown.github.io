@@ -94,10 +94,16 @@ body {
 <nav class="nav-menu">
     <a href="bio.html">BIO</a>
     <a href="#" onclick="linkToCV(); return false;">CV</a>
-    <a href="cv.html">CV</a>
     <a href="projects.html">PROJECTS</a>
     <a href="contact.html">CONTACT</a>
 </nav>
+
+<script>
+function linkToCV() {
+    const currentPage = encodeURIComponent(window.location.href);
+    window.location.href = `cv.html?from=${currentPage}`;
+}
+</script>
 
 <div class="content-container">
     <h1 class="name-heading">DANYELA JUNE BROWN</h1>
