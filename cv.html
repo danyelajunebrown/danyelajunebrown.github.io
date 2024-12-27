@@ -164,15 +164,27 @@ document.addEventListener('DOMContentLoaded', function() {
     overlay.className = 'background-overlay';
     document.body.insertBefore(overlay, document.body.firstChild);
 
-    if (document.referrer) {
+    async function requestReferrerPermission() {
         try {
-            const referrerDomain = new URL(document.referrer).origin;
-            overlay.style.backgroundImage = `linear-gradient(rgba(26, 26, 26, 0.7), rgba(26, 26, 26, 0.7)), url(${document.referrer})`;
+            const result = await window.navigator.permissions.query({ name: 'browsing-history' });
+            
+            if (result.state === 'granted' && document.referrer) {
+                const referrerDomain = new URL(document.referrer).origin;
+                overlay.style.backgroundImage = `linear-gradient(rgba(26, 26, 26, 0.7), rgba(26, 26, 26, 0.7)), url(${document.referrer})`;
+            } else if (result.state === 'prompt') {
+                const permission = confirm('This site would like to access your previous page URL to create a custom background. Allow?');
+                if (permission && document.referrer) {
+                    const referrerDomain = new URL(document.referrer).origin;
+                    overlay.style.backgroundImage = `linear-gradient(rgba(26, 26, 26, 0.7), rgba(26, 26, 26, 0.7)), url(${document.referrer})`;
+                } else {
+                    setDefaultBackground();
+                }
+            } else {
+                setDefaultBackground();
+            }
         } catch (e) {
             setDefaultBackground();
         }
-    } else {
-        setDefaultBackground();
     }
 
     function setDefaultBackground() {
@@ -181,6 +193,8 @@ document.addEventListener('DOMContentLoaded', function() {
         overlay.style.animation = 'backgroundMove 30s linear infinite';
         overlay.style.opacity = '0.1';
     }
+
+    requestReferrerPermission();
 });
 </script>
 </head>
