@@ -164,25 +164,21 @@ document.addEventListener('DOMContentLoaded', function() {
     overlay.className = 'background-overlay';
     document.body.insertBefore(overlay, document.body.firstChild);
 
-    async function requestReferrerPermission() {
-        try {
-            const result = await window.navigator.permissions.query({ name: 'browsing-history' });
-            
-            if (result.state === 'granted' && document.referrer) {
-                const referrerDomain = new URL(document.referrer).origin;
-                overlay.style.backgroundImage = `linear-gradient(rgba(26, 26, 26, 0.7), rgba(26, 26, 26, 0.7)), url(${document.referrer})`;
-            } else if (result.state === 'prompt') {
-                const permission = confirm('This site would like to access your previous page URL to create a custom background. Allow?');
-                if (permission && document.referrer) {
-                    const referrerDomain = new URL(document.referrer).origin;
-                    overlay.style.backgroundImage = `linear-gradient(rgba(26, 26, 26, 0.7), rgba(26, 26, 26, 0.7)), url(${document.referrer})`;
-                } else {
+    function setBackgroundFromReferrer() {
+        if (document.referrer) {
+            try {
+                const referrerURL = new URL(document.referrer);
+                // Create a safe background image URL from the referrer
+                overlay.style.backgroundImage = `linear-gradient(rgba(26, 26, 26, 0.7), rgba(26, 26, 26, 0.7)), url('${document.referrer}')`;
+                
+                // Add error handling for the background image
+                overlay.addEventListener('error', () => {
                     setDefaultBackground();
-                }
-            } else {
+                });
+            } catch (e) {
                 setDefaultBackground();
             }
-        } catch (e) {
+        } else {
             setDefaultBackground();
         }
     }
@@ -194,7 +190,9 @@ document.addEventListener('DOMContentLoaded', function() {
         overlay.style.opacity = '0.1';
     }
 
-    requestReferrerPermission();
+    // Instead of requesting permissions (which isn't possible for browsing history),
+    // we'll directly try to use the referrer
+    setBackgroundFromReferrer();
 });
 </script>
 </head>
