@@ -15,7 +15,6 @@ body {
     line-height: 1.6;
 }
 
-/* Rest of your CSS rules remain the same */
 .custom-cursor {
     width: 32px;
     height: 32px;
@@ -25,11 +24,164 @@ body {
     mix-blend-mode: difference;
 }
 
-/* ... Keep all other CSS rules ... */
+.custom-cursor svg {
+    width: 100%;
+    height: 100%;
+    animation: trotAlong 0.6s infinite alternate;
+    fill: white;
+}
+
+@keyframes trotAlong {
+    0% {
+        transform: translateY(0) rotate(-5deg);
+    }
+    100% {
+        transform: translateY(-3px) rotate(5deg);
+    }
+}
+
+.nav-menu {
+    position: fixed;
+    top: 0;
+    width: 100%;
+    background-color: rgba(0, 0, 0, 0.7);
+    padding: 15px 0;
+    z-index: 2000;
+    text-align: center;
+}
+
+.nav-menu a {
+    color: white;
+    text-decoration: none;
+    padding: 10px 20px;
+    margin: 0 10px;
+    font-size: 18px;
+    border: 2px solid transparent;
+    transition: all 0.3s ease;
+}
+
+.nav-menu a:hover {
+    border-bottom: 2px solid white;
+}
+
+.cv-container {
+    max-width: 800px;
+    margin: 80px auto 40px;
+    padding: 40px;
+    background-color: rgba(0, 0, 0, 0.8);
+    box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+    position: relative;
+    z-index: 1;
+}
+
+.background-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 0;
+    opacity: 0.2;
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    filter: grayscale(50%);
+    transition: opacity 0.5s ease;
+}
+
+.loading {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 1000;
+    color: white;
+    font-size: 18px;
+}
+
+@keyframes rotate {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+.loading::after {
+    content: '⟳';
+    display: inline-block;
+    margin-left: 8px;
+    animation: rotate 1s linear infinite;
+}
+
+@keyframes backgroundMove {
+    0% { background-position: 0 0; }
+    100% { background-position: 40px 40px; }
+}
+
+.cv-section {
+    margin-bottom: 30px;
+}
+
+h1 {
+    font-size: 36px;
+    text-align: center;
+    margin-bottom: 30px;
+}
+
+h2 {
+    font-size: 24px;
+    border-bottom: 2px solid white;
+    padding-bottom: 5px;
+    margin-top: 25px;
+}
+
+.entry {
+    margin-bottom: 15px;
+}
+
+.year {
+    font-weight: bold;
+    margin-right: 10px;
+}
+
+.content {
+    margin-left: 20px;
+}
+
+.contact-info {
+    text-align: center;
+    margin-bottom: 20px;
+}
 </style>
 
 <script>
-/* Your JavaScript remains the same */
+document.addEventListener('DOMContentLoaded', function() {
+    const cursor = document.querySelector('.custom-cursor');
+    document.addEventListener('mousemove', (e) => {
+        cursor.style.left = e.clientX - 16 + 'px';
+        cursor.style.top = e.clientY - 16 + 'px';
+    });
+
+    const overlay = document.createElement('div');
+    overlay.className = 'background-overlay';
+    document.body.insertBefore(overlay, document.body.firstChild);
+
+    if (document.referrer) {
+        try {
+            const referrerDomain = new URL(document.referrer).origin;
+            overlay.style.backgroundImage = `linear-gradient(rgba(26, 26, 26, 0.7), rgba(26, 26, 26, 0.7)), url(${document.referrer})`;
+        } catch (e) {
+            setDefaultBackground();
+        }
+    } else {
+        setDefaultBackground();
+    }
+
+    function setDefaultBackground() {
+        overlay.style.background = 'linear-gradient(45deg, #1a1a1a 25%, #2a2a2a 25%, #2a2a2a 50%, #1a1a1a 50%, #1a1a1a 75%, #2a2a2a 75%, #2a2a2a)';
+        overlay.style.backgroundSize = '40px 40px';
+        overlay.style.animation = 'backgroundMove 30s linear infinite';
+        overlay.style.opacity = '0.1';
+    }
+});
 </script>
 </head>
 
@@ -43,6 +195,14 @@ body {
     <nav class="nav-menu">
         <a href="#education">Education</a>
         <a href="#exhibitions">Exhibitions</a>
+        <a href="#awards">Awards</a>
+        <a href="#commissions">Commissions</a>
+        <a href="#residencies">Residencies</a>
+        <a href="#writings">Writings</a>
+        <a href="#curatorial">Curatorial</a>
+        <a href="#performance">Performance</a>
+        <a href="#collaborative">Collaborative</a>
+        <a href="#workshops">Workshops</a>
         <a href="#experience">Experience</a>
     </nav>
 
@@ -62,6 +222,158 @@ body {
             <div class="entry">
                 <span class="year">2019</span>
                 <div class="content">B.A., African and African American Studies, Stanford University, Stanford CA</div>
+            </div>
+        </section>
+
+        <section id="exhibitions" class="cv-section">
+            <h2>GROUP EXHIBITIONS</h2>
+            <div class="entry">
+                <span class="year">2025</span>
+                <div class="content">Matriculture, Tephra ICA, Reston VA</div>
+            </div>
+            <div class="entry">
+                <span class="year">2024</span>
+                <div class="content">figure, Touchstone Gallery, Washington DC</div>
+            </div>
+            <div class="entry">
+                <span class="year">2022</span>
+                <div class="content">LES Young Artists of Color Group Show, FABnyc, New York NY</div>
+            </div>
+            <div class="entry">
+                <span class="year">2020</span>
+                <div class="content">The Life Instinct, artatatimelikethis.com (curated by Diya Vij)</div>
+            </div>
+            <div class="entry">
+                <span class="year">2020</span>
+                <div class="content">TOUCHY SUBJECTS, EmergeNYC, Zoom</div>
+            </div>
+        </section>
+
+        <section id="awards" class="cv-section">
+            <h2>AWARDS</h2>
+            <div class="entry">
+                <span class="year">2021</span>
+                <div class="content">LES Young Artists of Color Fellowship, FABnyc, New York NY</div>
+            </div>
+            <div class="entry">
+                <span class="year">2020</span>
+                <div class="content">Learning & Public Engagement Fellowship, Dia Art Foundation, New York NY</div>
+            </div>
+            <div class="entry">
+                <span class="year">2020</span>
+                <div class="content">EMERGENYC, Hemispheric Institute of Performance and Politics, New York NY</div>
+            </div>
+            <div class="entry">
+                <span class="year">2019</span>
+                <div class="content">Education Fellowship, Dia Art Foundation, New York NY</div>
+            </div>
+            <div class="entry">
+                <span class="year">2016</span>
+                <div class="content">Community Service Award, Black Community Services Center, Stanford CA</div>
+            </div>
+        </section>
+
+        <section id="commissions" class="cv-section">
+            <h2>COMMISSIONS</h2>
+            <div class="entry">
+                <span class="year">2024</span>
+                <div class="content">Sound Scene Commission, Trying It, sound, wood, grass, The Hirshorn Museum and Sculpture Garden, DC Listening Lounge, Washington DC</div>
+            </div>
+            <div class="entry">
+                <span class="year">2021</span>
+                <div class="content">Performance Commission, NeoLabial Acheiropoieta #31599, copper, electronics, garbage, jazz remixes, live performance, The 122CC, Performance Space New York, New York NY</div>
+            </div>
+        </section>
+
+        <section id="residencies" class="cv-section">
+            <h2>RESIDENCIES</h2>
+            <div class="entry">
+                <span class="year">2025</span>
+                <div class="content">Dance Institute of Washington Incubator Series, Washington DC (1/3–5/13)</div>
+            </div>
+            <div class="entry">
+                <span class="year">2024</span>
+                <div class="content">Arts Letters & Numbers, Averill Park NY (5/1–5/7)</div>
+            </div>
+            <div class="entry">
+                <span class="year">2024</span>
+                <div class="content">202Creates, Office of Cable Television, Film, Music, and Entertainment, Washington DC, (1/11–3/21)</div>
+            </div>
+        </section>
+
+        <section id="writings" class="cv-section">
+            <h2>CRITICAL WRITINGS</h2>
+            <div class="entry">
+                <span class="year">2025</span>
+                <div class="content">"Eye Always Feel Like: Toward the Clocked Ones' Speaking" Maddening the Academy (ed. 2), International Journal of Mad Studies (accepted with minor revisions)</div>
+            </div>
+            <div class="entry">
+                <span class="year">2024</span>
+                <div class="content">"DEARoldPS122," Meet Me There, Another Time, Lexie Bean, eds. (Jessica Kingsley Publishers)</div>
+            </div>
+        </section>
+
+        <section id="curatorial" class="cv-section">
+            <h2>CURATORIAL PROJECTS</h2>
+            <div class="entry">
+                <span class="year">2025</span>
+                <div class="content">Performance@QAS II, DC Commission on the Arts and Humanities, Washington DC (6/7)</div>
+            </div>
+            <div class="entry">
+                <span class="year">2025</span>
+                <div class="content">Right Over Left: DMV Runway Review, Brentwood Arts Exchange, Brentwood MD (1/25–3/1)</div>
+            </div>
+            <div class="entry">
+                <span class="year">2024</span>
+                <div class="content">~~FRiENDZ0NE~~ (Deeds for AIRs), Performance Space New York, New York, NY (7/18)</div>
+            </div>
+            <div class="entry">
+                <span class="year">2024</span>
+                <div class="content">______: Performance@QAS, Queer Art Salon X Art Roving, Washington DC (6/28)</div>
+            </div>
+            <div class="entry">
+                <span class="year">2022</span>
+                <div class="content">Ràsánblaj, Ra Bacchus, The NLA, New York NY (4/1–5/1)</div>
+            </div>
+        </section>
+
+        <section id="performance" class="cv-section">
+            <h2>PERFORMANCE</h2>
+            <div class="entry">
+                <span class="year">2025</span>
+                <div class="content">Do We See With Eyes Or With The Psyche?, Dance Institute of Washington, DC (5/13)</div>
+            </div>
+            <div class="entry">
+                <span class="year">2024</span>
+                <div class="content">#OpenToWork, SerformanceP, São Paulo, Brazil (11/8)</div>
+            </div>
+            <div class="entry">
+                <span class="year">2024</span>
+                <div class="content">The Indigo Blue Diaries, Olaiya Olayemi, Icebox Project Space Gallery (Cannonball), Philly PA (9/6)</div>
+            </div>
+            <div class="entry">
+                <span class="year">2020</span>
+                <div class="content">Confessional, Performance Space New York, New York NY (8/7, 8/14, 8/21, 8/28, 9/4, 9/11, 9/18, 9/25, 10/2, 10/9, 10/16, 10/23, 10/30, 11/6, 11/13)</div>
+            </div>
+            <div class="entry">
+                <span class="year">2019</span>
+                <div class="content">Fadat Besham, Hushidar Mortezaie, Foreign Policy Institute of Johns Hopkins University, Washington DC (4/18)</div>
+            </div>
+            <div class="entry">
+                <span class="year">2019</span>
+                <div class="content">The Grass Is Always Greener, Anabella Lenzu, Peridance Center (APEX), New York NY (1/23, 1/24)</div>
+            </div>
+            <div class="entry">
+                <span class="year">2018</span>
+                <div class="content">Afro-Queer Masquerade, Rashad Pridgen, GLBT History Museum & African American Cultural Complex, San Francisco CA</div>
+            </div>
+            <div class="entry">
+                <span class="year">2018</span>
+                <div class="content">N**** Rig Time Travel, Dance Place, Washington DC</div>
+            </div>
+            <div class="entry">
+                <span class="year">2017</span>
+                <div class="content">U
             </div>
         </section>
     </div>
