@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
+<meta name="referrer" content="strict-origin-when-cross-origin">
 <meta charset="utf-8">
 <title>Danyela June Brown - CV</title>
  
@@ -186,16 +187,15 @@ document.addEventListener('DOMContentLoaded', function() {
         debug.textContent = `Attempting to get screenshot for: ${url}`;
         
         try {
-            const proxyUrl = 'https://api.allorigins.win/get?url=';
+            const proxyUrl = 'https://api.allorigins.win/raw?url=';
             const encodedUrl = encodeURIComponent(`https://archive.org/wayback/available?url=${encodeURIComponent(url)}`);
-            const response = await fetch(proxyUrl + encodedUrl);
             
+            const response = await fetch(proxyUrl + encodedUrl);
             if (!response.ok) {
-                debug.textContent += '\nWayback API request failed';
                 throw new Error('Wayback Machine API request failed');
             }
             
-            const data = JSON.parse(JSON.parse(response.json()).contents);
+            const data = await response.json();
             debug.textContent += '\nReceived response from Wayback API';
             
             if (data.archived_snapshots && data.archived_snapshots.closest) {
@@ -227,7 +227,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 const screenshotUrl = await getWaybackScreenshot(referrerURL.href);
                 
                 if (screenshotUrl) {
-                    return new Promise((resolve, reject) => {
+                    await new Promise((resolve, reject) => {
                         const img = new Image();
                         img.crossOrigin = "anonymous";
                         
@@ -243,7 +243,7 @@ document.addEventListener('DOMContentLoaded', function() {
                             console.error('Failed to load Wayback screenshot');
                             setDefaultBackground();
                             loading.style.display = 'none';
-                            reject();
+                            reject(new Error('Failed to load image'));
                         };
                         
                         img.src = screenshotUrl;
