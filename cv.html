@@ -183,33 +183,33 @@ document.addEventListener('DOMContentLoaded', function() {
     debug.style.zIndex = '9999';
     document.body.appendChild(debug);
 
-    async function getWaybackScreenshot(url) {
+    async function getLastCaptureTimestamp(url) {
         debug.textContent = `Attempting to get screenshot for: ${url}`;
         
         try {
-            const proxyUrl = 'https://api.allorigins.win/raw?url=';
-            const encodedUrl = encodeURIComponent(`https://archive.org/wayback/available?url=${encodeURIComponent(url)}`);
+            // Use CDX API to get the most recent capture
+            const cdxUrl = `https://web.archive.org/cdx/search/cdx?url=${encodeURIComponent(url)}&output=json&limit=1`;
+            const response = await fetch(cdxUrl);
             
-            const response = await fetch(proxyUrl + encodedUrl);
             if (!response.ok) {
-                throw new Error('Wayback Machine API request failed');
+                throw new Error('CDX API request failed');
             }
             
-            const data = await response.json();
-            debug.textContent += '\nReceived response from Wayback API';
+            const data = await response.text();
+            const parsedData = JSON.parse(data);
             
-            if (data.archived_snapshots && data.archived_snapshots.closest) {
-                const timestamp = data.archived_snapshots.closest.timestamp;
+            if (parsedData && parsedData.length > 1) {
+                const timestamp = parsedData[1][1]; // Get timestamp from the first result
                 const screenshotUrl = `https://web.archive.org/screenshot/${timestamp}/${url}`;
                 debug.textContent += `\nFound screenshot URL: ${screenshotUrl}`;
                 return screenshotUrl;
             }
             
-            debug.textContent += '\nNo snapshots found';
-            throw new Error('No snapshots found');
+            debug.textContent += '\nNo captures found';
+            return null;
         } catch (e) {
             debug.textContent += `\nError: ${e.message}`;
-            console.error('Wayback Machine error:', e);
+            console.error('Archive.org error:', e);
             return null;
         }
     }
@@ -227,7 +227,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 const url = new URL(sourceUrl);
                 debug.textContent += `\nUsing URL: ${url.href}`;
                 
-                const screenshotUrl = await getWaybackScreenshot(url.href);
+                const screenshotUrl = await getLastCaptureTimestamp(url.href);
                 
                 if (screenshotUrl) {
                     await new Promise((resolve, reject) => {
