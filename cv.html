@@ -156,120 +156,38 @@ h2 {
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     const cursor = document.querySelector('.custom-cursor');
+    const overlay = document.createElement('div');
+    overlay.className = 'background-overlay';
+    document.body.insertBefore(overlay, document.body.firstChild);
+
+    // Mouse cursor movement
     document.addEventListener('mousemove', (e) => {
         cursor.style.left = e.clientX - 16 + 'px';
         cursor.style.top = e.clientY - 16 + 'px';
     });
 
-    const overlay = document.createElement('div');
-    overlay.className = 'background-overlay';
-    document.body.insertBefore(overlay, document.body.firstChild);
+    // Function to get URL parameters
+    function getUrlParameter(name) {
+        name = name.replace(/[\[]/, '\\[').replace(/[\]]/, '\\]');
+        const regex = new RegExp('[\\?&]' + name + '=([^&#]*)');
+        const results = regex.exec(location.search);
+        return results === null ? '' : decodeURIComponent(results[1].replace(/\+/g, ' '));
+    }
 
-    // Add loading indicator
-    const loading = document.createElement('div');
-    loading.className = 'loading';
-    loading.textContent = 'Loading background';
-    document.body.appendChild(loading);
-
-    // Add debug info display
-    const debug = document.createElement('div');
-    debug.style.position = 'fixed';
-    debug.style.bottom = '10px';
-    debug.style.left = '10px';
-    debug.style.color = 'white';
-    debug.style.backgroundColor = 'rgba(0,0,0,0.7)';
-    debug.style.padding = '10px';
-    debug.style.fontSize = '12px';
-    debug.style.zIndex = '9999';
-    document.body.appendChild(debug);
-
-    async function getLastCaptureTimestamp(url) {
-        debug.textContent = `Attempting to get screenshot for: ${url}`;
-        
+    // Function to set background from URL
+    async function setBackgroundFromUrl(url) {
         try {
-            // Use CDX API to get the most recent capture
-            const cdxUrl = `https://web.archive.org/cdx/search/cdx?url=${encodeURIComponent(url)}&output=json&limit=1`;
-            const response = await fetch(cdxUrl);
+            const response = await fetch(url);
+            if (!response.ok) throw new Error('Failed to load image');
             
-            if (!response.ok) {
-                throw new Error('CDX API request failed');
-            }
-            
-            const data = await response.text();
-            const parsedData = JSON.parse(data);
-            
-            if (parsedData && parsedData.length > 1) {
-                const timestamp = parsedData[1][1]; // Get timestamp from the first result
-                const screenshotUrl = `https://web.archive.org/screenshot/${timestamp}/${url}`;
-                debug.textContent += `\nFound screenshot URL: ${screenshotUrl}`;
-                return screenshotUrl;
-            }
-            
-            debug.textContent += '\nNo captures found';
-            return null;
-        } catch (e) {
-            debug.textContent += `\nError: ${e.message}`;
-            console.error('Archive.org error:', e);
-            return null;
-        }
-    }
-
-    async function setBackground() {
-        const referrer = document.referrer;
-        const lastVisitedPage = localStorage.getItem('lastVisitedPage');
-        const sourceUrl = referrer || lastVisitedPage;
-        
-        debug.textContent = `Referrer: ${referrer || 'None'}\nLast visited page: ${lastVisitedPage || 'None'}`;
-        
-        if (sourceUrl) {
-            try {
-                loading.style.display = 'block';
-                const url = new URL(sourceUrl);
-                debug.textContent += `\nUsing URL: ${url.href}`;
-                
-                const screenshotUrl = await getLastCaptureTimestamp(url.href);
-                
-                if (screenshotUrl) {
-                    await new Promise((resolve, reject) => {
-                        const img = new Image();
-                        img.crossOrigin = "anonymous";
-                        
-                        img.onload = () => {
-                            overlay.style.backgroundImage = `linear-gradient(rgba(26, 26, 26, 0.7), rgba(26, 26, 26, 0.7)), url('${screenshotUrl}')`;
-                            loading.style.display = 'none';
-                            debug.textContent += '\nBackground image loaded successfully';
-                            resolve();
-                        };
-                        
-                        img.onerror = () => {
-                            debug.textContent += '\nFailed to load background image';
-                            console.error('Failed to load Wayback screenshot');
-                            setDefaultBackground();
-                            loading.style.display = 'none';
-                            reject(new Error('Failed to load image'));
-                        };
-                        
-                        img.src = screenshotUrl;
-                    });
-                } else {
-                    throw new Error('No screenshot URL available');
-                }
-            } catch (e) {
-                debug.textContent += `\nError setting background: ${e.message}`;
-                console.error('Error setting background:', e);
-                setDefaultBackground();
-                loading.style.display = 'none';
-            }
-        } else {
-            debug.textContent += '\nNo source URL available, using default background';
+            overlay.style.backgroundImage = `linear-gradient(rgba(26, 26, 26, 0.7), rgba(26, 26, 26, 0.7)), url('${url}')`;
+        } catch (error) {
+            console.error('Failed to load background:', error);
             setDefaultBackground();
-            loading.style.display = 'none';
         }
-        
-        // Clear the last visited page after attempting to use it
-        localStorage.removeItem('lastVisitedPage');
     }
 
+    // Function to set default background
     function setDefaultBackground() {
         overlay.style.background = 'linear-gradient(45deg, #1a1a1a 25%, #2a2a2a 25%, #2a2a2a 50%, #1a1a1a 50%, #1a1a1a 75%, #2a2a2a 75%, #2a2a2a)';
         overlay.style.backgroundSize = '40px 40px';
@@ -277,8 +195,46 @@ document.addEventListener('DOMContentLoaded', function() {
         overlay.style.opacity = '0.1';
     }
 
-    // Initialize the background
-    setBackground();
+    // Function to store current page URL before navigation
+    function storeCurrentPage() {
+        if (document.referrer) {
+            localStorage.setItem('lastVisitedPage', document.referrer);
+        }
+    }
+
+    // Add navigation helper to all links
+    function addNavigationHelper() {
+        document.querySelectorAll('a').forEach(link => {
+            if (link.href && !link.href.startsWith('javascript:')) {
+                link.addEventListener('click', (e) => {
+                    storeCurrentPage();
+                });
+            }
+        });
+    }
+
+    // Initialize
+    const backgroundUrl = getUrlParameter('bg');
+    if (backgroundUrl) {
+        setBackgroundFromUrl(backgroundUrl);
+    } else {
+        const lastVisitedPage = localStorage.getItem('lastVisitedPage');
+        if (lastVisitedPage) {
+            // Create a modified version of the URL for the background parameter
+            const newUrl = new URL(window.location.href);
+            newUrl.searchParams.set('bg', lastVisitedPage);
+            window.history.replaceState({}, '', newUrl);
+            setBackgroundFromUrl(lastVisitedPage);
+        } else {
+            setDefaultBackground();
+        }
+    }
+
+    // Add navigation helper
+    addNavigationHelper();
+
+    // Clear localStorage after use
+    localStorage.removeItem('lastVisitedPage');
 });
 </script>
 </head>
