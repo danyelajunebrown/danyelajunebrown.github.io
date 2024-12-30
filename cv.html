@@ -1,5 +1,3 @@
-s Page Capture
-
 <!DOCTYPE html>
 <html>
 <head>
@@ -8,173 +6,248 @@ s Page Capture
     <title>Danyela June Brown - CV</title>
     
     <style>
-        /* Previous styles remain the same */
-        
-        /* Add styles for permission UI */
-        .permission-overlay {
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: Arial, sans-serif;
+            background-color: #1a1a1a;
+            color: white;
+            cursor: none;
+            line-height: 1.6;
+        }
+
+        .background-overlay {
             position: fixed;
             top: 0;
             left: 0;
             right: 0;
             bottom: 0;
-            background: rgba(0, 0, 0, 0.9);
+            z-index: 0;
+            opacity: 0.2;
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            filter: grayscale(50%);
+            transition: opacity 0.5s ease;
+        }
+
+        .custom-cursor {
+            width: 32px;
+            height: 32px;
+            position: fixed;
+            pointer-events: none;
+            z-index: 9999;
+            mix-blend-mode: difference;
+        }
+
+        .custom-cursor svg {
+            width: 100%;
+            height: 100%;
+            animation: trotAlong 0.6s infinite alternate;
+            fill: white;
+        }
+
+        .nav-menu {
+            position: fixed;
+            top: 0;
+            width: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+            padding: 15px 0;
+            z-index: 2000;
+            text-align: center;
+        }
+
+        .nav-menu a {
+            color: white;
+            text-decoration: none;
+            padding: 10px 20px;
+            margin: 0 10px;
+            font-size: 18px;
+            border: 2px solid transparent;
+            transition: all 0.3s ease;
+        }
+
+        .nav-menu a:hover {
+            border-bottom: 2px solid white;
+        }
+
+        .cv-container {
+            max-width: 800px;
+            margin: 80px auto 40px;
+            padding: 40px;
+            background-color: rgba(0, 0, 0, 0.8);
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+            position: relative;
+            z-index: 1;
+        }
+
+        .cv-section {
+            margin-bottom: 30px;
+        }
+
+        h1 {
+            font-size: 36px;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        h2 {
+            font-size: 24px;
+            border-bottom: 2px solid white;
+            padding-bottom: 5px;
+            margin-top: 25px;
+        }
+
+        .entry {
+            margin-bottom: 15px;
+        }
+
+        .year {
+            font-weight: bold;
+            margin-right: 10px;
+        }
+
+        .content {
+            margin-left: 20px;
+        }
+
+        .contact-info {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        /* Journey prompt styles */
+        .journey-prompt {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.85);
             display: flex;
             align-items: center;
             justify-content: center;
             z-index: 3000;
+            transition: opacity 0.5s ease;
         }
-        
-        .permission-dialog {
-            background: #2a2a2a;
-            padding: 2rem;
-            border-radius: 8px;
-            max-width: 500px;
+
+        .prompt-content {
             text-align: center;
-        }
-        
-        .permission-buttons {
-            margin-top: 1rem;
-            display: flex;
-            gap: 1rem;
-            justify-content: center;
-        }
-        
-        .permission-button {
-            padding: 0.5rem 1rem;
-            border: 2px solid white;
-            background: transparent;
             color: white;
+            padding: 2rem;
+        }
+
+        .prompt-content h2 {
+            font-size: 24px;
+            margin-bottom: 1rem;
+            border: none;
+        }
+
+        .prompt-content p {
+            margin-bottom: 2rem;
+            opacity: 0.8;
+        }
+
+        #captureBtn {
+            padding: 12px 24px;
+            background: transparent;
+            border: 2px solid white;
+            color: white;
+            font-size: 16px;
             cursor: pointer;
             transition: all 0.3s ease;
         }
-        
-        .permission-button:hover {
+
+        #captureBtn:hover {
             background: white;
             color: black;
+        }
+
+        @keyframes trotAlong {
+            0% {
+                transform: translateY(0) rotate(-5deg);
+            }
+            100% {
+                transform: translateY(-3px) rotate(5deg);
+            }
         }
     </style>
 
     <script>
-// Add this just before the closing </head> tag
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    // Create overlay for initial prompt
-    const promptOverlay = document.createElement('div');
-    promptOverlay.className = 'journey-prompt';
-    promptOverlay.innerHTML = `
-        <div class="prompt-content">
-            <h2>Make this page yours</h2>
-            <p>Share a glimpse of your web journey as the background</p>
-            <button id="captureBtn">Share a page</button>
-        </div>
-    `;
-    document.body.appendChild(promptOverlay);
+    document.addEventListener('DOMContentLoaded', function() {
+        // Create overlay for initial prompt
+        const promptOverlay = document.createElement('div');
+        promptOverlay.className = 'journey-prompt';
+        promptOverlay.innerHTML = `
+            <div class="prompt-content">
+                <h2>Make this page yours</h2>
+                <p>Share a glimpse of your web journey as the background</p>
+                <button id="captureBtn">Share a page</button>
+            </div>
+        `;
+        document.body.appendChild(promptOverlay);
 
-    // Handle capture
-    document.getElementById('captureBtn').addEventListener('click', async () => {
-        try {
-            // Request screen capture
-            const stream = await navigator.mediaDevices.getDisplayMedia({
-                video: {
-                    cursor: 'never'
-                },
-                audio: false
-            });
+        // Handle capture
+        document.getElementById('captureBtn').addEventListener('click', async () => {
+            try {
+                // Request screen capture
+                const stream = await navigator.mediaDevices.getDisplayMedia({
+                    video: {
+                        cursor: 'never'
+                    },
+                    audio: false
+                });
 
-            // Create video element to capture frame
-            const video = document.createElement('video');
-            video.srcObject = stream;
-            await video.play();
+                // Create video element to capture frame
+                const video = document.createElement('video');
+                video.srcObject = stream;
+                await video.play();
 
-            // Capture single frame
-            const canvas = document.createElement('canvas');
-            canvas.width = video.videoWidth;
-            canvas.height = video.videoHeight;
-            const ctx = canvas.getContext('2d');
-            ctx.drawImage(video, 0, 0);
+                // Capture single frame
+                const canvas = document.createElement('canvas');
+                canvas.width = video.videoWidth;
+                canvas.height = video.videoHeight;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(video, 0, 0);
 
-            // Stop capture
-            stream.getTracks().forEach(track => track.stop());
+                // Stop capture
+                stream.getTracks().forEach(track => track.stop());
 
-            // Use the captured frame
-            const imageUrl = canvas.toDataURL('image/jpeg', 0.8);
-            
-            // Apply as background
-            const overlay = document.querySelector('.background-overlay');
-            if (overlay) {
-                overlay.style.backgroundImage = `linear-gradient(
-                    rgba(26, 26, 26, 0.85), 
-                    rgba(26, 26, 26, 0.85)
-                ), url(${imageUrl})`;
-                overlay.style.backgroundSize = 'cover';
-                overlay.style.backgroundPosition = 'center';
+                // Use the captured frame
+                const imageUrl = canvas.toDataURL('image/jpeg', 0.8);
+                
+                // Apply as background
+                const overlay = document.querySelector('.background-overlay');
+                if (overlay) {
+                    overlay.style.backgroundImage = `linear-gradient(
+                        rgba(26, 26, 26, 0.85), 
+                        rgba(26, 26, 26, 0.85)
+                    ), url(${imageUrl})`;
+                    overlay.style.backgroundSize = 'cover';
+                    overlay.style.backgroundPosition = 'center';
+                }
+
+                // Remove prompt
+                promptOverlay.style.opacity = '0';
+                setTimeout(() => promptOverlay.remove(), 500);
+
+            } catch (err) {
+                console.log('Capture cancelled or failed');
+                promptOverlay.remove();
             }
+        });
 
-            // Remove prompt
-            promptOverlay.style.opacity = '0';
-            setTimeout(() => promptOverlay.remove(), 500);
-
-        } catch (err) {
-            console.log('Capture cancelled or failed');
-            promptOverlay.remove();
+        // Initialize background overlay
+        if (!document.querySelector('.background-overlay')) {
+            const overlay = document.createElement('div');
+            overlay.className = 'background-overlay';
+            document.body.insertBefore(overlay, document.body.firstChild);
         }
     });
-});
-</script>
-
-<style>
-.journey-prompt {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: rgba(0, 0, 0, 0.85);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    z-index: 3000;
-    transition: opacity 0.5s ease;
-}
-
-.prompt-content {
-    text-align: center;
-    color: white;
-    padding: 2rem;
-}
-
-.prompt-content h2 {
-    font-size: 24px;
-    margin-bottom: 1rem;
-    border: none;
-}
-
-.prompt-content p {
-    margin-bottom: 2rem;
-    opacity: 0.8;
-}
-
-#captureBtn {
-    padding: 12px 24px;
-    background: transparent;
-    border: 2px solid white;
-    color: white;
-    font-size: 16px;
-    cursor: pointer;
-    transition: all 0.3s ease;
-}
-
-#captureBtn:hover {
-    background: white;
-    color: black;
-}
-
-.background-overlay {
-    transition: all 1s ease;
-}
-</style>
-</script>
+    </script>
 </head>
+
+<!-- Rest of your body content remains the same -->
 
 <body>
     <div class="custom-cursor">
