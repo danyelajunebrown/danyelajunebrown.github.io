@@ -1,3 +1,5 @@
+
+
 <!DOCTYPE html>
 <html>
 <head>
@@ -23,7 +25,7 @@
             right: 0;
             bottom: 0;
             z-index: 0;
-            opacity: 0.2;
+            opacity: 1;
             background-size: cover;
             background-position: center;
             background-repeat: no-repeat;
@@ -75,10 +77,10 @@
             max-width: 800px;
             margin: 80px auto 40px;
             padding: 40px;
-            background-color: rgba(0, 0, 0, 0.8);
-            box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
             position: relative;
             z-index: 1;
+            text-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+            mix-blend-mode: difference;
         }
 
         .cv-section {
@@ -219,10 +221,7 @@
                 // Apply as background
                 const overlay = document.querySelector('.background-overlay');
                 if (overlay) {
-                    overlay.style.backgroundImage = `linear-gradient(
-                        rgba(26, 26, 26, 0.85), 
-                        rgba(26, 26, 26, 0.85)
-                    ), url(${imageUrl})`;
+                    overlay.style.backgroundImage = `url(${imageUrl})`;
                     overlay.style.backgroundSize = 'cover';
                     overlay.style.backgroundPosition = 'center';
                 }
