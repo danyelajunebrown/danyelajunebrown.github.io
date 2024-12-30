@@ -171,32 +171,88 @@ document.addEventListener('DOMContentLoaded', function() {
     `;
     document.body.appendChild(debug);
 
-    // Function to update debug info
     function updateDebug(info) {
         debug.innerHTML += `<div>${new Date().toISOString()}: ${info}</div>`;
     }
 
-    // Test available browser APIs
-    updateDebug(`Referrer: ${document.referrer}`);
-    updateDebug(`Previous page URL from localStorage: ${localStorage.getItem('lastVisitedPage')}`);
+    // Create canvas for potential screenshot
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
     
-    // Test performance navigation API
-    if (window.performance && performance.getEntriesByType) {
-        const navigationEntries = performance.getEntriesByType('navigation');
-        updateDebug(`Navigation entries: ${JSON.stringify(navigationEntries)}`);
-    } else {
-        updateDebug('Performance navigation API not available');
+    async function attemptScreenshotCapture() {
+        updateDebug('Starting screenshot capture attempt...');
+        
+        try {
+            if (!document.referrer) {
+                throw new Error('No referrer available');
+            }
+            
+            updateDebug('Checking permissions...');
+            
+            // Try to request necessary permissions
+            if (navigator.mediaDevices && navigator.mediaDevices.getDisplayMedia) {
+                updateDebug('getDisplayMedia API available');
+                
+                try {
+                    const stream = await navigator.mediaDevices.getDisplayMedia({
+                        video: {
+                            displaySurface: 'browser',
+                            logicalSurface: true,
+                            cursor: 'never'
+                        }
+                    });
+                    
+                    updateDebug('Got media stream, creating video element');
+                    
+                    const video = document.createElement('video');
+                    video.srcObject = stream;
+                    
+                    video.onloadedmetadata = () => {
+                        updateDebug(`Video dimensions: ${video.videoWidth}x${video.videoHeight}`);
+                        canvas.width = video.videoWidth;
+                        canvas.height = video.videoHeight;
+                        
+                        // Draw video frame to canvas
+                        ctx.drawImage(video, 0, 0);
+                        
+                        // Convert to image
+                        try {
+                            const imageData = canvas.toDataURL('image/jpeg', 0.8);
+                            updateDebug('Successfully captured screenshot');
+                            
+                            // Set as background
+                            const overlay = document.querySelector('.background-overlay');
+                            if (overlay) {
+                                overlay.style.backgroundImage = `linear-gradient(rgba(26, 26, 26, 0.7), rgba(26, 26, 26, 0.7)), url(${imageData})`;
+                                updateDebug('Set background image');
+                            }
+                            
+                            // Stop all tracks
+                            stream.getTracks().forEach(track => track.stop());
+                            
+                        } catch (e) {
+                            updateDebug(`Canvas conversion error: ${e.message}`);
+                        }
+                    };
+                    
+                    video.play().catch(e => updateDebug(`Video play error: ${e.message}`));
+                    
+                } catch (e) {
+                    updateDebug(`Media capture error: ${e.message}`);
+                }
+            } else {
+                updateDebug('getDisplayMedia API not available');
+            }
+            
+        } catch (error) {
+            updateDebug(`Error during capture: ${error.message}`);
+        }
     }
 
-    // Test History API
-    if (window.history && history.length) {
-        updateDebug(`History length: ${history.length}`);
-    }
-
-    // Add permission request button for testing
-    const permissionButton = document.createElement('button');
-    permissionButton.textContent = 'Request History Access';
-    permissionButton.style.cssText = `
+    // Add capture button
+    const captureButton = document.createElement('button');
+    captureButton.textContent = 'Capture Previous Page';
+    captureButton.style.cssText = `
         position: fixed;
         top: 20px;
         right: 20px;
@@ -206,47 +262,16 @@ document.addEventListener('DOMContentLoaded', function() {
         border: 1px solid white;
         cursor: pointer;
     `;
-
-    permissionButton.addEventListener('click', async () => {
-        try {
-            updateDebug('Testing permissions...');
-            
-            // Test if Permissions API is available
-            if (navigator.permissions) {
-                const result = await navigator.permissions.query({
-                    name: 'history'
-                }).catch(e => updateDebug(`Permissions error: ${e.message}`));
-                
-                updateDebug(`Permissions query result: ${result?.state}`);
-            } else {
-                updateDebug('Permissions API not available');
-            }
-
-            // Try to access history API
-            if (window.history) {
-                updateDebug(`Current history state: ${JSON.stringify(history.state)}`);
-            }
-
-        } catch (error) {
-            updateDebug(`Error: ${error.message}`);
-        }
-    });
-
-    document.body.appendChild(permissionButton);
-
-    // Store current page before navigation
-    document.addEventListener('beforeunload', () => {
-        localStorage.setItem('lastVisitedPage', window.location.href);
-        updateDebug('Stored current page URL');
-    });
-
-    // Track clicks on all links
-    document.querySelectorAll('a').forEach(link => {
-        link.addEventListener('click', () => {
-            updateDebug(`Link clicked: ${link.href}`);
-            localStorage.setItem('lastVisitedPage', window.location.href);
-        });
-    });
+    
+    captureButton.addEventListener('click', attemptScreenshotCapture);
+    document.body.appendChild(captureButton);
+    
+    // Initialize background overlay if not exists
+    if (!document.querySelector('.background-overlay')) {
+        const overlay = document.createElement('div');
+        overlay.className = 'background-overlay';
+        document.body.insertBefore(overlay, document.body.firstChild);
+    }
 });
 </script>
 </head>
