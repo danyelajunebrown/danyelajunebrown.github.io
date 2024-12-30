@@ -155,86 +155,98 @@ h2 {
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    const cursor = document.querySelector('.custom-cursor');
-    const overlay = document.createElement('div');
-    overlay.className = 'background-overlay';
-    document.body.insertBefore(overlay, document.body.firstChild);
+    // Debug info display
+    const debug = document.createElement('div');
+    debug.style.cssText = `
+        position: fixed;
+        top: 100px;
+        left: 20px;
+        padding: 20px;
+        background: rgba(0,0,0,0.8);
+        color: white;
+        font-family: monospace;
+        z-index: 9999;
+        max-width: 600px;
+        overflow-wrap: break-word;
+    `;
+    document.body.appendChild(debug);
 
-    // Mouse cursor movement
-    document.addEventListener('mousemove', (e) => {
-        cursor.style.left = e.clientX - 16 + 'px';
-        cursor.style.top = e.clientY - 16 + 'px';
+    // Function to update debug info
+    function updateDebug(info) {
+        debug.innerHTML += `<div>${new Date().toISOString()}: ${info}</div>`;
+    }
+
+    // Test available browser APIs
+    updateDebug(`Referrer: ${document.referrer}`);
+    updateDebug(`Previous page URL from localStorage: ${localStorage.getItem('lastVisitedPage')}`);
+    
+    // Test performance navigation API
+    if (window.performance && performance.getEntriesByType) {
+        const navigationEntries = performance.getEntriesByType('navigation');
+        updateDebug(`Navigation entries: ${JSON.stringify(navigationEntries)}`);
+    } else {
+        updateDebug('Performance navigation API not available');
+    }
+
+    // Test History API
+    if (window.history && history.length) {
+        updateDebug(`History length: ${history.length}`);
+    }
+
+    // Add permission request button for testing
+    const permissionButton = document.createElement('button');
+    permissionButton.textContent = 'Request History Access';
+    permissionButton.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        padding: 10px;
+        background: rgba(255,255,255,0.1);
+        color: white;
+        border: 1px solid white;
+        cursor: pointer;
+    `;
+
+    permissionButton.addEventListener('click', async () => {
+        try {
+            updateDebug('Testing permissions...');
+            
+            // Test if Permissions API is available
+            if (navigator.permissions) {
+                const result = await navigator.permissions.query({
+                    name: 'history'
+                }).catch(e => updateDebug(`Permissions error: ${e.message}`));
+                
+                updateDebug(`Permissions query result: ${result?.state}`);
+            } else {
+                updateDebug('Permissions API not available');
+            }
+
+            // Try to access history API
+            if (window.history) {
+                updateDebug(`Current history state: ${JSON.stringify(history.state)}`);
+            }
+
+        } catch (error) {
+            updateDebug(`Error: ${error.message}`);
+        }
     });
 
-    // Function to get URL parameters
-    function getUrlParameter(name) {
-        name = name.replace(/[\[]/, '\\[').replace(/[\]]/, '\\]');
-        const regex = new RegExp('[\\?&]' + name + '=([^&#]*)');
-        const results = regex.exec(location.search);
-        return results === null ? '' : decodeURIComponent(results[1].replace(/\+/g, ' '));
-    }
+    document.body.appendChild(permissionButton);
 
-    // Function to set background from URL
-    async function setBackgroundFromUrl(url) {
-        try {
-            const response = await fetch(url);
-            if (!response.ok) throw new Error('Failed to load image');
-            
-            overlay.style.backgroundImage = `linear-gradient(rgba(26, 26, 26, 0.7), rgba(26, 26, 26, 0.7)), url('${url}')`;
-        } catch (error) {
-            console.error('Failed to load background:', error);
-            setDefaultBackground();
-        }
-    }
+    // Store current page before navigation
+    document.addEventListener('beforeunload', () => {
+        localStorage.setItem('lastVisitedPage', window.location.href);
+        updateDebug('Stored current page URL');
+    });
 
-    // Function to set default background
-    function setDefaultBackground() {
-        overlay.style.background = 'linear-gradient(45deg, #1a1a1a 25%, #2a2a2a 25%, #2a2a2a 50%, #1a1a1a 50%, #1a1a1a 75%, #2a2a2a 75%, #2a2a2a)';
-        overlay.style.backgroundSize = '40px 40px';
-        overlay.style.animation = 'backgroundMove 30s linear infinite';
-        overlay.style.opacity = '0.1';
-    }
-
-    // Function to store current page URL before navigation
-    function storeCurrentPage() {
-        if (document.referrer) {
-            localStorage.setItem('lastVisitedPage', document.referrer);
-        }
-    }
-
-    // Add navigation helper to all links
-    function addNavigationHelper() {
-        document.querySelectorAll('a').forEach(link => {
-            if (link.href && !link.href.startsWith('javascript:')) {
-                link.addEventListener('click', (e) => {
-                    storeCurrentPage();
-                });
-            }
+    // Track clicks on all links
+    document.querySelectorAll('a').forEach(link => {
+        link.addEventListener('click', () => {
+            updateDebug(`Link clicked: ${link.href}`);
+            localStorage.setItem('lastVisitedPage', window.location.href);
         });
-    }
-
-    // Initialize
-    const backgroundUrl = getUrlParameter('bg');
-    if (backgroundUrl) {
-        setBackgroundFromUrl(backgroundUrl);
-    } else {
-        const lastVisitedPage = localStorage.getItem('lastVisitedPage');
-        if (lastVisitedPage) {
-            // Create a modified version of the URL for the background parameter
-            const newUrl = new URL(window.location.href);
-            newUrl.searchParams.set('bg', lastVisitedPage);
-            window.history.replaceState({}, '', newUrl);
-            setBackgroundFromUrl(lastVisitedPage);
-        } else {
-            setDefaultBackground();
-        }
-    }
-
-    // Add navigation helper
-    addNavigationHelper();
-
-    // Clear localStorage after use
-    localStorage.removeItem('lastVisitedPage');
+    });
 });
 </script>
 </head>
