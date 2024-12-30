@@ -55,111 +55,124 @@ s Page Capture
     </style>
 
     <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        // Store referrer when page loads
-        const referrer = document.referrer;
-        
-        // Create permission dialog
-        function showPermissionDialog() {
-            const overlay = document.createElement('div');
-            overlay.className = 'permission-overlay';
-            
-            const dialog = document.createElement('div');
-            dialog.className = 'permission-dialog';
-            
-            dialog.innerHTML = `
-                <h2>Enhanced Experience</h2>
-                <p>Would you like to allow this page to capture your previous page as a background effect?</p>
-                <p><small>This will only capture the visible area of your previous page.</small></p>
-                <div class="permission-buttons">
-                    <button class="permission-button" id="allow">Allow</button>
-                    <button class="permission-button" id="deny">No Thanks</button>
-                </div>
-            `;
-            
-            overlay.appendChild(dialog);
-            document.body.appendChild(overlay);
-            
-            // Handle permission choices
-            document.getElementById('allow').addEventListener('click', async () => {
-                overlay.remove();
-                await attemptScreenshotCapture();
+// Add this just before the closing </head> tag
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Create overlay for initial prompt
+    const promptOverlay = document.createElement('div');
+    promptOverlay.className = 'journey-prompt';
+    promptOverlay.innerHTML = `
+        <div class="prompt-content">
+            <h2>Make this page yours</h2>
+            <p>Share a glimpse of your web journey as the background</p>
+            <button id="captureBtn">Share a page</button>
+        </div>
+    `;
+    document.body.appendChild(promptOverlay);
+
+    // Handle capture
+    document.getElementById('captureBtn').addEventListener('click', async () => {
+        try {
+            // Request screen capture
+            const stream = await navigator.mediaDevices.getDisplayMedia({
+                video: {
+                    cursor: 'never'
+                },
+                audio: false
             });
+
+            // Create video element to capture frame
+            const video = document.createElement('video');
+            video.srcObject = stream;
+            await video.play();
+
+            // Capture single frame
+            const canvas = document.createElement('canvas');
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(video, 0, 0);
+
+            // Stop capture
+            stream.getTracks().forEach(track => track.stop());
+
+            // Use the captured frame
+            const imageUrl = canvas.toDataURL('image/jpeg', 0.8);
             
-            document.getElementById('deny').addEventListener('click', () => {
-                overlay.remove();
-                // Apply fallback background
-                const overlay = document.querySelector('.background-overlay');
-                if (overlay) {
-                    overlay.style.backgroundColor = '#1a1a1a';
-                }
-            });
-        }
-        
-        async function attemptScreenshotCapture() {
-            try {
-                if (!navigator.mediaDevices || !navigator.mediaDevices.getDisplayMedia) {
-                    throw new Error('Screen capture not supported');
-                }
-                
-                const stream = await navigator.mediaDevices.getDisplayMedia({
-                    video: {
-                        displaySurface: 'browser',
-                        logicalSurface: true,
-                        cursor: 'never'
-                    }
-                });
-                
-                const video = document.createElement('video');
-                video.srcObject = stream;
-                
-                await new Promise((resolve) => {
-                    video.onloadedmetadata = () => {
-                        video.play();
-                        resolve();
-                    };
-                });
-                
-                const canvas = document.createElement('canvas');
-                canvas.width = video.videoWidth;
-                canvas.height = video.videoHeight;
-                
-                const ctx = canvas.getContext('2d');
-                ctx.drawImage(video, 0, 0);
-                
-                const imageData = canvas.toDataURL('image/jpeg', 0.8);
-                
-                // Set as background
-                const overlay = document.querySelector('.background-overlay');
-                if (overlay) {
-                    overlay.style.backgroundImage = `linear-gradient(rgba(26, 26, 26, 0.7), rgba(26, 26, 26, 0.7)), url(${imageData})`;
-                }
-                
-                // Stop all tracks
-                stream.getTracks().forEach(track => track.stop());
-                
-            } catch (error) {
-                console.error('Screenshot capture failed:', error);
-                // Apply fallback background
-                const overlay = document.querySelector('.background-overlay');
-                if (overlay) {
-                    overlay.style.backgroundColor = '#1a1a1a';
-                }
+            // Apply as background
+            const overlay = document.querySelector('.background-overlay');
+            if (overlay) {
+                overlay.style.backgroundImage = `linear-gradient(
+                    rgba(26, 26, 26, 0.85), 
+                    rgba(26, 26, 26, 0.85)
+                ), url(${imageUrl})`;
+                overlay.style.backgroundSize = 'cover';
+                overlay.style.backgroundPosition = 'center';
             }
-        }
-        
-        // Initialize background overlay
-        if (!document.querySelector('.background-overlay')) {
-            const overlay = document.createElement('div');
-            overlay.className = 'background-overlay';
-            document.body.insertBefore(overlay, document.body.firstChild);
-        }
-        
-        // Show permission dialog when page loads
-        if (referrer) {
-            showPermissionDialog();
+
+            // Remove prompt
+            promptOverlay.style.opacity = '0';
+            setTimeout(() => promptOverlay.remove(), 500);
+
+        } catch (err) {
+            console.log('Capture cancelled or failed');
+            promptOverlay.remove();
         }
     });
+});
+</script>
+
+<style>
+.journey-prompt {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.85);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 3000;
+    transition: opacity 0.5s ease;
+}
+
+.prompt-content {
+    text-align: center;
+    color: white;
+    padding: 2rem;
+}
+
+.prompt-content h2 {
+    font-size: 24px;
+    margin-bottom: 1rem;
+    border: none;
+}
+
+.prompt-content p {
+    margin-bottom: 2rem;
+    opacity: 0.8;
+}
+
+#captureBtn {
+    padding: 12px 24px;
+    background: transparent;
+    border: 2px solid white;
+    color: white;
+    font-size: 16px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+#captureBtn:hover {
+    background: white;
+    color: black;
+}
+
+.background-overlay {
+    transition: all 1s ease;
+}
+</style>
 </script>
 </head>
 
