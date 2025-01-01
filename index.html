@@ -10,18 +10,38 @@ body {
     margin: 0;
     padding: 0;
     font-family: Arial, sans-serif;
+    cursor: none; /* Hide the default cursor */
     height: 100vh;
     width: 100vw;
     overflow: hidden;
 }
-#app {
+.custom-cursor {
+    width: 32px;
+    height: 32px;
     position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
     pointer-events: none;
     z-index: 9999;
+    mix-blend-mode: difference;
+    display: none; /* Hide on mobile by default */
+}
+@media (pointer: fine) {
+    .custom-cursor {
+        display: block; /* Show only on devices with mouse */
+    }
+}
+.custom-cursor svg {
+    width: 100%;
+    height: 100%;
+    animation: trotAlong 0.6s infinite alternate;
+    fill: white;
+}
+@keyframes trotAlong {
+    0% {
+        transform: translateY(0) rotate(-5deg);
+    }
+    100% {
+        transform: translateY(-3px) rotate(5deg);
+    }
 }
 .nav-menu {
     position: fixed;
@@ -97,6 +117,17 @@ body {
         font-size: 16px;
     }
 }
+
+/* Add this for the neon cursor container */
+#app {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 9999;
+}
 </style>
 </head>
  
@@ -109,6 +140,12 @@ body {
     <a href="contact.html">CONTACT</a>
 </nav>
 
+<script>
+function linkToCV() {
+    const currentPage = encodeURIComponent(window.location.href);
+    window.location.href = `cv.html?from=${currentPage}`;
+}
+</script>
 <div id="container">
     <video autoplay playsinline muted id="videoElement">
     </video>
@@ -118,13 +155,7 @@ body {
     Please allow camera access to view this content
 </div>
 
-<script>
-function linkToCV() {
-    const currentPage = encodeURIComponent(window.location.href);
-    window.location.href = `cv.html?from=${currentPage}`;
-}
-</script>
-
+<!-- Add the neon cursor initialization -->
 <script type="module">
 import { neonCursor } from 'https://unpkg.com/threejs-toys@0.0.8/build/threejs-toys.module.cdn.min.js'
 
