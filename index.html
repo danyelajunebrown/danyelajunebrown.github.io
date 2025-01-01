@@ -15,34 +15,19 @@ body {
     width: 100vw;
     overflow: hidden;
 }
-.custom-cursor {
-    width: 32px;
-    height: 32px;
+
+/* Position the app container for the cursor */
+#app {
     position: fixed;
-    pointer-events: none;
-    z-index: 9999;
-    mix-blend-mode: difference;
-    display: none; /* Hide on mobile by default */
-}
-@media (pointer: fine) {
-    .custom-cursor {
-        display: block; /* Show only on devices with mouse */
-    }
-}
-.custom-cursor svg {
+    top: 0;
+    left: 0;
     width: 100%;
     height: 100%;
-    animation: trotAlong 0.6s infinite alternate;
-    fill: white;
+    pointer-events: none;
+    z-index: 3000; /* Ensure it's above other content */
+    background: transparent; /* Make sure background is transparent */
 }
-@keyframes trotAlong {
-    0% {
-        transform: translateY(0) rotate(-5deg);
-    }
-    100% {
-        transform: translateY(-3px) rotate(5deg);
-    }
-}
+
 .nav-menu {
     position: fixed;
     top: 0;
@@ -71,6 +56,7 @@ body {
     border: 10px #333 solid;
     position: relative;
     box-sizing: border-box;
+    z-index: 1; /* Ensure container is below cursor */
 }
 #videoElement {
     width: 100%;
@@ -117,22 +103,13 @@ body {
         font-size: 16px;
     }
 }
-
-/* Add this for the neon cursor container */
-#app {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    pointer-events: none;
-    z-index: 9999;
-}
 </style>
 </head>
  
 <body>
+<!-- The cursor container -->
 <div id="app"></div>
+
 <nav class="nav-menu">
     <a href="bio.html">BIO</a>
     <a href="#" onclick="linkToCV(); return false;">CV</a>
@@ -140,22 +117,24 @@ body {
     <a href="contact.html">CONTACT</a>
 </nav>
 
+<div id="container">
+    <video autoplay playsinline muted id="videoElement">
+    </video>
+    <div class="name-overlay">DANYELA JUNE BROWN</div>
+</div>
+
+<div class="error-message">
+    Please allow camera access to view this content
+</div>
+
 <script>
 function linkToCV() {
     const currentPage = encodeURIComponent(window.location.href);
     window.location.href = `cv.html?from=${currentPage}`;
 }
 </script>
-<div id="container">
-    <video autoplay playsinline muted id="videoElement">
-    </video>
-    <div class="name-overlay">DANYELA JUNE BROWN</div>
-</div>
-<div class="error-message">
-    Please allow camera access to view this content
-</div>
 
-<!-- Add the neon cursor initialization -->
+<!-- Neon cursor initialization -->
 <script type="module">
 import { neonCursor } from 'https://unpkg.com/threejs-toys@0.0.8/build/threejs-toys.module.cdn.min.js'
 
@@ -240,8 +219,7 @@ window.addEventListener('orientationchange', function() {
     setTimeout(initCamera, 500);
 });
 
-// Add this code to your main site pages (not the CV page)
-// This will store the current page URL before navigation
+// Store the current page URL before navigation
 window.addEventListener('beforeunload', function() {
     localStorage.setItem('lastVisitedPage', window.location.href);
 });
