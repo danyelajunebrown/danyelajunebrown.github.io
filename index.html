@@ -10,11 +10,53 @@ body {
     margin: 0;
     padding: 0;
     font-family: Arial, sans-serif;
-    cursor: none; /* Hide the default cursor */
+    cursor: none;
     height: 100vh;
     width: 100vw;
     overflow: hidden;
+    background-color: #000;  /* Added black background */
 }
+
+/* Container styles */
+#container {
+    position: fixed;  /* Changed to fixed */
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    border: 10px #333 solid;
+    box-sizing: border-box;
+    z-index: 1;
+}
+
+#videoElement {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    position: absolute;  /* Changed to absolute */
+    top: 0;
+    left: 0;
+}
+
+/* Neon cursor styles */
+#app {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 1500;
+}
+
+#app canvas {
+    position: fixed;
+    top: 0;
+    left: 0;
+    pointer-events: none;
+}
+
+/* Navigation styles */
 .nav-menu {
     position: fixed;
     top: 0;
@@ -24,6 +66,7 @@ body {
     z-index: 2000;
     text-align: center;
 }
+
 .nav-menu a {
     color: white;
     text-decoration: none;
@@ -33,28 +76,14 @@ body {
     border: 2px solid transparent;
     transition: all 0.3s ease;
 }
+
 .nav-menu a:hover {
     border-bottom: 2px solid white;
 }
-#container {
-    margin: 0px auto;
-    width: 100vw;
-    height: 100vh;
-    border: 10px #333 solid;
-    position: relative;
-    box-sizing: border-box;
-    z-index: 1; /* Ensure container is below cursor */
-}
-#videoElement {
-    width: 100%;
-    height: 100%;
-    background-color: #666;
-    object-fit: cover;
-    position: relative;
-    z-index: 1; /* Ensure video is below cursor */
-}
+
+/* Overlay styles */
 .name-overlay {
-    position: absolute;
+    position: fixed;  /* Changed to fixed */
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
@@ -68,8 +97,9 @@ body {
     text-align: center;
     width: 100%;
 }
+
 .error-message {
-    position: absolute;
+    position: fixed;  /* Changed to fixed */
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
@@ -81,23 +111,7 @@ body {
     display: none;
     z-index: 2001;
 }
-/* Neon cursor styles */
-#app {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    overflow: hidden;
-    z-index: 1500; /* Position between name overlay and nav menu */
-    pointer-events: none;
-}
-#app canvas {
-    position: fixed;
-    top: 0;
-    left: 0;
-    pointer-events: none;
-}
+
 @media (max-width: 768px) {
     .name-overlay {
         font-size: 32px;
@@ -113,7 +127,10 @@ body {
 </head>
  
 <body>
-<!-- Neon cursor container -->
+<div id="container">
+    <video autoplay playsinline muted id="videoElement"></video>
+</div>
+
 <div id="app"></div>
 
 <nav class="nav-menu">
@@ -123,11 +140,8 @@ body {
     <a href="contact.html">CONTACT</a>
 </nav>
 
-<div id="container">
-    <video autoplay playsinline muted id="videoElement">
-    </video>
-    <div class="name-overlay">DANYELA JUNE BROWN</div>
-</div>
+<div class="name-overlay">DANYELA JUNE BROWN</div>
+
 <div class="error-message">
     Please allow camera access to view this content
 </div>
