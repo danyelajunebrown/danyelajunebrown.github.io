@@ -5,24 +5,30 @@ const TEPHRA_LAT = 38.9586;
 const TEPHRA_LNG = -77.3570;
 const MILES_TO_PIXELS = 100;
 
-// Calculate positions in a circular pattern around Tephra ICA
+const BASE_URL = 'https://danyelajunebrown.github.io';
+
+// Create a systematic distribution of coordinates in a spiral pattern
 const generateCoordinates = (centerLat, centerLng, radiusMiles, count) => {
   const coordinates = [];
   for (let i = 0; i < count; i++) {
-    // Distribute points in a spiral pattern
     const angle = (i / count) * 2 * Math.PI;
     const radius = (radiusMiles * (i + 1)) / count;
-    
-    // Convert polar coordinates to lat/lng
     const lat = centerLat + (radius / 69) * Math.cos(angle);
     const lng = centerLng + (radius / (69 * Math.cos(centerLat * Math.PI / 180))) * Math.sin(angle);
-    
     coordinates.push({ lat, lng });
   }
   return coordinates;
 };
 
+// Generate positions for all herbs
 const positions = generateCoordinates(TEPHRA_LAT, TEPHRA_LNG, 4.5, 20);
+
+// Convert lat/lng to x,y coordinates relative to Tephra ICA
+const convertToXY = (lat, lng) => {
+  const x = (lng - TEPHRA_LNG) * MILES_TO_PIXELS * Math.cos(TEPHRA_LAT * Math.PI / 180);
+  const y = -(lat - TEPHRA_LAT) * MILES_TO_PIXELS;
+  return { x: x + 500, y: y + 500 };
+};
 
 const herbData = [
   {
@@ -30,7 +36,7 @@ const herbData = [
     name: "Spearmint Leaves",
     lat: positions[0].lat,
     lng: positions[0].lng,
-    image: "/api/placeholder/100/100",
+    image: `${BASE_URL}/spearmint.jpg`,
     eventUrl: "https://eventbrite.com/spearmint",
     nextEvent: "2025-03-01T15:00:00"
   },
@@ -39,180 +45,173 @@ const herbData = [
     name: "White Peony Root",
     lat: positions[1].lat,
     lng: positions[1].lng,
-    image: "/api/placeholder/100/100",
+    image: `${BASE_URL}/peony.jpg`,
     eventUrl: "https://eventbrite.com/peony",
     nextEvent: "2025-03-02T15:00:00"
   },
   {
     id: 3,
-    name: "Saw Palmetto Berries",
+    name: "Saw Palmetto",
     lat: positions[2].lat,
     lng: positions[2].lng,
-    image: "/api/placeholder/100/100",
+    image: `${BASE_URL}/palmetto.jpg`,
     eventUrl: "https://eventbrite.com/sawpalmetto",
     nextEvent: "2025-03-03T15:00:00"
   },
   {
     id: 4,
-    name: "Dong Quai",
+    name: "Licorice Root",
     lat: positions[3].lat,
     lng: positions[3].lng,
-    image: "/api/placeholder/100/100",
-    eventUrl: "https://eventbrite.com/dongquai",
+    image: `${BASE_URL}/licorice.jpg`,
+    eventUrl: "https://eventbrite.com/licorice",
     nextEvent: "2025-03-04T15:00:00"
   },
   {
     id: 5,
-    name: "Chaste Tree Berries",
+    name: "Dong Quai",
     lat: positions[4].lat,
     lng: positions[4].lng,
-    image: "/api/placeholder/100/100",
-    eventUrl: "https://eventbrite.com/chasteberry",
+    image: `${BASE_URL}/dong.jpg`,
+    eventUrl: "https://eventbrite.com/dongquai",
     nextEvent: "2025-03-05T15:00:00"
   },
   {
     id: 6,
-    name: "Black Cohosh Root",
+    name: "Chaste Tree Berries",
     lat: positions[5].lat,
     lng: positions[5].lng,
-    image: "/api/placeholder/100/100",
-    eventUrl: "https://eventbrite.com/blackcohosh",
+    image: `${BASE_URL}/chaste.jpg`,
+    eventUrl: "https://eventbrite.com/chasteberry",
     nextEvent: "2025-03-06T15:00:00"
   },
   {
     id: 7,
-    name: "Fenugreek Seeds",
+    name: "Black Cohosh Root",
     lat: positions[6].lat,
     lng: positions[6].lng,
-    image: "/api/placeholder/100/100",
-    eventUrl: "https://eventbrite.com/fenugreek",
+    image: `${BASE_URL}/cohosh.jpg`,
+    eventUrl: "https://eventbrite.com/blackcohosh",
     nextEvent: "2025-03-07T15:00:00"
   },
   {
     id: 8,
-    name: "Dried Pomegranate",
+    name: "Kwao Krua",
     lat: positions[7].lat,
     lng: positions[7].lng,
-    image: "/api/placeholder/100/100",
-    eventUrl: "https://eventbrite.com/pomegranate",
+    image: `${BASE_URL}/kwao.jpg`,
+    eventUrl: "https://eventbrite.com/kwaokrua",
     nextEvent: "2025-03-08T15:00:00"
   },
   {
     id: 9,
-    name: "Kwao Krua",
+    name: "Marshmallow Root",
     lat: positions[8].lat,
     lng: positions[8].lng,
-    image: "/api/placeholder/100/100",
-    eventUrl: "https://eventbrite.com/kwaokrua",
+    image: `${BASE_URL}/marshmallow.jpg`,
+    eventUrl: "https://eventbrite.com/marshmallow",
     nextEvent: "2025-03-09T15:00:00"
   },
   {
     id: 10,
-    name: "MACA",
+    name: "Calendula Buds",
     lat: positions[9].lat,
     lng: positions[9].lng,
-    image: "/api/placeholder/100/100",
-    eventUrl: "https://eventbrite.com/maca",
+    image: `${BASE_URL}/calendula.jpg`,
+    eventUrl: "https://eventbrite.com/calendula",
     nextEvent: "2025-03-10T15:00:00"
   },
   {
     id: 11,
-    name: "Calendula Buds",
+    name: "Oatstraw",
     lat: positions[10].lat,
     lng: positions[10].lng,
-    image: "/api/placeholder/100/100",
-    eventUrl: "https://eventbrite.com/calendula",
+    image: `${BASE_URL}/oatstraw.jpg`,
+    eventUrl: "https://eventbrite.com/oatstraw",
     nextEvent: "2025-03-11T15:00:00"
   },
   {
     id: 12,
-    name: "Marshmallow Root",
+    name: "Raspberry Leaf",
     lat: positions[11].lat,
     lng: positions[11].lng,
-    image: "/api/placeholder/100/100",
-    eventUrl: "https://eventbrite.com/marshmallow",
+    image: `${BASE_URL}/raspberry.jpg`,
+    eventUrl: "https://eventbrite.com/raspberry",
     nextEvent: "2025-03-12T15:00:00"
   },
   {
     id: 13,
-    name: "Oatstraw",
+    name: "Elderberries",
     lat: positions[12].lat,
     lng: positions[12].lng,
-    image: "/api/placeholder/100/100",
-    eventUrl: "https://eventbrite.com/oatstraw",
+    image: `${BASE_URL}/elderberries.jpg`,
+    eventUrl: "https://eventbrite.com/elderberry",
     nextEvent: "2025-03-13T15:00:00"
   },
   {
     id: 14,
-    name: "Raspberry Leaf",
+    name: "St. John's Wort",
     lat: positions[13].lat,
     lng: positions[13].lng,
-    image: "/api/placeholder/100/100",
-    eventUrl: "https://eventbrite.com/raspberry",
+    image: `${BASE_URL}/wort.jpg`,
+    eventUrl: "https://eventbrite.com/stjohnswort",
     nextEvent: "2025-03-14T15:00:00"
   },
   {
     id: 15,
-    name: "Elderberries",
+    name: "Solomon's Seal",
     lat: positions[14].lat,
     lng: positions[14].lng,
-    image: "/api/placeholder/100/100",
-    eventUrl: "https://eventbrite.com/elderberry",
+    image: `${BASE_URL}/solomons.jpg`,
+    eventUrl: "https://eventbrite.com/solomonseal",
     nextEvent: "2025-03-15T15:00:00"
   },
   {
     id: 16,
-    name: "St. John's Wort",
+    name: "Stinging Nettle",
     lat: positions[15].lat,
     lng: positions[15].lng,
-    image: "/api/placeholder/100/100",
-    eventUrl: "https://eventbrite.com/stjohnswort",
+    image: `${BASE_URL}/nettle.jpg`,
+    eventUrl: "https://eventbrite.com/nettle",
     nextEvent: "2025-03-16T15:00:00"
   },
   {
     id: 17,
-    name: "Solomon's Seal",
+    name: "Dried Blueberries",
     lat: positions[16].lat,
     lng: positions[16].lng,
-    image: "/api/placeholder/100/100",
-    eventUrl: "https://eventbrite.com/solomonseal",
+    image: `${BASE_URL}/blueberries.jpg`,
+    eventUrl: "https://eventbrite.com/blueberry",
     nextEvent: "2025-03-17T15:00:00"
   },
   {
     id: 18,
-    name: "Stinging Nettle",
+    name: "Pineapple Stem",
     lat: positions[17].lat,
     lng: positions[17].lng,
-    image: "/api/placeholder/100/100",
-    eventUrl: "https://eventbrite.com/nettle",
+    image: `${BASE_URL}/pineapple.jpg`,
+    eventUrl: "https://eventbrite.com/pineapple",
     nextEvent: "2025-03-18T15:00:00"
   },
   {
     id: 19,
-    name: "Dried Blueberries",
+    name: "Arnica Montana",
     lat: positions[18].lat,
     lng: positions[18].lng,
-    image: "/api/placeholder/100/100",
-    eventUrl: "https://eventbrite.com/blueberry",
+    image: `${BASE_URL}/arnica.jpg`,
+    eventUrl: "https://eventbrite.com/arnica",
     nextEvent: "2025-03-19T15:00:00"
   },
   {
     id: 20,
-    name: "Arnica Montana",
+    name: "Dried Pomegranate",
     lat: positions[19].lat,
     lng: positions[19].lng,
-    image: "/api/placeholder/100/100",
-    eventUrl: "https://eventbrite.com/arnica",
+    image: `${BASE_URL}/pomegranate.jpg`,
+    eventUrl: "https://eventbrite.com/pomegranate",
     nextEvent: "2025-03-20T15:00:00"
   }
 ];
-
-// Convert lat/lng to x,y coordinates relative to Tephra ICA
-const convertToXY = (lat, lng) => {
-  const x = (lng - TEPHRA_LNG) * MILES_TO_PIXELS * Math.cos(TEPHRA_LAT * Math.PI / 180);
-  const y = -(lat - TEPHRA_LAT) * MILES_TO_PIXELS;
-  return { x: x + 500, y: y + 500 };
-};
 
 const CountdownClock = ({ nextEvent }) => {
   const [timeLeft, setTimeLeft] = useState(null);
