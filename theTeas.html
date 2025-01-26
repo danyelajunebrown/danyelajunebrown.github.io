@@ -21,7 +21,6 @@
         const TEPHRA_LNG = -77.3570;
         const MILES_TO_PIXELS = 100;
 
-        // Create a systematic distribution of coordinates in a spiral pattern
         const generateCoordinates = (centerLat, centerLng, radiusMiles, count) => {
             const coordinates = [];
             for (let i = 0; i < count; i++) {
@@ -34,10 +33,8 @@
             return coordinates;
         };
 
-        // Generate positions for all herbs
-        const positions = generateCoordinates(TEPHRA_LAT, TEPHRA_LNG, 4.5, 20);
+        const positions = generateCoordinates(TEPHRA_LAT, TEPHRA_LNG, 4.5, 19);
 
-        // Convert lat/lng to x,y coordinates relative to Tephra ICA
         const convertToXY = (lat, lng) => {
             const x = (lng - TEPHRA_LNG) * MILES_TO_PIXELS * Math.cos(TEPHRA_LAT * Math.PI / 180);
             const y = -(lat - TEPHRA_LAT) * MILES_TO_PIXELS;
@@ -47,14 +44,175 @@
         const herbData = [
             {
                 id: 1,
-                name: "Spearmint Leaves",
+                name: "Arnica",
                 lat: positions[0].lat,
                 lng: positions[0].lng,
-                image: "spearmint.jpg",
-                eventUrl: "https://eventbrite.com/spearmint",
+                image: "arnica.jpg",
+                eventUrl: "#",
                 nextEvent: "2025-03-01T15:00:00"
             },
-            // ... Copy your full herbData array here from your original file
+            {
+                id: 2,
+                name: "Blueberries",
+                lat: positions[1].lat,
+                lng: positions[1].lng,
+                image: "blueberries.jpg",
+                eventUrl: "#",
+                nextEvent: "2025-03-15T14:00:00"
+            },
+            {
+                id: 3,
+                name: "Calendula",
+                lat: positions[2].lat,
+                lng: positions[2].lng,
+                image: "calendula.jpg",
+                eventUrl: "#",
+                nextEvent: "2025-03-30T16:00:00"
+            },
+            {
+                id: 4,
+                name: "Chaste Tree",
+                lat: positions[3].lat,
+                lng: positions[3].lng,
+                image: "chaste.jpg",
+                eventUrl: "#",
+                nextEvent: "2025-04-01T15:00:00"
+            },
+            {
+                id: 5,
+                name: "Black Cohosh",
+                lat: positions[4].lat,
+                lng: positions[4].lng,
+                image: "cohosh.jpg",
+                eventUrl: "#",
+                nextEvent: "2025-04-15T14:00:00"
+            },
+            {
+                id: 6,
+                name: "Dong Quai",
+                lat: positions[5].lat,
+                lng: positions[5].lng,
+                image: "dong.jpg",
+                eventUrl: "#",
+                nextEvent: "2025-04-30T16:00:00"
+            },
+            {
+                id: 7,
+                name: "Elderberries",
+                lat: positions[6].lat,
+                lng: positions[6].lng,
+                image: "elderberries.jpg",
+                eventUrl: "#",
+                nextEvent: "2025-05-01T15:00:00"
+            },
+            {
+                id: 8,
+                name: "Kwao Krua",
+                lat: positions[7].lat,
+                lng: positions[7].lng,
+                image: "kwao.jpg",
+                eventUrl: "#",
+                nextEvent: "2025-05-15T14:00:00"
+            },
+            {
+                id: 9,
+                name: "Licorice Root",
+                lat: positions[8].lat,
+                lng: positions[8].lng,
+                image: "licorice.jpg",
+                eventUrl: "#",
+                nextEvent: "2025-05-30T16:00:00"
+            },
+            {
+                id: 10,
+                name: "Marshmallow",
+                lat: positions[9].lat,
+                lng: positions[9].lng,
+                image: "marshmallow.jpg",
+                eventUrl: "#",
+                nextEvent: "2025-06-01T15:00:00"
+            },
+            {
+                id: 11,
+                name: "Nettle",
+                lat: positions[10].lat,
+                lng: positions[10].lng,
+                image: "nettle.jpg",
+                eventUrl: "#",
+                nextEvent: "2025-06-15T14:00:00"
+            },
+            {
+                id: 12,
+                name: "Oatstraw",
+                lat: positions[11].lat,
+                lng: positions[11].lng,
+                image: "oatstraw.jpg",
+                eventUrl: "#",
+                nextEvent: "2025-06-30T16:00:00"
+            },
+            {
+                id: 13,
+                name: "Saw Palmetto",
+                lat: positions[12].lat,
+                lng: positions[12].lng,
+                image: "palmetto.jpg",
+                eventUrl: "#",
+                nextEvent: "2025-07-01T15:00:00"
+            },
+            {
+                id: 14,
+                name: "Pineapple Weed",
+                lat: positions[13].lat,
+                lng: positions[13].lng,
+                image: "pineapple.jpg",
+                eventUrl: "#",
+                nextEvent: "2025-07-15T14:00:00"
+            },
+            {
+                id: 15,
+                name: "Pomegranate",
+                lat: positions[14].lat,
+                lng: positions[14].lng,
+                image: "pomegranate.jpg",
+                eventUrl: "#",
+                nextEvent: "2025-07-30T16:00:00"
+            },
+            {
+                id: 16,
+                name: "Raspberry Leaf",
+                lat: positions[15].lat,
+                lng: positions[15].lng,
+                image: "raspberry.jpg",
+                eventUrl: "#",
+                nextEvent: "2025-08-01T15:00:00"
+            },
+            {
+                id: 17,
+                name: "Solomon's Seal",
+                lat: positions[16].lat,
+                lng: positions[16].lng,
+                image: "solomons.jpg",
+                eventUrl: "#",
+                nextEvent: "2025-08-15T14:00:00"
+            },
+            {
+                id: 18,
+                name: "Spearmint",
+                lat: positions[17].lat,
+                lng: positions[17].lng,
+                image: "spearmint.jpg",
+                eventUrl: "#",
+                nextEvent: "2025-08-30T16:00:00"
+            },
+            {
+                id: 19,
+                name: "St. John's Wort",
+                lat: positions[18].lat,
+                lng: positions[18].lng,
+                image: "wort.jpg",
+                eventUrl: "#",
+                nextEvent: "2025-09-01T15:00:00"
+            }
         ];
 
         const CountdownClock = ({ nextEvent }) => {
@@ -100,6 +258,8 @@
                 <g 
                     transform={`translate(${x},${y})`}
                     onClick={onClick}
+                    onMouseEnter={() => setHoveredId(herb.id)}
+                    onMouseLeave={() => setHoveredId(null)}
                     className="cursor-pointer"
                 >
                     <circle
@@ -143,7 +303,6 @@
                         viewBox="0 0 1000 1000"
                         className="w-full h-full bg-white rounded-lg shadow-lg"
                     >
-                        {/* 5 mile radius circle */}
                         <circle
                             cx="500"
                             cy="500"
@@ -154,7 +313,6 @@
                             strokeDasharray="5,5"
                         />
                         
-                        {/* Tephra ICA marker */}
                         <circle
                             cx="500"
                             cy="500"
@@ -170,15 +328,12 @@
                             Tephra ICA
                         </text>
 
-                        {/* Herb markers */}
                         {herbData.map(herb => (
                             <HerbIcon
                                 key={herb.id}
                                 herb={herb}
                                 isHovered={hoveredId === herb.id}
                                 onClick={() => window.open(herb.eventUrl, '_blank')}
-                                onMouseEnter={() => setHoveredId(herb.id)}
-                                onMouseLeave={() => setHoveredId(null)}
                             />
                         ))}
                     </svg>
