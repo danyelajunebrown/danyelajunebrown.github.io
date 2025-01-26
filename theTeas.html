@@ -17,21 +17,28 @@
 
         const TEPHRA_LAT = 38.9586;
         const TEPHRA_LNG = -77.3570;
-        const MILES_TO_PIXELS = 100;
+        const MILES_TO_PIXELS = 65;
 
-        const generateCoordinates = (centerLat, centerLng, radiusMiles, count) => {
+        const generateCoordinates = (centerLat, centerLng, count) => {
             const coordinates = [];
+            const a = 15;
+            const b = 1;
+            
             for (let i = 0; i < count; i++) {
-                const angle = (i / count) * 2 * Math.PI;
-                const radius = (radiusMiles * (i + 1)) / count;
-                const lat = centerLat + (radius / 69) * Math.cos(angle);
-                const lng = centerLng + (radius / (69 * Math.cos(centerLat * Math.PI / 180))) * Math.sin(angle);
+                const angle = (i * 2.5);
+                const radius = b * Math.sqrt(angle);
+                const x = radius * Math.cos(angle);
+                const y = radius * Math.sin(angle);
+                
+                const lat = centerLat + (y / 69);
+                const lng = centerLng + (x / (69 * Math.cos(centerLat * Math.PI / 180)));
+                
                 coordinates.push({ lat, lng });
             }
             return coordinates;
         };
 
-        const positions = generateCoordinates(TEPHRA_LAT, TEPHRA_LNG, 4.5, 19);
+        const positions = generateCoordinates(TEPHRA_LAT, TEPHRA_LNG, 19);
 
         const convertToXY = (lat, lng) => {
             const x = (lng - TEPHRA_LNG) * MILES_TO_PIXELS * Math.cos(TEPHRA_LAT * Math.PI / 180);
