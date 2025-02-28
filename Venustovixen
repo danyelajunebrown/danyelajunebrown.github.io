@@ -6,7 +6,7 @@
     <meta name="description" content="V2V - An artist run experimental space">
     <title>V2V | Artist Run Experimental Space</title>
     <!-- Favicon -->
-    <link rel="icon" href="favicon.ico" type="image/x-icon">
+    <link rel="icon" href="/venustovixen/favicon.ico" type="image/x-icon">
     <style>
         * {
             margin: 0;
@@ -44,6 +44,7 @@
             letter-spacing: 1px;
             position: relative;
             transition: all 0.3s ease;
+            text-shadow: 0 0 5px rgba(0, 0, 0, 0.5);
         }
         
         .nav-menu a:hover {
@@ -117,9 +118,9 @@
     </nav>
     
     <div class="slider-container">
-        <div class="slide" style="background-image: url('images/cat1.jpg')"></div>
-        <div class="slide" style="background-image: url('images/cat2.jpg')"></div>
-        <div class="slide" style="background-image: url('images/cat3.jpg')"></div>
+        <div class="slide" style="background-image: url('/venustovixen/images/cat1.jpg')"></div>
+        <div class="slide" style="background-image: url('/venustovixen/images/cat2.jpg')"></div>
+        <div class="slide" style="background-image: url('/venustovixen/images/cat3.jpg')"></div>
     </div>
     
     <div class="overlay-text">V2V</div>
