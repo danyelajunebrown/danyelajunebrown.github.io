@@ -99,11 +99,52 @@
             margin: 10px 0;
             display: none;
         }
+        .control-panel {
+            border: 1px solid #ddd;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+        .control-group {
+            margin-bottom: 10px;
+        }
+        label {
+            display: inline-block;
+            width: 150px;
+        }
+        input[type="number"] {
+            width: 80px;
+            padding: 5px;
+        }
     </style>
 </head>
 <body>
     <h1>STL Slicer Tool</h1>
     <div class="container">
+        <div class="control-panel">
+            <h3>Tooth Joint Parameters</h3>
+            <div class="control-group">
+                <label for="tooth-height">Tooth Height:</label>
+                <input type="number" id="tooth-height" value="20" min="5" max="100" step="1">
+            </div>
+            <div class="control-group">
+                <label for="tooth-size">Tooth Size:</label>
+                <input type="number" id="tooth-size" value="5" min="1" max="20" step="0.5">
+            </div>
+            <div class="control-group">
+                <label for="tooth-ratio">Tooth Ratio:</label>
+                <input type="number" id="tooth-ratio" value="1.4" min="0.5" max="3" step="0.1">
+            </div>
+            <div class="control-group">
+                <label for="tooth-rounding">Tooth Rounding:</label>
+                <input type="number" id="tooth-rounding" value="1" min="0.1" max="5" step="0.1">
+            </div>
+            <div class="control-group">
+                <label for="tooth-gap">Tooth Gap:</label>
+                <input type="number" id="tooth-gap" value="0.2" min="0.1" max="2" step="0.1">
+            </div>
+        </div>
+        
         <div class="upload-section" id="drop-area">
             <p>Drag and drop an STL file here or</p>
             <input type="file" id="file-input" accept=".stl" style="display: none;">
@@ -150,6 +191,13 @@
             const previewContainer = document.getElementById('preview-container');
             const downloadAllBtn = document.getElementById('download-all-btn');
             const errorMessage = document.getElementById('error-message');
+            
+            // Get tooth parameters
+            const toothHeightInput = document.getElementById('tooth-height');
+            const toothSizeInput = document.getElementById('tooth-size');
+            const toothRatioInput = document.getElementById('tooth-ratio');
+            const toothRoundingInput = document.getElementById('tooth-rounding');
+            const toothGapInput = document.getElementById('tooth-gap');
             
             // Store original model and sliced parts
             let originalModel = null;
@@ -691,47 +739,23 @@
                     });
             }
             
-            function sliceModel(geometry, filename) {
-             const boxGeometry = new THREE.BoxGeometry(size.x, sliceHeight, size.z);
-                    const material = new THREE.MeshStandardMaterial({
-                        color: getPartColor(i),
-                        metalness: 0.1,
-                        roughness: 0.8
-                    });
-                    
-                    // Position the box
-                    const mesh = new THREE.Mesh(boxGeometry, material);
-                    mesh.position.y = box.min.y + (i * sliceHeight) + (sliceHeight / 2);
-                    
-                    // Create a scene for this part
-                    const scene = new THREE.Scene();
-                    scene.background = new THREE.Color(0xf5f5f5);
-                    scene.add(mesh);
-                    
-                    // Add lights
-                    const ambientLight = new THREE.AmbientLight(0x888888);
-                    scene.add(ambientLight);
-                    
-                    const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
-                    directionalLight.position.set(1, 1, 1);
-                    scene.add(directionalLight);
-                    
-                    // Create a part name
-                    const baseName = filename.replace(/\.[^/.]+$/, "");
-                    const partName = `${baseName}_part${i+1}.stl`;
-                    
-                    // Store the part
-                    slicedParts.push({
-                        name: partName,
-                        scene: scene,
-                        mesh: mesh
-                    });
-                    
-                    // Create a preview box for this part
-                    createPreviewBox(i, partName);
-                }
+            // Get tooth parameters
+            function getToothParameters() {
+                return {
+                    height: parseFloat(toothHeightInput.value),
+                    size: parseFloat(toothSizeInput.value),
+                    ratio: parseFloat(toothRatioInput.value),
+                    rounding: parseFloat(toothRoundingInput.value),
+                    gap: parseFloat(toothGapInput.value)
+                };
             }
-        });
-    </script>
-</body>
-</html>
+            
+            // Create a tooth geometry based on the OpenSCAD tooth design
+            function createToothGeometry(params) {
+                // Create a shape based on the tooth polygon
+                const shape = new THREE.Shape();
+                
+                // Define basic parameters
+                const size = params.size;
+                const ratio = params.ratio;
+                const r
