@@ -560,6 +560,11 @@
     </script>
 
     <script>
+        // Make file input button work immediately
+        document.getElementById('select-file-btn').onclick = function() {
+            document.getElementById('file-input').click();
+        };
+        
         // Main application script
         document.addEventListener('DOMContentLoaded', function() {
             // Initialize application
@@ -581,11 +586,6 @@
             initEventListeners();
             
             function initEventListeners() {
-                // File selection button
-                selectFileBtn.addEventListener('click', () => {
-                    fileInput.click();
-                });
-                
                 // File input change
                 fileInput.addEventListener('change', (e) => {
                     if (e.target.files.length > 0) {
@@ -689,3 +689,58 @@
                     
                     // Enable download all button
                     downloadAllBtn.disabled = false;
+                } catch (error) {
+                    showError(`Error parsing STL file: ${error.message}`);
+                    console.error(error);
+                }
+            }
+            
+            function createPreviewBox(index, partName) {
+                // Create a div for this preview
+                const previewBox = document.createElement('div');
+                previewBox.className = 'preview-box';
+                previewBox.innerHTML = `
+                    <h3>Part ${index + 1}</h3>
+                    <canvas id="canvas-${index}" class="preview-canvas"></canvas>
+                    <button class="download-btn" data-index="${index}">Download Part ${index + 1}</button>
+                `;
+                
+                // Add to container
+                previewContainer.appendChild(previewBox);
+                
+                // Set up renderer
+                const canvas = document.getElementById(`canvas-${index}`);
+                const renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true });
+                renderer.setSize(canvas.clientWidth, canvas.clientHeight);
+                
+                // Set up camera
+                const camera = new THREE.PerspectiveCamera(45, canvas.clientWidth / canvas.clientHeight, 0.1, 1000);
+                camera.position.set(50, 50, 100);
+                camera.lookAt(0, 0, 0);
+                
+                // Render the scene
+                renderer.render(slicedParts[index].scene, camera);
+                
+                // Add download event listener
+                const downloadBtn = previewBox.querySelector('.download-btn');
+                downloadBtn.addEventListener('click', () => {
+                    downloadPart(index);
+                });
+            }
+            
+            function getPartColor(index) {
+                const colors = [
+                    0x4CAF50, // Green
+                    0x2196F3, // Blue
+                    0xFF9800, // Orange
+                    0xE91E63  // Pink
+                ];
+                return colors[index % colors.length];
+            }
+            
+            function downloadPart(index) {
+                const part = slicedParts[index];
+                
+                // Use our updated STLExporter to export the part
+                const exporter = new THREE.STLExporter();
+                const stlString = exporter.parse(part.scene, { binary: false });
