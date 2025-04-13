@@ -692,26 +692,7 @@
             }
             
             function sliceModel(geometry, filename) {
-                // Compute bounding box if not already computed
-                if (!geometry.boundingBox) {
-                    geometry.computeBoundingBox();
-                }
-                const box = geometry.boundingBox;
-                
-                // Calculate dimensions
-                const size = new THREE.Vector3();
-                box.getSize(size);
-                
-                // Determine slicing axis (we'll use Y-axis for slicing)
-                const sliceHeight = size.y / 4;
-                
-                // Create 4 slices
-                for (let i = 0; i < 4; i++) {
-                    // In a real implementation, we would use CSG or similar to slice the actual model
-                    // For this simplified version, we'll create colored boxes to represent the slices
-                    
-                    // Create a box to represent this slice
-                    const boxGeometry = new THREE.BoxGeometry(size.x, sliceHeight, size.z);
+             const boxGeometry = new THREE.BoxGeometry(size.x, sliceHeight, size.z);
                     const material = new THREE.MeshStandardMaterial({
                         color: getPartColor(i),
                         metalness: 0.1,
