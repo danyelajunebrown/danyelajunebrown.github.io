@@ -66,6 +66,11 @@
             background-color: #cccccc;
             cursor: not-allowed;
         }
+        .button-container {
+            display: flex;
+            justify-content: space-around;
+            margin-top: 15px;
+        }
         .download-all {
             text-align: center;
             margin-top: 20px;
@@ -101,8 +106,11 @@
     <div class="container">
         <div class="upload-section" id="drop-area">
             <p>Drag and drop an STL file here or</p>
-            <input type="file" id="file-input" accept=".stl">
-            <button type="button" onclick="document.getElementById('file-input').click()">Select STL File</button>
+            <input type="file" id="file-input" accept=".stl" style="display: none;">
+            <div class="button-container">
+                <button type="button" onclick="document.getElementById('file-input').click()">Select STL File</button>
+                <button type="button" id="slice-btn" disabled>Slice in 4 Parts</button>
+            </div>
             <p id="file-name"></p>
         </div>
         
@@ -150,90 +158,7 @@
                 loader.load( url, function ( text ) {
                     try {
                         onLoad( scope.parse( text ) );
-                    }
-            
-            function downloadAllParts() {
-                // Create zip
-                const zip = new JSZip();
-                
-                // Add each part to the zip
-                slicedParts.forEach((part, index) => {
-                    const exporter = new THREE.STLExporter();
-                    const stlString = exporter.parse(part.scene, { binary: false });
-                    zip.file(part.name, stlString);
-                });
-                
-                // Generate and download zip
-                zip.generateAsync({ type: 'blob' })
-                    .then(function(content) {
-                        saveAs(content, 'sliced_parts.zip');
-                    })
-                    .catch(function(error) {
-                        showError(`Error creating zip file: ${error.message}`);
-                    });
-            }
-            
-            function sliceModel(geometry, filename) {
-                // Compute bounding box
-                geometry.computeBoundingBox();
-                const box = geometry.boundingBox;
-                
-                // Calculate dimensions
-                const size = new THREE.Vector3();
-                box.getSize(size);
-                
-                // Determine slicing axis (we'll use Y-axis)
-                const sliceHeight = size.y / 4;
-                
-                // Create 4 slices
-                for (let i = 0; i < 4; i++) {
-                    // In a real implementation, we would use CSG to create proper slices
-                    // For this simplified version, we'll just create colored boxes to represent slices
-                    
-                    // Create a box to represent the slice
-                    const boxGeometry = new THREE.BoxGeometry(size.x, sliceHeight, size.z);
-                    const material = new THREE.MeshStandardMaterial({
-                        color: getPartColor(i),
-                        metalness: 0.1,
-                        roughness: 0.8
-                    });
-                    
-                    // Position the box
-                    const mesh = new THREE.Mesh(boxGeometry, material);
-                    mesh.position.y = box.min.y + (i * sliceHeight) + (sliceHeight / 2);
-                    
-                    // Create a scene for this part
-                    const scene = new THREE.Scene();
-                    scene.background = new THREE.Color(0xf5f5f5);
-                    scene.add(mesh);
-                    
-                    // Add lights
-                    const ambientLight = new THREE.AmbientLight(0x888888);
-                    scene.add(ambientLight);
-                    
-                    const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
-                    directionalLight.position.set(1, 1, 1);
-                    scene.add(directionalLight);
-                    
-                    // Create a part name
-                    const baseName = filename.replace(/\.[^/.]+$/, "");
-                    const partName = `${baseName}_part${i+1}.stl`;
-                    
-                    // Store the part
-                    slicedParts.push({
-                        name: partName,
-                        scene: scene,
-                        mesh: mesh
-                    });
-                    
-                    // Create a preview box for this part
-                    createPreviewBox(i, partName);
-                }
-            }
-        });
-    </script>
-</body>
-</html> catch ( e ) {
+                    } catch ( e ) {
                         if ( onError ) {
                             onError( e );
                         } else {
@@ -648,6 +573,7 @@
         document.addEventListener('DOMContentLoaded', function() {
             // Initialize application
             const fileInput = document.getElementById('file-input');
+            const sliceBtn = document.getElementById('slice-btn');
             const dropArea = document.getElementById('drop-area');
             const fileName = document.getElementById('file-name');
             const loading = document.getElementById('loading');
@@ -659,12 +585,23 @@
             // Store original model and sliced parts
             let originalModel = null;
             let slicedParts = [];
+            let loadedFileName = '';
             
             // Initialize event listeners
             fileInput.addEventListener('change', function(e) {
                 if (e.target.files.length > 0) {
                     const file = e.target.files[0];
-                    handleFile(file);
+                    loadedFileName = file.name;
+                    loadFile(file);
+                }
+            });
+            
+            // Slice button functionality
+            sliceBtn.addEventListener('click', function() {
+                if (originalModel) {
+                    processModel();
+                } else {
+                    showError('Please load an STL file first.');
                 }
             });
             
@@ -684,7 +621,8 @@
             dropArea.addEventListener('drop', (e) => {
                 const file = e.dataTransfer.files[0];
                 if (file && file.name.toLowerCase().endsWith('.stl')) {
-                    handleFile(file);
+                    loadedFileName = file.name;
+                    loadFile(file);
                 } else {
                     showError('Please drop a valid STL file.');
                 }
@@ -716,24 +654,22 @@
                 errorMessage.style.display = 'none';
             }
             
-            function handleFile(file) {
+            function loadFile(file) {
                 // Clear previous state
                 hideError();
-                previewSection.style.display = 'none';
-                previewContainer.innerHTML = '';
-                slicedParts = [];
                 
                 // Show file name and loading indicator
                 fileName.textContent = `Selected file: ${file.name}`;
-                loading.style.display = 'block';
                 
                 // Read file
                 const reader = new FileReader();
                 reader.onload = function(e) {
                     try {
-                        processSTL(e.target.result, file.name);
+                        const loader = new THREE.STLLoader();
+                        originalModel = loader.parse(e.target.result);
+                        sliceBtn.disabled = false;
                     } catch (error) {
-                        showError(`Error processing STL file: ${error.message}`);
+                        showError(`Error loading STL file: ${error.message}`);
                         console.error(error);
                     }
                 };
@@ -743,29 +679,36 @@
                 reader.readAsArrayBuffer(file);
             }
             
-            function processSTL(buffer, filename) {
-                // Parse STL
-                const loader = new THREE.STLLoader();
-                
-                try {
-                    const geometry = loader.parse(buffer);
-                    originalModel = geometry;
-                    
-                    // Slice the model
-                    sliceModel(geometry, filename);
-                    
-                    // Hide loading indicator
-                    loading.style.display = 'none';
-                    
-                    // Show preview section
-                    previewSection.style.display = 'block';
-                    
-                    // Enable download all button
-                    downloadAllBtn.disabled = false;
-                } catch (error) {
-                    showError(`Error parsing STL file: ${error.message}`);
-                    console.error(error);
+            function processModel() {
+                if (!originalModel) {
+                    showError('No STL model loaded.');
+                    return;
                 }
+                
+                // Reset state
+                previewSection.style.display = 'none';
+                previewContainer.innerHTML = '';
+                slicedParts = [];
+                loading.style.display = 'block';
+                
+                // Slice the model
+                setTimeout(() => {
+                    try {
+                        sliceModel(originalModel, loadedFileName);
+                        
+                        // Hide loading indicator
+                        loading.style.display = 'none';
+                        
+                        // Show preview section
+                        previewSection.style.display = 'block';
+                        
+                        // Enable download all button
+                        downloadAllBtn.disabled = false;
+                    } catch (error) {
+                        showError(`Error slicing model: ${error.message}`);
+                        console.error(error);
+                    }
+                }, 100); // Short timeout to allow the UI to update
             }
             
             function createPreviewBox(index, partName) {
@@ -822,3 +765,86 @@
                 const blob = new Blob([stlString], { type: 'application/octet-stream' });
                 saveAs(blob, part.name);
             }
+            
+            function downloadAllParts() {
+                // Create zip
+                const zip = new JSZip();
+                
+                // Add each part to the zip
+                slicedParts.forEach((part, index) => {
+                    const exporter = new THREE.STLExporter();
+                    const stlString = exporter.parse(part.scene, { binary: false });
+                    zip.file(part.name, stlString);
+                });
+                
+                // Generate and download zip
+                zip.generateAsync({ type: 'blob' })
+                    .then(function(content) {
+                        saveAs(content, 'sliced_parts.zip');
+                    })
+                    .catch(function(error) {
+                        showError(`Error creating zip file: ${error.message}`);
+                    });
+            }
+            
+            function sliceModel(geometry, filename) {
+                // Compute bounding box
+                geometry.computeBoundingBox();
+                const box = geometry.boundingBox;
+                
+                // Calculate dimensions
+                const size = new THREE.Vector3();
+                box.getSize(size);
+                
+                // Determine slicing axis (we'll use Y-axis)
+                const sliceHeight = size.y / 4;
+                
+                // Create 4 slices
+                for (let i = 0; i < 4; i++) {
+                    // In a real implementation, we would use CSG to create proper slices
+                    // For this simplified version, we'll just create colored boxes to represent slices
+                    
+                    // Create a box to represent the slice
+                    const boxGeometry = new THREE.BoxGeometry(size.x, sliceHeight, size.z);
+                    const material = new THREE.MeshStandardMaterial({
+                        color: getPartColor(i),
+                        metalness: 0.1,
+                        roughness: 0.8
+                    });
+                    
+                    // Position the box
+                    const mesh = new THREE.Mesh(boxGeometry, material);
+                    mesh.position.y = box.min.y + (i * sliceHeight) + (sliceHeight / 2);
+                    
+                    // Create a scene for this part
+                    const scene = new THREE.Scene();
+                    scene.background = new THREE.Color(0xf5f5f5);
+                    scene.add(mesh);
+                    
+                    // Add lights
+                    const ambientLight = new THREE.AmbientLight(0x888888);
+                    scene.add(ambientLight);
+                    
+                    const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+                    directionalLight.position.set(1, 1, 1);
+                    scene.add(directionalLight);
+                    
+                    // Create a part name
+                    const baseName = filename.replace(/\.[^/.]+$/, "");
+                    const partName = `${baseName}_part${i+1}.stl`;
+                    
+                    // Store the part
+                    slicedParts.push({
+                        name: partName,
+                        scene: scene,
+                        mesh: mesh
+                    });
+                    
+                    // Create a preview box for this part
+                    createPreviewBox(i, partName);
+                }
+            }
+        });
+    </script>
+</body>
+</html>
