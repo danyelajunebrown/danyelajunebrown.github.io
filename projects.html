@@ -34,7 +34,7 @@
         }
 
         .container {
-            max-width: 1200px;
+            max-width: 900px;
             margin: 0 auto;
             padding: 100px 20px 40px;
         }
@@ -65,41 +65,34 @@
             border-bottom: 2px solid white;
         }
 
-        .projects-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
-            grid-gap: 20px;
+        .projects-list {
+            list-style-type: none;
         }
 
         .project {
-            background: rgba(20, 20, 20, 0.8);
-            border-radius: 8px;
-            overflow: hidden;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
-            transition: transform 0.3s ease, box-shadow 0.3s ease;
-            backdrop-filter: blur(5px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-        }
-
-        .project:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.4);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            margin-bottom: 0;
+            background: transparent;
         }
 
         .project-header {
             width: 100%;
-            padding: 15px;
+            padding: 20px 10px;
             background: none;
             border: none;
             text-align: left;
             font-size: 1.2rem;
-            font-weight: bold;
+            font-weight: normal;
             cursor: pointer;
             display: flex;
             justify-content: space-between;
             align-items: center;
             color: #fff;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            transition: background-color 0.3s ease;
+        }
+
+        .project-header:hover {
+            background-color: rgba(255, 255, 255, 0.1);
         }
 
         .project-header:after {
@@ -116,6 +109,7 @@
             max-height: 0;
             overflow: hidden;
             transition: max-height 0.4s ease-out;
+            background-color: rgba(0, 0, 0, 0.3);
         }
 
         .project-content.active {
@@ -123,24 +117,8 @@
             transition: max-height 0.8s ease-in;
         }
 
-        .media-container {
-            width: 100%;
-            margin-bottom: 0;
-            position: relative;
-        }
-
-        .media-container img,
-        .media-container video,
-        .media-container iframe {
-            width: 100%;
-            height: 250px;
-            object-fit: cover;
-            display: block;
-        }
-
         .metadata {
             padding: 15px;
-            background: rgba(0, 0, 0, 0.3);
             border-bottom: 1px solid rgba(255, 255, 255, 0.1);
         }
 
@@ -158,27 +136,27 @@
             color: rgba(255, 255, 255, 0.8);
         }
 
+        .media-container {
+            width: 100%;
+            padding: 15px;
+        }
+
+        .media-container img,
+        .media-container video,
+        .media-container iframe {
+            width: 100%;
+            max-height: 500px;
+            object-fit: contain;
+        }
+
         .pdf-container {
             width: 100%;
-            height: 250px;
+            height: 500px;
             border: none;
         }
 
-        .project-year {
-            font-size: 24px;
-            font-weight: bold;
-            margin: 40px 0 20px;
-            color: #fff;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.3);
-            padding-bottom: 10px;
-        }
-
         /* Add responsive adjustments */
-        @media (max-width: 768px) {
-            .projects-grid {
-                grid-template-columns: 1fr;
-            }
-            
+        @media (max-width: 768px) {            
             .nav-menu a {
                 padding: 8px 10px;
                 margin: 0 5px;
@@ -196,7 +174,7 @@
     </nav>
 
     <div class="container">
-        <div id="projects"></div>
+        <ul id="projects" class="projects-list"></ul>
     </div>
 
     <script>
@@ -418,13 +396,8 @@
         }
 
         function createProjectElement(project) {
-            const projectDiv = document.createElement('div');
-            projectDiv.className = 'project';
-            
-            const mediaElement = createMediaElement(project);
-            if (mediaElement) {
-                projectDiv.appendChild(mediaElement);
-            }
+            const projectItem = document.createElement('li');
+            projectItem.className = 'project';
             
             const header = document.createElement('button');
             header.className = 'project-header';
@@ -441,57 +414,66 @@
                 ${project.runTime ? `<span><strong>Run Time:</strong> ${project.runTime}</span>` : ''}
             `;
             
+            const mediaElement = createMediaElement(project);
+            
             const description = document.createElement('div');
             description.className = 'description';
             description.innerHTML = project.description;
             
             content.appendChild(metadata);
+            if (mediaElement) {
+                content.appendChild(mediaElement);
+            }
             content.appendChild(description);
             
-            projectDiv.appendChild(header);
-            projectDiv.appendChild(content);
+            projectItem.appendChild(header);
+            projectItem.appendChild(content);
             
             header.addEventListener('click', () => {
                 header.classList.toggle('active');
                 content.classList.toggle('active');
             });
             
-            return projectDiv;
+            return projectItem;
         }
 
-        function groupProjectsByYear(projects) {
-            // Sort projects by year descending
-            const sortedProjects = [...projects].sort((a, b) => b.year - a.year);
+        // Parse dates to create sortable date objects
+        function parseDateString(dateStr) {
+            // Handle different date formats
+            if (dateStr.includes('–')) {
+                // For date ranges, use the first date
+                dateStr = dateStr.split('–')[0].trim();
+            }
             
-            // Group projects by year
-            const groupedProjects = {};
-            sortedProjects.forEach(project => {
-                if (!groupedProjects[project.year]) {
-                    groupedProjects[project.year] = [];
-                }
-                groupedProjects[project.year].push(project);
-            });
+            // Handle "Jan 2025" format
+            if (dateStr.match(/[A-Za-z]+\s+\d{4}/)) {
+                const parts = dateStr.split(' ');
+                const month = new Date(Date.parse(parts[0] + " 1, " + parts[1])).getMonth();
+                const year = parseInt(parts[1]);
+                return new Date(year, month, 1);
+            }
             
-            return groupedProjects;
+            // Handle just year format "2023"
+            if (dateStr.match(/^\d{4}$/)) {
+                return new Date(parseInt(dateStr), 0, 1);
+            }
+            
+            // Try to parse other formats
+            return new Date(Date.parse(dateStr));
         }
+
+        // Sort projects by date, most recent first
+        const sortedProjects = [...projects].sort((a, b) => {
+            const dateA = parseDateString(a.date);
+            const dateB = parseDateString(b.date);
+            return dateB - dateA;
+        });
 
         const projectsContainer = document.getElementById('projects');
-        const groupedProjects = groupProjectsByYear(projects);
         
-        // Create year sections with projects
-        Object.keys(groupedProjects).forEach(year => {
-            const yearHeading = document.createElement('h2');
-            yearHeading.className = 'project-year';
-            yearHeading.textContent = year;
-            projectsContainer.appendChild(yearHeading);
-            
-            const yearGrid = document.createElement('div');
-            yearGrid.className = 'projects-grid';
-            projectsContainer.appendChild(yearGrid);
-            
-            groupedProjects[year].forEach(project => {
-                yearGrid.appendChild(createProjectElement(project));
-            });
+        // Create simple list of projects
+        sortedProjects.forEach(project => {
+            projectsContainer.appendChild(createProjectElement(project));
         });
     </script>
 </body>
