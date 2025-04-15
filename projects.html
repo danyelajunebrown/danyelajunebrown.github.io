@@ -5,16 +5,52 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Art Portfolio</title>
     <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            color: #fff;
+            position: relative;
+            min-height: 100vh;
+            background-attachment: fixed;
+            background-image: url('https://source.unsplash.com/random/1920x1080/?abstract,art');
+            background-size: cover;
+            background-position: center;
+        }
+
+        body::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+            z-index: -1;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 100px 20px 40px;
+        }
+
         .nav-menu {
             position: fixed;
             top: 0;
             left: 0;
             width: 100%;
-            background-color: rgba(0, 0, 0, 0.7);
+            background-color: rgba(0, 0, 0, 0.8);
             padding: 15px 0;
             z-index: 2000;
             text-align: center;
+            backdrop-filter: blur(5px);
         }
+        
         .nav-menu a {
             color: white;
             text-decoration: none;
@@ -24,30 +60,35 @@
             border: 2px solid transparent;
             transition: all 0.3s ease;
         }
+        
         .nav-menu a:hover {
             border-bottom: 2px solid white;
         }
 
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-            max-width: 800px;
-            margin: 0 auto;
-            padding: 80px 2rem 2rem;
-            background: #f5f5f5;
-            color: #333;
+        .projects-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            grid-gap: 20px;
         }
 
         .project {
-            margin-bottom: 1rem;
-            background: white;
-            border-radius: 4px;
+            background: rgba(20, 20, 20, 0.8);
+            border-radius: 8px;
             overflow: hidden;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            backdrop-filter: blur(5px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .project:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.4);
         }
 
         .project-header {
             width: 100%;
-            padding: 1rem;
+            padding: 15px;
             background: none;
             border: none;
             text-align: left;
@@ -57,7 +98,8 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            color: #333;
+            color: #fff;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
         }
 
         .project-header:after {
@@ -73,72 +115,101 @@
         .project-content {
             max-height: 0;
             overflow: hidden;
-            transition: max-height 0.3s ease-out;
+            transition: max-height 0.4s ease-out;
         }
 
         .project-content.active {
             max-height: 2000px;
-            transition: max-height 0.6s ease-in;
+            transition: max-height 0.8s ease-in;
         }
 
         .media-container {
             width: 100%;
-            margin-bottom: 1rem;
+            margin-bottom: 0;
+            position: relative;
         }
 
         .media-container img,
         .media-container video,
         .media-container iframe {
             width: 100%;
-            max-height: 500px;
-            object-fit: contain;
+            height: 250px;
+            object-fit: cover;
+            display: block;
         }
 
         .metadata {
-            padding: 1rem;
-            background: #f8f8f8;
-            border-top: 1px solid #eee;
+            padding: 15px;
+            background: rgba(0, 0, 0, 0.3);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
         }
 
         .metadata span {
             display: block;
-            margin-bottom: 0.5rem;
+            margin-bottom: 8px;
+            font-size: 14px;
+            color: rgba(255, 255, 255, 0.9);
         }
 
         .description {
-            padding: 1rem;
+            padding: 15px;
             line-height: 1.6;
+            font-size: 15px;
+            color: rgba(255, 255, 255, 0.8);
         }
 
         .pdf-container {
             width: 100%;
-            height: 500px;
+            height: 250px;
             border: none;
+        }
+
+        .project-year {
+            font-size: 24px;
+            font-weight: bold;
+            margin: 40px 0 20px;
+            color: #fff;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.3);
+            padding-bottom: 10px;
+        }
+
+        /* Add responsive adjustments */
+        @media (max-width: 768px) {
+            .projects-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .nav-menu a {
+                padding: 8px 10px;
+                margin: 0 5px;
+                font-size: 16px;
+            }
         }
     </style>
 </head>
 <body>
     <nav class="nav-menu">
-    <a href="bio.html">BIO</a>
-    <a href="#" onclick="linkToCV(); return false;">CV</a>
-    <a href="projects.html">PROJECTS</a>
-    <a href="contact.html">CONTACT</a>
-</nav>
+        <a href="bio.html">BIO</a>
+        <a href="#" onclick="linkToCV(); return false;">CV</a>
+        <a href="projects.html">PROJECTS</a>
+        <a href="contact.html">CONTACT</a>
+    </nav>
 
-<script>
-function linkToCV() {
-    const currentPage = encodeURIComponent(window.location.href);
-    window.location.href = `cv.html?from=${currentPage}`;
-}
-</script>
-
-    <div id="projects"></div>
+    <div class="container">
+        <div id="projects"></div>
+    </div>
 
     <script>
-       const projects = [
+        function linkToCV() {
+            const currentPage = encodeURIComponent(window.location.href);
+            window.location.href = `cv.html?from=${currentPage}`;
+        }
+
+        const projects = [
             {
                 title: "Right Over Left: DMV Runway Review (2018–Present)",
                 date: "Jan 25–Feb 22, 2025",
+                year: 2025,
                 media: "Curatorial Project",
                 mediaType: "image",
                 mediaUrl: "Right Over Left-rejected flyer.png",
@@ -147,6 +218,7 @@ function linkToCV() {
             {
                 title: "the Teas",
                 date: "Jan 2025",
+                year: 2025,
                 media: "pvc tubes, hoses, tub, water, pump, seedlings, dried herbs, acrylic, tea kettle, cups, mic, pillows, a few gworls",
                 mediaType: "image",
                 mediaUrl: "the Teas-hydroponic progress.JPG",
@@ -155,6 +227,7 @@ function linkToCV() {
             {
                 title: "Eye Always Feel Like: Black Transgender Speaking and Operationalizing the Clock",
                 date: "Jan 2025",
+                year: 2025,
                 media: "Critical Writing",
                 mediaType: "image",
                 mediaUrl: "Eye Always Feel Like -abstract.jpg",
@@ -163,6 +236,7 @@ function linkToCV() {
             {
                 title: "Stamina Night (8-16-4 12/14)",
                 date: "Dec 15, 2024",
+                year: 2024,
                 media: "voguers, DJ Tony Play, speaker, live cam feed, free clothing, free canned goods, confidential HIV testing",
                 mediaType: "youtube",
                 mediaUrl: "2FN0QGuwTq0",
@@ -172,6 +246,7 @@ function linkToCV() {
             {
                 title: "untitled (Casa Ruby Plaque)",
                 date: "Nov 1, 2024",
+                year: 2024,
                 media: "Wood Stain on MDF",
                 mediaType: "image",
                 mediaUrl: "casa ruby award-supremacy.png",
@@ -180,6 +255,7 @@ function linkToCV() {
             {
                 title: "Trying It",
                 date: "2024",
+                year: 2024,
                 media: "earth, grass, electronics, recorded-audio",
                 mediaType: "video",
                 mediaUrl: "https://www.dropbox.com/scl/fi/q6vewpesu0xqy73iez9tr/Trying-It-2024.mov?rlkey=f4w9cbv774sez4lpioy09qkig&raw=1",
@@ -189,6 +265,7 @@ function linkToCV() {
             {
                 title: "untitled (fresh to death)",
                 date: "2024",
+                year: 2024,
                 media: "Photography",
                 mediaType: "image",
                 mediaUrl: "untitled (fresh to death).jpg",
@@ -197,6 +274,7 @@ function linkToCV() {
             {
                 title: "#OpenToWork",
                 date: "2024",
+                year: 2024,
                 media: "Video",
                 mediaType: "video",
                 mediaUrl: "https://www.dropbox.com/scl/fi/sb2b58xj06zz7le3k21qz/OpenToWork-2024.mov?rlkey=0c47bxx9rj8z2vgzljd56y943&raw=1",
@@ -206,6 +284,7 @@ function linkToCV() {
             {
                 title: "Unpaid Internship",
                 date: "2023",
+                year: 2023,
                 media: "Digital Image",
                 mediaType: "image",
                 mediaUrl: "unpaid internship.png",
@@ -214,6 +293,7 @@ function linkToCV() {
             {
                 title: "*__*: Performance @ QAS",
                 date: "2023",
+                year: 2023,
                 media: "Performance",
                 mediaType: "image",
                 mediaUrl: "*__* Performance @ QAS.jpg",
@@ -222,6 +302,7 @@ function linkToCV() {
             {
                 title: "Out The Doll House II",
                 date: "2023",
+                year: 2023,
                 media: "Video",
                 mediaType: "youtube",
                 mediaUrl: "ETBAGdcVCH8",
@@ -231,6 +312,7 @@ function linkToCV() {
             {
                 title: "DEARoldPS122",
                 date: "2023",
+                year: 2023,
                 media: "PDF",
                 mediaType: "pdf",
                 mediaUrl: "DearOldPS122 (pg1).pdf",
@@ -239,6 +321,7 @@ function linkToCV() {
             {
                 title: "Tea Party 2 Traverse",
                 date: "2023",
+                year: 2023,
                 media: "Photography",
                 mediaType: "image",
                 mediaUrl: "tea party 2 traverse.jpg",
@@ -247,6 +330,7 @@ function linkToCV() {
             {
                 title: "The Nosebleed",
                 date: "2022",
+                year: 2022,
                 media: "Video",
                 mediaType: "video",
                 mediaUrl: "https://www.dropbox.com/scl/fi/1tvjqoc78es8ukv6kcdm5/the-Nosebleed-2022.mp4?rlkey=njzkg2sidg8mimqatuku4dvpx&raw=1",
@@ -256,6 +340,7 @@ function linkToCV() {
             {
                 title: "Confessional",
                 date: "2022",
+                year: 2022,
                 media: "Photography",
                 mediaType: "image",
                 mediaUrl: "Confessional logbook-10.16.jpg",
@@ -264,6 +349,7 @@ function linkToCV() {
             {
                 title: "Out The Doll Haus",
                 date: "2020",
+                year: 2020,
                 media: "Video",
                 mediaType: "video",
                 mediaUrl: "https://www.dropbox.com/scl/fi/mquf7mu3z7cpg7jfbaf3i/Out-The-Doll-Haus-2020.mp4?rlkey=ci7b41jqnx3xbnapfd5zt8is5&raw=1",
@@ -273,6 +359,7 @@ function linkToCV() {
             {
                 title: "Dear Marsha's",
                 date: "2020",
+                year: 2020,
                 media: "Digital Image",
                 mediaType: "image",
                 mediaUrl: "dear marsha's.png",
@@ -281,6 +368,7 @@ function linkToCV() {
             {
                 title: "Taxonomy of Transgendered Gesture",
                 date: "2020",
+                year: 2020,
                 media: "Photography",
                 mediaType: "image",
                 mediaUrl: "Taxonomy of Transgendered Gesture.jpg",
@@ -333,17 +421,17 @@ function linkToCV() {
             const projectDiv = document.createElement('div');
             projectDiv.className = 'project';
             
+            const mediaElement = createMediaElement(project);
+            if (mediaElement) {
+                projectDiv.appendChild(mediaElement);
+            }
+            
             const header = document.createElement('button');
             header.className = 'project-header';
             header.innerHTML = project.title;
             
             const content = document.createElement('div');
             content.className = 'project-content';
-            
-            const mediaElement = createMediaElement(project);
-            if (mediaElement) {
-                content.appendChild(mediaElement);
-            }
             
             const metadata = document.createElement('div');
             metadata.className = 'metadata';
@@ -371,9 +459,39 @@ function linkToCV() {
             return projectDiv;
         }
 
+        function groupProjectsByYear(projects) {
+            // Sort projects by year descending
+            const sortedProjects = [...projects].sort((a, b) => b.year - a.year);
+            
+            // Group projects by year
+            const groupedProjects = {};
+            sortedProjects.forEach(project => {
+                if (!groupedProjects[project.year]) {
+                    groupedProjects[project.year] = [];
+                }
+                groupedProjects[project.year].push(project);
+            });
+            
+            return groupedProjects;
+        }
+
         const projectsContainer = document.getElementById('projects');
-        projects.forEach(project => {
-            projectsContainer.appendChild(createProjectElement(project));
+        const groupedProjects = groupProjectsByYear(projects);
+        
+        // Create year sections with projects
+        Object.keys(groupedProjects).forEach(year => {
+            const yearHeading = document.createElement('h2');
+            yearHeading.className = 'project-year';
+            yearHeading.textContent = year;
+            projectsContainer.appendChild(yearHeading);
+            
+            const yearGrid = document.createElement('div');
+            yearGrid.className = 'projects-grid';
+            projectsContainer.appendChild(yearGrid);
+            
+            groupedProjects[year].forEach(project => {
+                yearGrid.appendChild(createProjectElement(project));
+            });
         });
     </script>
 </body>
