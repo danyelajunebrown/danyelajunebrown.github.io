@@ -14,7 +14,27 @@ body {
     height: 100vh;
     width: 100vw;
     overflow: hidden;
+    animation: boatSway 4s ease-in-out infinite;
 }
+
+@keyframes boatSway {
+    0% {
+        transform: rotate(0deg) translateY(0px);
+    }
+    25% {
+        transform: rotate(0.5deg) translateY(-2px);
+    }
+    50% {
+        transform: rotate(0deg) translateY(-4px);
+    }
+    75% {
+        transform: rotate(-0.5deg) translateY(-2px);
+    }
+    100% {
+        transform: rotate(0deg) translateY(0px);
+    }
+}
+
 .custom-cursor {
     width: 32px;
     height: 32px;
@@ -43,56 +63,7 @@ body {
         transform: translateY(-3px) rotate(5deg);
     }
 }
-/* Removed the nav-menu fixed styles */
-/* New floating menu buttons style */
-.floating-buttons {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    z-index: 2000;
-    pointer-events: none;
-}
-.floating-button {
-    position: absolute;
-    pointer-events: auto;
-    background-color: rgba(0, 0, 0, 0.7);
-    color: white;
-    text-decoration: none;
-    padding: 15px 25px;
-    border-radius: 30px;
-    font-size: 18px;
-    font-weight: bold;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
-    border: 2px solid rgba(255, 255, 255, 0.3);
-    transition: transform 0.3s ease, background-color 0.3s ease;
-    animation: float 8s infinite linear;
-    z-index: 2000;
-}
-.floating-button:hover {
-    animation-play-state: paused;
-    background-color: rgba(255, 255, 255, 0.9);
-    color: black;
-    transform: scale(1.1);
-}
-@keyframes float {
-    0% {
-        transform: translate(0, 0);
-    }
-    25% {
-        transform: translate(20px, 30px);
-    }
-    50% {
-        transform: translate(0, 60px);
-    }
-    75% {
-        transform: translate(-20px, 30px);
-    }
-    100% {
-        transform: translate(0, 0);
-    }
-}
+
 #container {
     margin: 0px auto;
     width: 100vw;
@@ -107,21 +78,7 @@ body {
     background-color: #666;
     object-fit: cover;
 }
-.name-overlay {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    color: white;
-    font-family: Arial, sans-serif;
-    font-size: 48px;
-    font-weight: bold;
-    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.7);
-    z-index: 1000;
-    pointer-events: none;
-    text-align: center;
-    width: 100%;
-}
+
 .error-message {
     position: absolute;
     top: 50%;
@@ -135,16 +92,6 @@ body {
     display: none;
     z-index: 2001;
 }
-@media (max-width: 768px) {
-    .name-overlay {
-        font-size: 32px;
-        padding: 0 20px;
-    }
-    .floating-button {
-        padding: 10px 15px;
-        font-size: 16px;
-    }
-}
 </style>
 </head>
  
@@ -155,88 +102,14 @@ body {
     </svg>
 </div>
 
-<!-- Replaced nav with floating buttons -->
-<div class="floating-buttons">
-    <a href="bio.html" class="floating-button" style="top: 10%; left: 15%; animation-delay: 0s; animation-duration: 10s;">BIO</a>
-    <a href="#" onclick="linkToCV(); return false;" class="floating-button" style="top: 20%; left: 70%; animation-delay: -2s; animation-duration: 12s;">CV</a>
-    <a href="projects.html" class="floating-button" style="top: 75%; left: 25%; animation-delay: -4s; animation-duration: 9s;">PROJECTS</a>
-    <a href="https://danyelajunebrown.github.io/tools.html" class="floating-button" style="top: 65%; left: 75%; animation-delay: -6s; animation-duration: 11s;">TOOLS</a>
-</div>
-
 <div id="container">
     <video autoplay playsinline muted id="videoElement">
     </video>
-    <div class="name-overlay">DANYELA JUNE BROWN</div>
 </div>
 <div class="error-message">
     Please allow camera access to view this content
 </div>
 <script>
-function linkToCV() {
-    const currentPage = encodeURIComponent(window.location.href);
-    window.location.href = `cv.html?from=${currentPage}`;
-}
-
-// Custom button animation with boundaries
-document.addEventListener('DOMContentLoaded', function() {
-    const buttons = document.querySelectorAll('.floating-button');
-    const container = document.getElementById('container');
-    
-    buttons.forEach(button => {
-        // Create random velocities for each button
-        button.vx = (Math.random() - 0.5) * 2; // Random x velocity between -1 and 1
-        button.vy = (Math.random() - 0.5) * 2; // Random y velocity between -1 and 1
-        
-        // Set initial positions more randomly
-        const randomX = 10 + Math.random() * 80; // Random percentage between 10% and 90%
-        const randomY = 10 + Math.random() * 80; // Random percentage between 10% and 90%
-        
-        button.style.left = `${randomX}%`;
-        button.style.top = `${randomY}%`;
-        
-        // Remove the default animation to use our custom one
-        button.style.animation = 'none';
-    });
-    
-    // Animation loop for custom bouncing
-    function animateButtons() {
-        const containerRect = container.getBoundingClientRect();
-        
-        buttons.forEach(button => {
-            if (button.matches(':hover')) return; // Skip animation if being hovered
-            
-            const rect = button.getBoundingClientRect();
-            
-            // Current position relative to container
-            let x = rect.left - containerRect.left;
-            let y = rect.top - containerRect.top;
-            
-            // Update position based on velocity
-            x += button.vx;
-            y += button.vy;
-            
-            // Boundary checking
-            if (x < 0 || x + rect.width > containerRect.width) {
-                button.vx = -button.vx; // Reverse direction on x-axis
-                x += button.vx * 2; // Adjust to prevent sticking to edge
-            }
-            
-            if (y < 0 || y + rect.height > containerRect.height) {
-                button.vy = -button.vy; // Reverse direction on y-axis
-                y += button.vy * 2; // Adjust to prevent sticking to edge
-            }
-            
-            // Apply new position
-            button.style.left = `${(x / containerRect.width) * 100}%`;
-            button.style.top = `${(y / containerRect.height) * 100}%`;
-        });
-        
-        requestAnimationFrame(animateButtons);
-    }
-    
-    animateButtons();
-});
-
 // Webcam initialization
 async function initCamera() {
     const video = document.querySelector("#videoElement");
@@ -309,12 +182,6 @@ if (window.matchMedia("(pointer: fine)").matches) {
 window.addEventListener('orientationchange', function() {
     // Reinitialize camera after orientation change
     setTimeout(initCamera, 500);
-});
-
-// Add this code to your main site pages (not the CV page)
-// This will store the current page URL before navigation
-window.addEventListener('beforeunload', function() {
-    localStorage.setItem('lastVisitedPage', window.location.href);
 });
 </script>
 </body>
