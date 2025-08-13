@@ -14,29 +14,46 @@
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
             color: #fff;
-            position: relative;
-            min-height: 100vh;
-            background-attachment: fixed;
-            background-image: url('https://source.unsplash.com/random/1920x1080/?abstract,art');
-            background-size: cover;
-            background-position: center;
+            overflow: hidden;
+            height: 100vh;
+            background: #000;
         }
 
-        body::before {
+        .slider-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+
+        .slide {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            opacity: 0;
+            transition: opacity 1.5s ease-in-out;
+            background-size: cover;
+            background-position: center;
+            cursor: pointer;
+        }
+
+        .slide.active {
+            opacity: 0.4;
+        }
+
+        .slide::before {
             content: '';
             position: absolute;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            background-color: rgba(0, 0, 0, 0.7);
-            z-index: -1;
-        }
-
-        .container {
-            max-width: 900px;
-            margin: 0 auto;
-            padding: 100px 20px 40px;
+            background: linear-gradient(45deg, rgba(0,0,0,0.8), rgba(0,0,0,0.6));
+            z-index: 1;
         }
 
         .nav-menu {
@@ -44,123 +61,207 @@
             top: 0;
             left: 0;
             width: 100%;
-            background-color: rgba(0, 0, 0, 0.8);
-            padding: 15px 0;
-            z-index: 2000;
+            background: linear-gradient(to bottom, rgba(0,0,0,0.9), transparent);
+            padding: 20px 0;
+            z-index: 1000;
             text-align: center;
-            backdrop-filter: blur(5px);
+            backdrop-filter: blur(10px);
         }
         
         .nav-menu a {
             color: white;
             text-decoration: none;
-            padding: 10px 20px;
-            margin: 0 10px;
+            padding: 12px 25px;
+            margin: 0 15px;
             font-size: 18px;
-            border: 2px solid transparent;
-            transition: all 0.3s ease;
+            font-weight: 300;
+            letter-spacing: 1px;
+            border: 1px solid transparent;
+            transition: all 0.4s ease;
+            text-transform: uppercase;
         }
         
         .nav-menu a:hover {
-            border-bottom: 2px solid white;
+            border: 1px solid white;
+            background: rgba(255,255,255,0.1);
         }
 
-        .projects-list {
-            list-style-type: none;
+        .center-controls {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 500;
+            text-align: center;
+            width: 90%;
+            max-width: 600px;
         }
 
-        .project {
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-            margin-bottom: 0;
-            background: transparent;
-        }
-
-        .project-header {
+        .project-dropdown {
+            background: rgba(0,0,0,0.9);
+            border: 2px solid rgba(255,255,255,0.3);
+            color: white;
+            padding: 15px 20px;
+            font-size: 18px;
             width: 100%;
-            padding: 20px 10px;
-            background: none;
-            border: none;
-            text-align: left;
-            font-size: 1.2rem;
-            font-weight: normal;
+            margin-bottom: 30px;
+            backdrop-filter: blur(15px);
+            border-radius: 8px;
             cursor: pointer;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
+            transition: all 0.3s ease;
+        }
+
+        .project-dropdown:focus {
+            outline: none;
+            border-color: white;
+            box-shadow: 0 0 20px rgba(255,255,255,0.3);
+        }
+
+        .project-dropdown option {
+            background: #000;
+            color: white;
+            padding: 10px;
+        }
+
+        .project-details {
+            background: rgba(0,0,0,0.95);
+            border-radius: 12px;
+            padding: 30px;
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255,255,255,0.2);
+            max-height: 60vh;
+            overflow-y: auto;
+            opacity: 0;
+            transform: translateY(20px);
+            transition: all 0.5s ease;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.8);
+        }
+
+        .project-details.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .project-title {
+            font-size: 24px;
+            font-weight: 300;
+            margin-bottom: 20px;
             color: #fff;
-            transition: background-color 0.3s ease;
+            letter-spacing: 0.5px;
         }
 
-        .project-header:hover {
-            background-color: rgba(255, 255, 255, 0.1);
+        .project-meta {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-bottom: 25px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid rgba(255,255,255,0.2);
         }
 
-        .project-header:after {
-            content: '+';
-            font-size: 1.5rem;
-            transition: transform 0.3s ease;
-        }
-
-        .project-header.active:after {
-            transform: rotate(45deg);
-        }
-
-        .project-content {
-            max-height: 0;
-            overflow: hidden;
-            transition: max-height 0.4s ease-out;
-            background-color: rgba(0, 0, 0, 0.3);
-        }
-
-        .project-content.active {
-            max-height: 2000px;
-            transition: max-height 0.8s ease-in;
-        }
-
-        .metadata {
-            padding: 15px;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-        }
-
-        .metadata span {
-            display: block;
-            margin-bottom: 8px;
+        .meta-item {
             font-size: 14px;
-            color: rgba(255, 255, 255, 0.9);
+            color: rgba(255,255,255,0.8);
         }
 
-        .description {
-            padding: 15px;
-            line-height: 1.6;
-            font-size: 15px;
-            color: rgba(255, 255, 255, 0.8);
+        .meta-label {
+            font-weight: 600;
+            color: white;
+            display: block;
+            margin-bottom: 5px;
         }
 
-        .media-container {
+        .project-media {
             width: 100%;
-            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 8px;
+            overflow: hidden;
         }
 
-        .media-container img,
-        .media-container video,
-        .media-container iframe {
+        .project-media img,
+        .project-media video,
+        .project-media iframe {
             width: 100%;
-            max-height: 500px;
-            object-fit: contain;
+            max-height: 300px;
+            object-fit: cover;
+            border-radius: 8px;
         }
 
-        .pdf-container {
-            width: 100%;
-            height: 500px;
-            border: none;
+        .project-description {
+            line-height: 1.7;
+            font-size: 16px;
+            color: rgba(255,255,255,0.9);
         }
 
-        /* Add responsive adjustments */
-        @media (max-width: 768px) {            
+        .slider-nav {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 500;
+            display: flex;
+            gap: 15px;
+        }
+
+        .nav-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.4);
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .nav-dot.active {
+            background: white;
+            transform: scale(1.2);
+        }
+
+        .slide-counter {
+            position: fixed;
+            bottom: 80px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 500;
+            color: rgba(255,255,255,0.7);
+            font-size: 14px;
+            letter-spacing: 1px;
+        }
+
+        /* Custom scrollbar */
+        .project-details::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .project-details::-webkit-scrollbar-track {
+            background: rgba(255,255,255,0.1);
+            border-radius: 4px;
+        }
+
+        .project-details::-webkit-scrollbar-thumb {
+            background: rgba(255,255,255,0.3);
+            border-radius: 4px;
+        }
+
+        @media (max-width: 768px) {
             .nav-menu a {
-                padding: 8px 10px;
+                padding: 8px 15px;
                 margin: 0 5px;
-                font-size: 16px;
+                font-size: 14px;
+            }
+            
+            .center-controls {
+                width: 95%;
+                padding: 0 10px;
+            }
+            
+            .project-details {
+                padding: 20px;
+                max-height: 70vh;
+            }
+            
+            .project-title {
+                font-size: 20px;
             }
         }
     </style>
@@ -173,9 +274,18 @@
         <a href="contact.html">CONTACT</a>
     </nav>
 
-    <div class="container">
-        <ul id="projects" class="projects-list"></ul>
+    <div class="slider-container" id="slider"></div>
+
+    <div class="center-controls">
+        <select class="project-dropdown" id="projectSelect">
+            <option value="">Select a Project</option>
+        </select>
+        
+        <div class="project-details" id="projectDetails"></div>
     </div>
+
+    <div class="slide-counter" id="slideCounter">1 / 1</div>
+    <div class="slider-nav" id="sliderNav"></div>
 
     <script>
         function linkToCV() {
@@ -354,98 +464,15 @@
             }
         ];
 
-        function createMediaElement(project) {
-            const container = document.createElement('div');
-            container.className = 'media-container';
-
-            switch (project.mediaType) {
-                case 'image':
-                    const img = document.createElement('img');
-                    img.src = project.mediaUrl;
-                    img.alt = project.title;
-                    container.appendChild(img);
-                    break;
-
-                case 'youtube':
-                    const iframe = document.createElement('iframe');
-                    iframe.src = `https://www.youtube.com/embed/${project.mediaUrl}`;
-                    iframe.allow = "accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture";
-                    iframe.allowFullscreen = true;
-                    container.appendChild(iframe);
-                    break;
-
-                case 'video':
-                    const video = document.createElement('video');
-                    video.controls = true;
-                    video.src = project.mediaUrl;
-                    container.appendChild(video);
-                    break;
-
-                case 'pdf':
-                    const pdfFrame = document.createElement('iframe');
-                    pdfFrame.className = 'pdf-container';
-                    pdfFrame.src = project.mediaUrl;
-                    container.appendChild(pdfFrame);
-                    break;
-
-                default:
-                    return null;
-            }
-
-            return container;
-        }
-
-        function createProjectElement(project) {
-            const projectItem = document.createElement('li');
-            projectItem.className = 'project';
-            
-            const header = document.createElement('button');
-            header.className = 'project-header';
-            header.innerHTML = project.title;
-            
-            const content = document.createElement('div');
-            content.className = 'project-content';
-            
-            const metadata = document.createElement('div');
-            metadata.className = 'metadata';
-            metadata.innerHTML = `
-                <span><strong>Date:</strong> ${project.date}</span>
-                <span><strong>Media:</strong> ${project.media}</span>
-                ${project.runTime ? `<span><strong>Run Time:</strong> ${project.runTime}</span>` : ''}
-            `;
-            
-            const mediaElement = createMediaElement(project);
-            
-            const description = document.createElement('div');
-            description.className = 'description';
-            description.innerHTML = project.description;
-            
-            content.appendChild(metadata);
-            if (mediaElement) {
-                content.appendChild(mediaElement);
-            }
-            content.appendChild(description);
-            
-            projectItem.appendChild(header);
-            projectItem.appendChild(content);
-            
-            header.addEventListener('click', () => {
-                header.classList.toggle('active');
-                content.classList.toggle('active');
-            });
-            
-            return projectItem;
-        }
+        let currentSlide = 0;
+        let slideInterval;
 
         // Parse dates to create sortable date objects
         function parseDateString(dateStr) {
-            // Handle different date formats
             if (dateStr.includes('–')) {
-                // For date ranges, use the first date
                 dateStr = dateStr.split('–')[0].trim();
             }
             
-            // Handle "Jan 2025" format
             if (dateStr.match(/[A-Za-z]+\s+\d{4}/)) {
                 const parts = dateStr.split(' ');
                 const month = new Date(Date.parse(parts[0] + " 1, " + parts[1])).getMonth();
@@ -453,12 +480,10 @@
                 return new Date(year, month, 1);
             }
             
-            // Handle just year format "2023"
             if (dateStr.match(/^\d{4}$/)) {
                 return new Date(parseInt(dateStr), 0, 1);
             }
             
-            // Try to parse other formats
             return new Date(Date.parse(dateStr));
         }
 
@@ -469,11 +494,134 @@
             return dateB - dateA;
         });
 
-        const projectsContainer = document.getElementById('projects');
-        
-        // Create simple list of projects
-        sortedProjects.forEach(project => {
-            projectsContainer.appendChild(createProjectElement(project));
+        function getBackgroundImage(project) {
+            if (project.mediaType === 'image') {
+                return `url('${project.mediaUrl}')`;
+            } else if (project.mediaType === 'youtube') {
+                return `url('https://img.youtube.com/vi/${project.mediaUrl}/maxresdefault.jpg')`;
+            }
+            return 'linear-gradient(45deg, #1a1a1a, #2a2a2a)';
+        }
+
+        function createSlides() {
+            const sliderContainer = document.getElementById('slider');
+            const sliderNav = document.getElementById('sliderNav');
+            
+            sortedProjects.forEach((project, index) => {
+                // Create slide
+                const slide = document.createElement('div');
+                slide.className = 'slide';
+                slide.style.backgroundImage = getBackgroundImage(project);
+                slide.addEventListener('click', () => selectProject(index));
+                sliderContainer.appendChild(slide);
+                
+                // Create nav dot
+                const dot = document.createElement('div');
+                dot.className = 'nav-dot';
+                dot.addEventListener('click', () => goToSlide(index));
+                sliderNav.appendChild(dot);
+            });
+        }
+
+        function updateSlider() {
+            const slides = document.querySelectorAll('.slide');
+            const dots = document.querySelectorAll('.nav-dot');
+            
+            slides.forEach((slide, index) => {
+                slide.classList.toggle('active', index === currentSlide);
+            });
+            
+            dots.forEach((dot, index) => {
+                dot.classList.toggle('active', index === currentSlide);
+            });
+            
+            document.getElementById('slideCounter').textContent = `${currentSlide + 1} / ${sortedProjects.length}`;
+        }
+
+        function goToSlide(index) {
+            currentSlide = index;
+            updateSlider();
+            resetSlideTimer();
+        }
+
+        function nextSlide() {
+            currentSlide = (currentSlide + 1) % sortedProjects.length;
+            updateSlider();
+        }
+
+        function resetSlideTimer() {
+            clearInterval(slideInterval);
+            slideInterval = setInterval(nextSlide, 4000);
+        }
+
+        function populateDropdown() {
+            const select = document.getElementById('projectSelect');
+            sortedProjects.forEach((project, index) => {
+                const option = document.createElement('option');
+                option.value = index;
+                option.textContent = `${project.title} (${project.year})`;
+                select.appendChild(option);
+            });
+        }
+
+        function selectProject(index) {
+            const project = sortedProjects[index];
+            const select = document.getElementById('projectSelect');
+            const details = document.getElementById('projectDetails');
+            
+            select.value = index;
+            
+            let mediaHTML = '';
+            switch (project.mediaType) {
+                case 'image':
+                    mediaHTML = `<div class="project-media"><img src="${project.mediaUrl}" alt="${project.title}"></div>`;
+                    break;
+                case 'youtube':
+                    mediaHTML = `<div class="project-media"><iframe src="https://www.youtube.com/embed/${project.mediaUrl}" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe></div>`;
+                    break;
+                case 'video':
+                    mediaHTML = `<div class="project-media"><video controls src="${project.mediaUrl}"></video></div>`;
+                    break;
+                case 'pdf':
+                    mediaHTML = `<div class="project-media"><iframe src="${project.mediaUrl}" style="height: 300px;"></iframe></div>`;
+                    break;
+            }
+            
+            details.innerHTML = `
+                <div class="project-title">${project.title}</div>
+                <div class="project-meta">
+                    <div class="meta-item">
+                        <span class="meta-label">Date</span>
+                        ${project.date}
+                    </div>
+                    <div class="meta-item">
+                        <span class="meta-label">Media</span>
+                        ${project.media}
+                    </div>
+                    ${project.runTime ? `<div class="meta-item"><span class="meta-label">Run Time</span>${project.runTime}</div>` : ''}
+                </div>
+                ${mediaHTML}
+                <div class="project-description">${project.description}</div>
+            `;
+            
+            details.classList.add('show');
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            createSlides();
+            populateDropdown();
+            updateSlider();
+            resetSlideTimer();
+            
+            document.getElementById('projectSelect').addEventListener('change', (e) => {
+                if (e.target.value !== '') {
+                    selectProject(parseInt(e.target.value));
+                    goToSlide(parseInt(e.target.value));
+                } else {
+                    document.getElementById('projectDetails').classList.remove('show');
+                }
+            });
         });
     </script>
 </body>
