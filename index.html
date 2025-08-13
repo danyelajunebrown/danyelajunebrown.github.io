@@ -64,6 +64,33 @@ body {
     object-fit: cover;
 }
 
+.nav-menu {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    background-color: rgba(0, 0, 0, 0.8);
+    padding: 15px 0;
+    z-index: 2000;
+    text-align: center;
+    backdrop-filter: blur(5px);
+}
+
+.nav-menu a {
+    color: white;
+    text-decoration: none;
+    padding: 10px 20px;
+    margin: 0 10px;
+    font-size: 18px;
+    border: 2px solid transparent;
+    transition: all 0.3s ease;
+    cursor: pointer;
+}
+
+.nav-menu a:hover {
+    border-bottom: 2px solid white;
+}
+
 .start-overlay {
     position: absolute;
     top: 0;
@@ -91,10 +118,26 @@ body {
 .start-button:hover {
     background: #0056b3;
 }
+
+/* Responsive adjustments */
+@media (max-width: 768px) {            
+    .nav-menu a {
+        padding: 8px 10px;
+        margin: 0 5px;
+        font-size: 16px;
+    }
+}
 </style>
 </head>
  
 <body>
+<nav class="nav-menu">
+    <a href="bio.html">BIO</a>
+    <a href="#" onclick="linkToCV(); return false;">CV</a>
+    <a href="projects.html">PROJECTS</a>
+    <a href="contact.html">CONTACT</a>
+</nav>
+
 <div class="custom-cursor">
     <svg viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
         <path d="M16 4C14 4 12 5 11 7L8 12L6 14C5 15 5 17 6 18C7 19 9 19 10 18L12 16V24C12 26.2 13.8 28 16 28C18.2 28 20 26.2 20 24V16L22 18C23 19 25 19 26 18C27 17 27 15 26 14L24 12L21 7C20 5 18 4 16 4Z"/>
@@ -109,6 +152,11 @@ body {
 </div>
 
 <script>
+function linkToCV() {
+    const currentPage = encodeURIComponent(window.location.href);
+    window.location.href = `cv.html?from=${currentPage}`;
+}
+
 document.getElementById('startButton').addEventListener('click', async function() {
     const video = document.getElementById('videoElement');
     const overlay = document.getElementById('startOverlay');
