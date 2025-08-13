@@ -91,6 +91,38 @@ body {
     text-align: center;
     display: none;
     z-index: 2001;
+    max-width: 80%;
+}
+
+.start-button {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background-color: #007bff;
+    color: white;
+    border: none;
+    padding: 15px 30px;
+    border-radius: 8px;
+    font-size: 16px;
+    cursor: pointer;
+    z-index: 2002;
+    display: block;
+}
+
+.start-button:hover {
+    background-color: #0056b3;
+}
+
+.loading {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: white;
+    font-size: 18px;
+    z-index: 2001;
+    display: none;
 }
 </style>
 </head>
@@ -106,68 +138,130 @@ body {
     <video autoplay playsinline muted id="videoElement">
     </video>
 </div>
-<div class="error-message">
-    Please allow camera access to view this content
+
+<button class="start-button" id="startButton">Start Camera</button>
+<div class="loading" id="loading">Loading camera...</div>
+<div class="error-message" id="errorMessage">
+    Camera access is required. Please allow camera permissions and try again.
 </div>
+
 <script>
+let currentStream = null;
+
 // Webcam initialization
 async function initCamera() {
     const video = document.querySelector("#videoElement");
-    const errorMessage = document.querySelector(".error-message");
+    const errorMessage = document.querySelector("#errorMessage");
+    const loading = document.querySelector("#loading");
+    const startButton = document.querySelector("#startButton");
+    
+    // Show loading
+    loading.style.display = 'block';
+    startButton.style.display = 'none';
+    errorMessage.style.display = 'none';
     
     try {
-        // Try to get both front and back cameras
-        const stream = await navigator.mediaDevices.getUserMedia({
-            video: {
-                facingMode: { ideal: "user" }, // Prefer front camera
-                width: { ideal: window.innerWidth },
-                height: { ideal: window.innerHeight }
-            }
-        });
+        // Stop any existing stream first
+        if (currentStream) {
+            currentStream.getTracks().forEach(track => track.stop());
+        }
+
+        // Get available video devices
+        const devices = await navigator.mediaDevices.enumerateDevices();
+        const videoDevices = devices.filter(device => device.kind === 'videoinput');
         
+        let constraints = {
+            video: {
+                width: { ideal: 1920, max: 1920 },
+                height: { ideal: 1080, max: 1080 },
+                frameRate: { ideal: 30 }
+            }
+        };
+
+        // Try user-facing camera first (front camera)
+        if (videoDevices.length > 0) {
+            constraints.video.facingMode = { ideal: "user" };
+        }
+        
+        const stream = await navigator.mediaDevices.getUserMedia(constraints);
+        currentStream = stream;
         video.srcObject = stream;
         
-        // Ensure video plays on iOS
-        video.play().catch(function(e) {
-            console.log("Video play error:", e);
+        // Wait for video to be ready
+        await new Promise((resolve, reject) => {
+            video.onloadedmetadata = () => {
+                video.play().then(resolve).catch(reject);
+            };
+            video.onerror = reject;
         });
         
+        loading.style.display = 'none';
         errorMessage.style.display = 'none';
+        
     } catch (error) {
         console.log("Camera error:", error);
-        errorMessage.style.display = 'block';
+        loading.style.display = 'none';
         
-        // If front camera fails, try back camera
-        if (error.name === 'NotAllowedError' || error.name === 'NotFoundError') {
+        let errorMsg = "Camera access failed. ";
+        
+        if (error.name === 'NotAllowedError') {
+            errorMsg += "Please allow camera access and refresh the page.";
+        } else if (error.name === 'NotFoundError') {
+            errorMsg += "No camera found on this device.";
+        } else if (error.name === 'NotSupportedError') {
+            errorMsg += "Camera not supported in this browser.";
+        } else if (error.name === 'NotReadableError') {
+            errorMsg += "Camera is being used by another application.";
+        } else {
+            errorMsg += "Please check your camera permissions and try again.";
+        }
+        
+        document.querySelector("#errorMessage").textContent = errorMsg;
+        errorMessage.style.display = 'block';
+        startButton.style.display = 'block';
+        
+        // Try environment camera as fallback
+        if (error.name !== 'NotAllowedError' && error.name !== 'NotFoundError') {
             try {
                 const backStream = await navigator.mediaDevices.getUserMedia({
                     video: {
-                        facingMode: { exact: "environment" }, // Force back camera
-                        width: { ideal: window.innerWidth },
-                        height: { ideal: window.innerHeight }
+                        facingMode: { exact: "environment" },
+                        width: { ideal: 1920, max: 1920 },
+                        height: { ideal: 1080, max: 1080 }
                     }
                 });
                 
+                currentStream = backStream;
                 video.srcObject = backStream;
-                video.play().catch(function(e) {
-                    console.log("Video play error:", e);
-                });
+                await video.play();
                 
                 errorMessage.style.display = 'none';
+                startButton.style.display = 'none';
             } catch (backError) {
-                console.log("Back camera error:", backError);
-                errorMessage.style.display = 'block';
+                console.log("Back camera also failed:", backError);
             }
         }
     }
 }
 
-// Initialize camera when page loads
-if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
-    initCamera();
-} else {
-    document.querySelector(".error-message").style.display = 'block';
+// Check if browser supports getUserMedia
+function checkCameraSupport() {
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        document.querySelector("#errorMessage").textContent = 
+            "Your browser doesn't support camera access. Please use a modern browser like Chrome, Firefox, or Safari.";
+        document.querySelector("#errorMessage").style.display = 'block';
+        document.querySelector("#startButton").style.display = 'none';
+        return false;
+    }
+    return true;
 }
+
+// Initialize when start button is clicked
+document.querySelector("#startButton").addEventListener('click', async () => {
+    if (checkCameraSupport()) {
+        await initCamera();
+    }
+});
 
 // Custom cursor movement (only on desktop)
 if (window.matchMedia("(pointer: fine)").matches) {
@@ -178,11 +272,35 @@ if (window.matchMedia("(pointer: fine)").matches) {
     });
 }
 
-// Handle orientation changes
+// Handle orientation changes on mobile
 window.addEventListener('orientationchange', function() {
-    // Reinitialize camera after orientation change
-    setTimeout(initCamera, 500);
+    if (currentStream) {
+        setTimeout(() => {
+            initCamera();
+        }, 500);
+    }
 });
+
+// Handle page visibility changes
+document.addEventListener('visibilitychange', function() {
+    if (document.visibilityState === 'visible' && currentStream) {
+        // Restart video if page becomes visible again
+        const video = document.querySelector("#videoElement");
+        if (video.paused) {
+            video.play().catch(e => console.log("Resume play error:", e));
+        }
+    }
+});
+
+// Clean up when page unloads
+window.addEventListener('beforeunload', function() {
+    if (currentStream) {
+        currentStream.getTracks().forEach(track => track.stop());
+    }
+});
+
+// Initial check
+checkCameraSupport();
 </script>
 </body>
 </html>
