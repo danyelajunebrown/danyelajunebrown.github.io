@@ -23,11 +23,11 @@
             right: 0;
             bottom: 0;
             z-index: 0;
-            opacity: 1;
+            opacity: 0.3;
             background-size: cover;
             background-position: center;
             background-repeat: no-repeat;
-            filter: grayscale(50%);
+            filter: grayscale(30%) blur(1px);
             transition: opacity 0.5s ease;
         }
 
@@ -51,10 +51,11 @@
             position: fixed;
             top: 0;
             width: 100%;
-            background-color: rgba(0, 0, 0, 0.7);
+            background-color: rgba(0, 0, 0, 0.8);
             padding: 15px 0;
             z-index: 2000;
             text-align: center;
+            backdrop-filter: blur(10px);
         }
 
         .nav-menu a {
@@ -85,8 +86,9 @@
             padding: 40px;
             position: relative;
             z-index: 1;
-            text-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
-            mix-blend-mode: difference;
+            background: rgba(0, 0, 0, 0.4);
+            border-radius: 10px;
+            backdrop-filter: blur(5px);
         }
 
         .cv-section {
@@ -97,6 +99,7 @@
             font-size: 36px;
             text-align: center;
             margin-bottom: 30px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
         }
 
         h2 {
@@ -104,6 +107,7 @@
             border-bottom: 2px solid white;
             padding-bottom: 5px;
             margin-top: 25px;
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8);
         }
 
         .entry {
@@ -124,7 +128,7 @@
             margin-bottom: 20px;
         }
 
-        /* Journey prompt styles */
+        /* Fallback prompt styles for when no image is passed */
         .journey-prompt {
             position: fixed;
             top: 0;
@@ -183,7 +187,45 @@
 
     <script>
     document.addEventListener('DOMContentLoaded', function() {
-        // Create overlay for initial prompt
+        // Initialize background overlay
+        if (!document.querySelector('.background-overlay')) {
+            const overlay = document.createElement('div');
+            overlay.className = 'background-overlay';
+            document.body.insertBefore(overlay, document.body.firstChild);
+        }
+
+        // Check if we have a captured image from the landing page
+        const urlParams = new URLSearchParams(window.location.search);
+        const capturedImage = urlParams.get('captured');
+        
+        if (capturedImage) {
+            // Use the captured camera frame as background
+            const overlay = document.querySelector('.background-overlay');
+            if (overlay) {
+                overlay.style.backgroundImage = `url(${decodeURIComponent(capturedImage)})`;
+                overlay.style.backgroundSize = 'cover';
+                overlay.style.backgroundPosition = 'center';
+                overlay.style.opacity = '0.3'; // Subtle so text remains readable
+            }
+        } else {
+            // Show fallback prompt for screen capture
+            showFallbackPrompt();
+        }
+
+        // Custom cursor movement
+        if (window.matchMedia("(pointer: fine)").matches) {
+            document.addEventListener('mousemove', function(e) {
+                const cursor = document.querySelector('.custom-cursor');
+                if (cursor) {
+                    cursor.style.left = e.clientX - 16 + 'px';
+                    cursor.style.top = e.clientY - 16 + 'px';
+                }
+            });
+        }
+    });
+
+    function showFallbackPrompt() {
+        // Create overlay for screen capture prompt (fallback)
         const promptOverlay = document.createElement('div');
         promptOverlay.className = 'journey-prompt';
         promptOverlay.innerHTML = `
@@ -195,7 +237,7 @@
         `;
         document.body.appendChild(promptOverlay);
 
-        // Handle capture
+        // Handle screen capture
         document.getElementById('captureBtn').addEventListener('click', async () => {
             try {
                 // Request screen capture
@@ -230,6 +272,7 @@
                     overlay.style.backgroundImage = `url(${imageUrl})`;
                     overlay.style.backgroundSize = 'cover';
                     overlay.style.backgroundPosition = 'center';
+                    overlay.style.opacity = '0.3';
                 }
 
                 // Remove prompt
@@ -241,30 +284,23 @@
                 promptOverlay.remove();
             }
         });
-
-        // Initialize background overlay
-        if (!document.querySelector('.background-overlay')) {
-            const overlay = document.createElement('div');
-            overlay.className = 'background-overlay';
-            document.body.insertBefore(overlay, document.body.firstChild);
-        }
-    });
+    }
     </script>
 </head>
 
 <body>
     <div class="custom-cursor">
-    <svg viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
-        <path d="M16 4C14 4 12 5 11 7L8 12L6 14C5 15 5 17 6 18C7 19 9 19 10 18L12 16V24C12 26.2 13.8 28 16 28C18.2 28 20 26.2 20 24V16L22 18C23 19 25 19 26 18C27 17 27 15 26 14L24 12L21 7C20 5 18 4 16 4Z"/>
-    </svg>
-</div>
+        <svg viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
+            <path d="M16 4C14 4 12 5 11 7L8 12L6 14C5 15 5 17 6 18C7 19 9 19 10 18L12 16V24C12 26.2 13.8 28 16 28C18.2 28 20 26.2 20 24V16L22 18C23 19 25 19 26 18C27 17 27 15 26 14L24 12L21 7C20 5 18 4 16 4Z"/>
+        </svg>
+    </div>
 
     <nav class="nav-menu">
-    <a href="bio.html">BIO</a>
-    <a href="#" onclick="window.location.href='cv.html'">CV</a>
-    <a href="projects.html">PROJECTS</a>
-    <a href="contact.html">CONTACT</a>
-</nav>
+        <a href="bio.html">BIO</a>
+        <a href="#" onclick="window.location.href='cv.html'">CV</a>
+        <a href="projects.html">PROJECTS</a>
+        <a href="contact.html">CONTACT</a>
+    </nav>
 
     <div class="cv-container">
         <div class="contact-info">
