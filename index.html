@@ -156,7 +156,14 @@ body {
 <script>
 function linkToCV() {
     const currentPage = encodeURIComponent(window.location.href);
-    window.location.href = `cv.html?from=${currentPage}`;
+    const capturedImage = window.capturedCameraFrame;
+    
+    if (capturedImage) {
+        // Pass the captured image as URL parameter
+        window.location.href = `cv.html?from=${currentPage}&captured=${encodeURIComponent(capturedImage)}`;
+    } else {
+        window.location.href = `cv.html?from=${currentPage}`;
+    }
 }
 
 // Auto-start camera when page loads
