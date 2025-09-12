@@ -1,349 +1,61 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Herb Map</title>
-    <script crossorigin src="https://unpkg.com/react@18.2.0/umd/react.development.js"></script>
-    <script crossorigin src="https://unpkg.com/react-dom@18.2.0/umd/react-dom.development.js"></script>
-    <script src="https://unpkg.com/@babel/standalone@7.22.17/babel.min.js"></script>
-    <script src="https://cdn.tailwindcss.com"></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>The Teas – Herb Map</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css">
+  <style>
+    body {
+      background-color: black;
+      color: white;
+    }
+    #map {
+      width: 100%;
+      height: 100vh;
+    }
+  </style>
+  <!-- Leaflet for mapping -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
 </head>
 <body>
-    <div id="root"></div>
+  <div id="map"></div>
 
-    <script type="text/babel">
-        const { useState, useEffect } = React;
+  <div class="absolute top-4 left-4 bg-black bg-opacity-70 p-4 rounded-lg max-w-sm">
+    <h1 class="text-xl font-bold mb-2">The Teas – Herb Map</h1>
+    <p class="text-sm">
+      This map will soon display real-time data of wild plants accessible within a 10-mile radius of Washington, DC.  
+      <br><br>
+      <strong>Forthcoming data will cover:</strong><br>
+      Spearmint leaves, White peony root, Saw Palmetto berries, Calendula buds, Marshmallow root, Oatstraw, Raspberry leaf, Elderberries, St. John’s wort, Solomon’s Seal, Stinging nettle leaf, Dried blueberries, Pineapple stem powder, Licorice root, Dong quai, Chaste tree berries, Black cohosh root, Fenugreek seeds, Dried Pomegranate kernels, Kwao Krua, MACA.
+    </p>
+  </div>
 
-        const TEPHRA_LAT = 38.9586;
-        const TEPHRA_LNG = -77.3570;
-        const MILES_TO_PIXELS = 65;
+  <script>
+    // Initialize map centered on DC
+    const dcLat = 38.9072;
+    const dcLng = -77.0369;
 
-        const generateCoordinates = (centerLat, centerLng, count) => {
-            const coordinates = [];
-            const a = 15;
-            const b = 1;
-            
-            for (let i = 0; i < count; i++) {
-                const angle = (i * 2.5);
-                const radius = b * Math.sqrt(angle);
-                const x = radius * Math.cos(angle);
-                const y = radius * Math.sin(angle);
-                
-                const lat = centerLat + (y / 69);
-                const lng = centerLng + (x / (69 * Math.cos(centerLat * Math.PI / 180)));
-                
-                coordinates.push({ lat, lng });
-            }
-            return coordinates;
-        };
+    const map = L.map('map', {
+      center: [dcLat, dcLng],
+      zoom: 12,
+      zoomControl: false
+    });
 
-        const positions = generateCoordinates(TEPHRA_LAT, TEPHRA_LNG, 19);
+    // Black background with white lines (Carto dark map)
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+      attribution: '&copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a>',
+      subdomains: 'abcd',
+      maxZoom: 19
+    }).addTo(map);
 
-        const convertToXY = (lat, lng) => {
-            const x = (lng - TEPHRA_LNG) * MILES_TO_PIXELS * Math.cos(TEPHRA_LAT * Math.PI / 180);
-            const y = -(lat - TEPHRA_LAT) * MILES_TO_PIXELS;
-            return { x: x + 500, y: y + 500 };
-        };
-
-        const herbData = [
-            {
-                id: 1,
-                name: "Arnica",
-                lat: positions[0].lat,
-                lng: positions[0].lng,
-                image: "/arnica.jpg",
-                eventUrl: "#",
-                nextEvent: "2025-03-01T15:00:00"
-            },
-            {
-                id: 2,
-                name: "Blueberries",
-                lat: positions[1].lat,
-                lng: positions[1].lng,
-                image: "/blueberries.jpg",
-                eventUrl: "#",
-                nextEvent: "2025-03-15T14:00:00"
-            },
-            {
-                id: 3,
-                name: "Calendula",
-                lat: positions[2].lat,
-                lng: positions[2].lng,
-                image: "/calendula.jpg",
-                eventUrl: "#",
-                nextEvent: "2025-03-30T16:00:00"
-            },
-            {
-                id: 4,
-                name: "Chaste Tree",
-                lat: positions[3].lat,
-                lng: positions[3].lng,
-                image: "/chaste.jpg",
-                eventUrl: "#",
-                nextEvent: "2025-04-01T15:00:00"
-            },
-            {
-                id: 5,
-                name: "Black Cohosh",
-                lat: positions[4].lat,
-                lng: positions[4].lng,
-                image: "/cohosh.jpg",
-                eventUrl: "#",
-                nextEvent: "2025-04-15T14:00:00"
-            },
-            {
-                id: 6,
-                name: "Dong Quai",
-                lat: positions[5].lat,
-                lng: positions[5].lng,
-                image: "/dong.jpg",
-                eventUrl: "#",
-                nextEvent: "2025-04-30T16:00:00"
-            },
-            {
-                id: 7,
-                name: "Elderberries",
-                lat: positions[6].lat,
-                lng: positions[6].lng,
-                image: "/elderberries.jpg",
-                eventUrl: "#",
-                nextEvent: "2025-05-01T15:00:00"
-            },
-            {
-                id: 8,
-                name: "Kwao Krua",
-                lat: positions[7].lat,
-                lng: positions[7].lng,
-                image: "/kwao.jpg",
-                eventUrl: "#",
-                nextEvent: "2025-05-15T14:00:00"
-            },
-            {
-                id: 9,
-                name: "Licorice Root",
-                lat: positions[8].lat,
-                lng: positions[8].lng,
-                image: "/licorice.jpg",
-                eventUrl: "#",
-                nextEvent: "2025-05-30T16:00:00"
-            },
-            {
-                id: 10,
-                name: "Marshmallow",
-                lat: positions[9].lat,
-                lng: positions[9].lng,
-                image: "/marshmallow.jpg",
-                eventUrl: "#",
-                nextEvent: "2025-06-01T15:00:00"
-            },
-            {
-                id: 11,
-                name: "Nettle",
-                lat: positions[10].lat,
-                lng: positions[10].lng,
-                image: "/nettle.jpg",
-                eventUrl: "#",
-                nextEvent: "2025-06-15T14:00:00"
-            },
-            {
-                id: 12,
-                name: "Oatstraw",
-                lat: positions[11].lat,
-                lng: positions[11].lng,
-                image: "/oatstraw.jpg",
-                eventUrl: "#",
-                nextEvent: "2025-06-30T16:00:00"
-            },
-            {
-                id: 13,
-                name: "Saw Palmetto",
-                lat: positions[12].lat,
-                lng: positions[12].lng,
-                image: "/palmetto.jpg",
-                eventUrl: "#",
-                nextEvent: "2025-07-01T15:00:00"
-            },
-            {
-                id: 14,
-                name: "Pineapple Weed",
-                lat: positions[13].lat,
-                lng: positions[13].lng,
-                image: "/pineapple.jpg",
-                eventUrl: "#",
-                nextEvent: "2025-07-15T14:00:00"
-            },
-            {
-                id: 15,
-                name: "Pomegranate",
-                lat: positions[14].lat,
-                lng: positions[14].lng,
-                image: "/pomegranate.jpg",
-                eventUrl: "#",
-                nextEvent: "2025-07-30T16:00:00"
-            },
-            {
-                id: 16,
-                name: "Raspberry Leaf",
-                lat: positions[15].lat,
-                lng: positions[15].lng,
-                image: "/raspberry.jpg",
-                eventUrl: "#",
-                nextEvent: "2025-08-01T15:00:00"
-            },
-            {
-                id: 17,
-                name: "Solomon's Seal",
-                lat: positions[16].lat,
-                lng: positions[16].lng,
-                image: "/solomons.jpg",
-                eventUrl: "#",
-                nextEvent: "2025-08-15T14:00:00"
-            },
-            {
-                id: 18,
-                name: "Spearmint",
-                lat: positions[17].lat,
-                lng: positions[17].lng,
-                image: "/spearmint.jpg",
-                eventUrl: "#",
-                nextEvent: "2025-08-30T16:00:00"
-            },
-            {
-                id: 19,
-                name: "St. John's Wort",
-                lat: positions[18].lat,
-                lng: positions[18].lng,
-                image: "/wort.jpg",
-                eventUrl: "#",
-                nextEvent: "2025-09-01T15:00:00"
-            }
-        ];
-
-        const CountdownClock = ({ nextEvent }) => {
-            const [timeLeft, setTimeLeft] = useState(null);
-
-            useEffect(() => {
-                const calculateTimeLeft = () => {
-                    const difference = new Date(nextEvent) - new Date();
-                    if (difference > 0) {
-                        return {
-                            days: Math.floor(difference / (1000 * 60 * 60 * 24)),
-                            hours: Math.floor((difference / (1000 * 60 * 60)) % 24),
-                            minutes: Math.floor((difference / 1000 / 60) % 60)
-                        };
-                    }
-                    return null;
-                };
-
-                setTimeLeft(calculateTimeLeft());
-                const timer = setInterval(() => {
-                    setTimeLeft(calculateTimeLeft());
-                }, 60000);
-
-                return () => clearInterval(timer);
-            }, [nextEvent]);
-
-            if (!timeLeft) return <div>Event Past</div>;
-
-            return (
-                <div className="flex items-center gap-2 text-sm">
-                    <span>⏰</span>
-                    <span>
-                        {timeLeft.days}d {timeLeft.hours}h {timeLeft.minutes}m
-                    </span>
-                </div>
-            );
-        };
-
-        const HerbMap = () => {
-            const [hoveredId, setHoveredId] = useState(null);
-
-            const HerbIcon = ({ herb }) => {
-                const { x, y } = convertToXY(herb.lat, herb.lng);
-                const isHovered = hoveredId === herb.id;
-                
-                return (
-                    <g 
-                        transform={`translate(${x},${y})`}
-                        onClick={() => window.open(herb.eventUrl, '_blank')}
-                        onMouseEnter={() => setHoveredId(herb.id)}
-                        onMouseLeave={() => setHoveredId(null)}
-                        className="cursor-pointer"
-                    >
-                        <circle
-                            r="25"
-                            fill={isHovered ? "rgba(255,255,255,0.9)" : "rgba(144,238,144,0.9)"}
-                            className="transition-all duration-300"
-                        />
-                        {isHovered ? (
-                            <foreignObject x="-45" y="-45" width="90" height="90">
-                                <div className="flex items-center justify-center h-full">
-                                    <CountdownClock nextEvent={herb.nextEvent} />
-                                </div>
-                            </foreignObject>
-                        ) : (
-                            <image
-                                href={herb.image}
-                                x="-20"
-                                y="-20"
-                                width="40"
-                                height="40"
-                                className="transition-opacity duration-300"
-                            />
-                        )}
-                        <text
-                            y="40"
-                            textAnchor="middle"
-                            className="text-xs font-semibold fill-current"
-                        >
-                            {herb.name}
-                        </text>
-                    </g>
-                );
-            };
-
-            return (
-                <div className="w-full h-screen bg-gray-100 p-4">
-                    <svg
-                        viewBox="0 0 1000 1000"
-                        className="w-full h-full bg-white rounded-lg shadow-lg"
-                    >
-                        <circle
-                            cx="500"
-                            cy="500"
-                            r={MILES_TO_PIXELS * 5}
-                            fill="none"
-                            stroke="#ddd"
-                            strokeWidth="2"
-                            strokeDasharray="5,5"
-                        />
-                        
-                        <circle
-                            cx="500"
-                            cy="500"
-                            r="8"
-                            fill="red"
-                        />
-                        <text
-                            x="500"
-                            y="480"
-                            textAnchor="middle"
-                            className="text-sm font-bold fill-current"
-                        >
-                            Tephra ICA
-                        </text>
-
-                        {herbData.map(herb => (
-                            <HerbIcon key={herb.id} herb={herb} />
-                        ))}
-                    </svg>
-                </div>
-            );
-        };
-
-        const root = ReactDOM.createRoot(document.getElementById('root'));
-        root.render(<HerbMap />);
-    </script>
+    // Draw a 10-mile (~16 km) radius circle
+    L.circle([dcLat, dcLng], {
+      radius: 16000, // meters
+      color: "white",
+      fillOpacity: 0
+    }).addTo(map).bindPopup("10 mile radius around DC");
+  </script>
 </body>
 </html>
