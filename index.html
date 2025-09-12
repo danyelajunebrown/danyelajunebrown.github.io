@@ -91,32 +91,25 @@ body {
     border-bottom: 2px solid white;
 }
 
-.start-overlay {
+.name-overlay {
     position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0,0,0,0.7);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    z-index: 1000;
-    cursor: pointer;
-}
-
-.start-button {
-    background: #007bff;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 1500;
     color: white;
-    border: none;
-    padding: 20px 40px;
-    border-radius: 10px;
-    font-size: 18px;
-    cursor: pointer;
+    font-size: 4rem;
+    font-weight: bold;
+    text-align: center;
+    text-shadow: 2px 2px 8px rgba(0, 0, 0, 0.8);
+    letter-spacing: 2px;
+    pointer-events: none;
+    animation: nameGlow 3s ease-in-out infinite alternate;
 }
 
-.start-button:hover {
-    background: #0056b3;
+@keyframes nameGlow {
+    0% { text-shadow: 2px 2px 8px rgba(0, 0, 0, 0.8), 0 0 20px rgba(255, 255, 255, 0.3); }
+    100% { text-shadow: 2px 2px 8px rgba(0, 0, 0, 0.8), 0 0 30px rgba(255, 255, 255, 0.5); }
 }
 
 /* Responsive adjustments */
@@ -125,6 +118,17 @@ body {
         padding: 8px 10px;
         margin: 0 5px;
         font-size: 16px;
+    }
+    
+    .name-overlay {
+        font-size: 2.5rem;
+        letter-spacing: 1px;
+    }
+}
+
+@media (max-width: 480px) {
+    .name-overlay {
+        font-size: 2rem;
     }
 }
 </style>
@@ -146,9 +150,7 @@ body {
 
 <div id="container">
     <video autoplay playsinline muted id="videoElement"></video>
-    <div class="start-overlay" id="startOverlay">
-        <button class="start-button" id="startButton">Click to Start Camera</button>
-    </div>
+    <div class="name-overlay">Danyela June Brown</div>
 </div>
 
 <script>
@@ -157,9 +159,9 @@ function linkToCV() {
     window.location.href = `cv.html?from=${currentPage}`;
 }
 
-document.getElementById('startButton').addEventListener('click', async function() {
+// Auto-start camera when page loads
+window.addEventListener('load', async function() {
     const video = document.getElementById('videoElement');
-    const overlay = document.getElementById('startOverlay');
     
     try {
         const stream = await navigator.mediaDevices.getUserMedia({ 
@@ -168,10 +170,10 @@ document.getElementById('startButton').addEventListener('click', async function(
         });
         
         video.srcObject = stream;
-        overlay.style.display = 'none';
         
     } catch (error) {
-        alert('Camera access denied or not available. Please allow camera access and refresh the page.');
+        console.error('Camera access denied or not available:', error);
+        // You could add a fallback background image here if needed
     }
 });
 
