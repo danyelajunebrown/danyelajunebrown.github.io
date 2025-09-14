@@ -222,70 +222,7 @@
                 }
             });
         }
-    });
-
-    function showFallbackPrompt() {
-        // Create overlay for screen capture prompt (fallback)
-        const promptOverlay = document.createElement('div');
-        promptOverlay.className = 'journey-prompt';
-        promptOverlay.innerHTML = `
-            <div class="prompt-content">
-                <h2>Make this page yours</h2>
-                <p>Share a glimpse of your web journey as the background</p>
-                <button id="captureBtn">Share a page</button>
-            </div>
-        `;
-        document.body.appendChild(promptOverlay);
-
-        // Handle screen capture
-        document.getElementById('captureBtn').addEventListener('click', async () => {
-            try {
-                // Request screen capture
-                const stream = await navigator.mediaDevices.getDisplayMedia({
-                    video: {
-                        cursor: 'never'
-                    },
-                    audio: false
-                });
-
-                // Create video element to capture frame
-                const video = document.createElement('video');
-                video.srcObject = stream;
-                await video.play();
-
-                // Capture single frame
-                const canvas = document.createElement('canvas');
-                canvas.width = video.videoWidth;
-                canvas.height = video.videoHeight;
-                const ctx = canvas.getContext('2d');
-                ctx.drawImage(video, 0, 0);
-
-                // Stop capture
-                stream.getTracks().forEach(track => track.stop());
-
-                // Use the captured frame
-                const imageUrl = canvas.toDataURL('image/jpeg', 0.8);
-                
-                // Apply as background
-                const overlay = document.querySelector('.background-overlay');
-                if (overlay) {
-                    overlay.style.backgroundImage = `url(${imageUrl})`;
-                    overlay.style.backgroundSize = 'cover';
-                    overlay.style.backgroundPosition = 'center';
-                    overlay.style.opacity = '0.3';
-                }
-
-                // Remove prompt
-                promptOverlay.style.opacity = '0';
-                setTimeout(() => promptOverlay.remove(), 500);
-
-            } catch (err) {
-                console.log('Capture cancelled or failed');
-                promptOverlay.remove();
-            }
-        });
-    }
-    </script>
+    });    </script>
 </head>
 
 <body>
