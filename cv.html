@@ -346,9 +346,8 @@
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             // Check if user came from landing page and has captured image
-            const urlParams = new URLSearchParams(window.location.search);
-            const capturedImage = urlParams.get('captured');
-            const fromPage = urlParams.get('from');
+            const capturedImage = sessionStorage.getItem('capturedFrame');
+            const fromPage = sessionStorage.getItem('fromPage');
             
             // Validate that user came from landing page with valid screenshot
             if (!capturedImage || !fromPage) {
@@ -360,6 +359,8 @@
             // Validate that the captured image is a valid data URL
             if (!capturedImage.startsWith('data:image/')) {
                 console.error('Invalid image data received');
+                sessionStorage.removeItem('capturedFrame');
+                sessionStorage.removeItem('fromPage');
                 window.location.href = 'index.html';
                 return;
             }
@@ -368,13 +369,19 @@
             const overlay = document.querySelector('.background-overlay');
             if (overlay) {
                 try {
-                    overlay.style.backgroundImage = `url(${decodeURIComponent(capturedImage)})`;
+                    overlay.style.backgroundImage = `url(${capturedImage})`;
                     overlay.style.backgroundSize = 'cover';
                     overlay.style.backgroundPosition = 'center';
                     overlay.style.opacity = '0.3';
                     console.log('Background image set successfully');
+                    
+                    // Clean up sessionStorage after successful use
+                    sessionStorage.removeItem('capturedFrame');
+                    sessionStorage.removeItem('fromPage');
                 } catch (error) {
                     console.error('Error setting background image:', error);
+                    sessionStorage.removeItem('capturedFrame');
+                    sessionStorage.removeItem('fromPage');
                     window.location.href = 'index.html';
                     return;
                 }
