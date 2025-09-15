@@ -190,11 +190,13 @@ function linkToCV() {
     const captured = captureCurrentFrame();
     
     if (captured && window.capturedCameraFrame) {
-        // Pass the captured image as URL parameter
-        window.location.href = `cv.html?from=${currentPage}&captured=${encodeURIComponent(window.capturedCameraFrame)}`;
+        // Store the image data in sessionStorage instead of URL
+        sessionStorage.setItem('capturedFrame', window.capturedCameraFrame);
+        sessionStorage.setItem('fromPage', window.location.href);
+        window.location.href = 'cv.html';
     } else {
         // Navigate without captured image if capture failed
-        window.location.href = `cv.html?from=${currentPage}`;
+        window.location.href = 'cv.html';
     }
 }
 
