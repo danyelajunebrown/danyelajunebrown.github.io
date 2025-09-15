@@ -139,35 +139,141 @@
             }
         }
     </style>
+</head>
+<body>
+    <!-- Background overlay -->
+    <div class="background-overlay"></div>
+
+    <!-- Custom cursor -->
+    <div class="custom-cursor">
+        <svg viewBox="0 0 32 32">
+            <path d="M16 2l4 12h12l-10 8 4 12-10-8-10 8 4-12-10-8h12z"/>
+        </svg>
+    </div>
+
+    <!-- Navigation -->
+    <nav class="nav-menu">
+        <a href="#about">About</a>
+        <a href="#experience">Experience</a>
+        <a href="#education">Education</a>
+        <a href="#skills">Skills</a>
+        <a href="#contact">Contact</a>
+    </nav>
+
+    <!-- CV Content -->
+    <div class="cv-container">
+        <h1>Danyela June Brown</h1>
+        
+        <div class="contact-info">
+            <p>Email: danyela.brown@email.com | Phone: (555) 123-4567</p>
+            <p>LinkedIn: linkedin.com/in/danyelabrown</p>
+        </div>
+
+        <div class="cv-section" id="about">
+            <h2>About</h2>
+            <p>Professional summary and background information goes here...</p>
+        </div>
+
+        <div class="cv-section" id="experience">
+            <h2>Experience</h2>
+            <div class="entry">
+                <span class="year">2022-Present</span>
+                <strong>Senior Position</strong> - Company Name
+                <div class="content">
+                    Description of role and achievements...
+                </div>
+            </div>
+            <div class="entry">
+                <span class="year">2020-2022</span>
+                <strong>Previous Position</strong> - Another Company
+                <div class="content">
+                    Description of role and achievements...
+                </div>
+            </div>
+        </div>
+
+        <div class="cv-section" id="education">
+            <h2>Education</h2>
+            <div class="entry">
+                <span class="year">2020</span>
+                <strong>Degree Name</strong> - University Name
+                <div class="content">
+                    Relevant coursework and achievements...
+                </div>
+            </div>
+        </div>
+
+        <div class="cv-section" id="skills">
+            <h2>Skills</h2>
+            <div class="content">
+                <p><strong>Technical:</strong> List of technical skills...</p>
+                <p><strong>Soft Skills:</strong> List of soft skills...</p>
+                <p><strong>Languages:</strong> List of languages...</p>
+            </div>
+        </div>
+
+        <div class="cv-section" id="contact">
+            <h2>Contact</h2>
+            <div class="content">
+                <p>Feel free to reach out for opportunities or collaborations.</p>
+            </div>
+        </div>
+    </div>
 
     <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        // Initialize background overlay
-        if (!document.querySelector('.background-overlay')) {
-            const overlay = document.createElement('div');
-            overlay.className = 'background-overlay';
-            document.body.insertBefore(overlay, document.body.firstChild);
-        }
+        document.addEventListener('DOMContentLoaded', function() {
+            // Check if we have a captured image from the landing page
+            const urlParams = new URLSearchParams(window.location.search);
+            const capturedImage = urlParams.get('captured');
+            const overlay = document.querySelector('.background-overlay');
+            
+            if (capturedImage && overlay) {
+                try {
+                    // Use the captured camera frame as background
+                    overlay.style.backgroundImage = `url(${decodeURIComponent(capturedImage)})`;
+                    overlay.style.backgroundSize = 'cover';
+                    overlay.style.backgroundPosition = 'center';
+                    overlay.style.opacity = '0.3';
+                } catch (error) {
+                    console.log('Error setting background image:', error);
+                    // Fallback to default gradient
+                }
+            }
+            // If no captured image, the CSS default gradient will show
 
-        // Check if we have a captured image from the landing page
-        const urlParams = new URLSearchParams(window.location.search);
-        const capturedImage = urlParams.get('captured');
-        const overlay = document.querySelector('.background-overlay');
-        
-        if (capturedImage && overlay) {
-            // Use the captured camera frame as background
-            overlay.style.backgroundImage = `url(${decodeURIComponent(capturedImage)})`;
-            overlay.style.backgroundSize = 'cover';
-            overlay.style.backgroundPosition = 'center';
-            overlay.style.opacity = '0.3';
-        }
-        // If no captured image, the CSS default gradient will show
-
-        // Custom cursor movement
-        if (window.matchMedia("(pointer: fine)").matches) {
-            document.addEventListener('mousemove', function(e) {
+            // Custom cursor movement - only on devices with fine pointer control
+            if (window.matchMedia("(pointer: fine)").matches) {
+                document.addEventListener('mousemove', function(e) {
+                    const cursor = document.querySelector('.custom-cursor');
+                    if (cursor) {
+                        cursor.style.left = e.clientX - 16 + 'px';
+                        cursor.style.top = e.clientY - 16 + 'px';
+                    }
+                });
+            } else {
+                // Hide custom cursor on touch devices
                 const cursor = document.querySelector('.custom-cursor');
                 if (cursor) {
-                    cursor.style.left = e.clientX - 16 + 'px';
-                    cursor.style.top = e.clientY - 16 + 'px';
+                    cursor.style.display = 'none';
                 }
+                document.body.style.cursor = 'auto';
+            }
+
+            // Smooth scrolling for navigation links
+            document.querySelectorAll('.nav-menu a').forEach(anchor => {
+                anchor.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    const targetId = this.getAttribute('href');
+                    const targetElement = document.querySelector(targetId);
+                    if (targetElement) {
+                        targetElement.scrollIntoView({
+                            behavior: 'smooth',
+                            block: 'start'
+                        });
+                    }
+                });
+            });
+        });
+    </script>
+</body>
+</html>
