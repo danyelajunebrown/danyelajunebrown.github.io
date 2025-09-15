@@ -153,15 +153,47 @@ body {
     <div class="name-overlay">Danyela June Brown</div>
 </div>
 
+<!-- Hidden canvas for capturing screenshots -->
+<canvas id="screenshotCanvas" style="display: none;"></canvas>
+
 <script>
+// Global variable to store the captured frame
+window.capturedCameraFrame = null;
+
+function captureCurrentFrame() {
+    const video = document.getElementById('videoElement');
+    const canvas = document.getElementById('screenshotCanvas');
+    const ctx = canvas.getContext('2d');
+    
+    if (video && video.videoWidth > 0 && video.videoHeight > 0) {
+        // Set canvas size to match video
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        
+        // Draw the current video frame to canvas
+        ctx.drawImage(video, 0, 0);
+        
+        // Convert to data URL and store globally
+        window.capturedCameraFrame = canvas.toDataURL('image/jpeg', 0.8);
+        console.log('Screenshot captured successfully');
+        return true;
+    } else {
+        console.log('Video not ready for capture');
+        return false;
+    }
+}
+
 function linkToCV() {
     const currentPage = encodeURIComponent(window.location.href);
-    const capturedImage = window.capturedCameraFrame;
     
-    if (capturedImage) {
+    // Try to capture current frame before navigating
+    const captured = captureCurrentFrame();
+    
+    if (captured && window.capturedCameraFrame) {
         // Pass the captured image as URL parameter
-        window.location.href = `cv.html?from=${currentPage}&captured=${encodeURIComponent(capturedImage)}`;
+        window.location.href = `cv.html?from=${currentPage}&captured=${encodeURIComponent(window.capturedCameraFrame)}`;
     } else {
+        // Navigate without captured image if capture failed
         window.location.href = `cv.html?from=${currentPage}`;
     }
 }
@@ -177,6 +209,15 @@ window.addEventListener('load', async function() {
         });
         
         video.srcObject = stream;
+        
+        // Wait for video to be ready, then capture one frame
+        video.addEventListener('loadeddata', function() {
+            console.log('Video loaded, ready for capture');
+            // Capture just one frame after a short delay to ensure video is playing
+            setTimeout(() => {
+                captureCurrentFrame();
+            }, 1000);
+        });
         
     } catch (error) {
         console.error('Camera access denied or not available:', error);
