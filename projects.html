@@ -17,43 +17,41 @@
             overflow: hidden;
             height: 100vh;
             background: #000;
+            position: relative;
         }
 
-        .slider-container {
+        .background-media {
             position: fixed;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
             z-index: 1;
+            opacity: 0;
+            transition: opacity 1s ease-in-out;
         }
 
-        .slide {
-            position: absolute;
-            top: 0;
-            left: 0;
+        .background-media.active {
+            opacity: 0.6;
+        }
+
+        .background-media img,
+        .background-media video,
+        .background-media iframe {
             width: 100%;
             height: 100%;
-            opacity: 0;
-            transition: opacity 1.5s ease-in-out;
-            background-size: cover;
-            background-position: center;
-            cursor: pointer;
+            object-fit: cover;
         }
 
-        .slide.active {
-            opacity: 0.4;
-        }
-
-        .slide::before {
+        .background-media::before {
             content: '';
             position: absolute;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            background: linear-gradient(45deg, rgba(0,0,0,0.8), rgba(0,0,0,0.6));
-            z-index: 1;
+            background: linear-gradient(45deg, rgba(0,0,0,0.7), rgba(0,0,0,0.5));
+            z-index: 2;
         }
 
         .nav-menu {
@@ -86,266 +84,102 @@
             background: rgba(255,255,255,0.1);
         }
 
-        .center-controls {
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            z-index: 500;
-            text-align: center;
-            width: 90%;
-            max-width: 600px;
-        }
-
-        .project-dropdown {
-            background: rgba(0,0,0,0.9);
-            border: 2px solid rgba(255,255,255,0.3);
-            color: white;
-            padding: 15px 20px;
-            font-size: 18px;
-            width: 100%;
-            margin-bottom: 30px;
-            backdrop-filter: blur(15px);
-            border-radius: 8px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-        }
-
-        .project-dropdown:focus {
-            outline: none;
-            border-color: white;
-            box-shadow: 0 0 20px rgba(255,255,255,0.3);
-        }
-
-        .project-dropdown option {
-            background: #000;
-            color: white;
-            padding: 10px;
-        }
-
-        .project-details {
-            background: rgba(0,0,0,0.95);
-            border-radius: 12px;
-            padding: 30px;
-            backdrop-filter: blur(20px);
-            border: 1px solid rgba(255,255,255,0.2);
-            max-height: 60vh;
-            overflow-y: auto;
-            opacity: 0;
-            transform: translateY(20px);
-            transition: all 0.5s ease;
-            box-shadow: 0 20px 40px rgba(0,0,0,0.8);
-        }
-
-        .project-details.show {
-            opacity: 1;
-            transform: translateY(0);
-        }
-
-        .project-title {
-            font-size: 24px;
-            font-weight: 300;
-            margin-bottom: 20px;
-            color: #fff;
-            letter-spacing: 0.5px;
-        }
-
-        .project-meta {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-            gap: 15px;
-            margin-bottom: 25px;
-            padding-bottom: 20px;
-            border-bottom: 1px solid rgba(255,255,255,0.2);
-        }
-
-        .meta-item {
-            font-size: 14px;
-            color: rgba(255,255,255,0.8);
-        }
-
-        .meta-label {
-            font-weight: 600;
-            color: white;
-            display: block;
-            margin-bottom: 5px;
-        }
-
-        .project-media {
-            width: 100%;
-            margin-bottom: 20px;
-            border-radius: 8px;
-            overflow: hidden;
-        }
-
-        .project-media img,
-        .project-media video,
-        .project-media iframe {
-            width: 100%;
-            max-height: 300px;
-            object-fit: cover;
-            border-radius: 8px;
-        }
-
-        .project-description {
-            line-height: 1.7;
-            font-size: 16px;
-            color: rgba(255,255,255,0.9);
-        }
-
-        .slider-nav {
-            position: fixed;
-            bottom: 30px;
-            left: 50%;
-            transform: translateX(-50%);
-            z-index: 500;
-            display: flex;
-            gap: 15px;
-        }
-
-        .nav-dot {
-            width: 12px;
-            height: 12px;
-            border-radius: 50%;
-            background: rgba(255,255,255,0.4);
-            cursor: pointer;
-            transition: all 0.3s ease;
-        }
-
-        .nav-dot.active {
-            background: white;
-            transform: scale(1.2);
-        }
-
-        .slide-counter {
-            position: fixed;
-            bottom: 80px;
-            left: 50%;
-            transform: translateX(-50%);
-            z-index: 500;
-            color: rgba(255,255,255,0.7);
-            font-size: 14px;
-            letter-spacing: 1px;
-        }
-
-        /* Fullscreen Media Modal */
-        .fullscreen-modal {
+        .floating-container {
             position: fixed;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            background: #000;
-            z-index: 2000;
-            opacity: 0;
-            visibility: hidden;
-            transition: all 0.3s ease;
+            z-index: 500;
+            pointer-events: none;
         }
 
-        .fullscreen-modal.active {
-            opacity: 1;
-            visibility: visible;
-        }
-
-        .fullscreen-media-container {
-            position: relative;
-            width: 100%;
-            height: 100%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .fullscreen-media {
-            max-width: 100%;
-            max-height: 100%;
-            object-fit: contain;
-        }
-
-        .fullscreen-media video,
-        .fullscreen-media iframe {
-            width: 100vw;
-            height: 100vh;
-        }
-
-        .fullscreen-media img {
-            max-width: 100vw;
-            max-height: 100vh;
-            object-fit: contain;
-        }
-
-        .fullscreen-overlay {
+        .floating-title {
             position: absolute;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            background: linear-gradient(transparent, rgba(0,0,0,0.9));
-            padding: 60px 40px 40px;
             color: white;
-        }
-
-        .fullscreen-title {
-            font-size: 32px;
+            font-size: 16px;
             font-weight: 300;
-            margin-bottom: 10px;
             letter-spacing: 0.5px;
-        }
-
-        .fullscreen-year {
-            font-size: 18px;
-            color: rgba(255,255,255,0.8);
-            margin-bottom: 15px;
-        }
-
-        .fullscreen-materials {
-            font-size: 16px;
-            color: rgba(255,255,255,0.9);
-            margin-bottom: 20px;
-            font-style: italic;
-        }
-
-        .fullscreen-description {
-            font-size: 16px;
-            line-height: 1.6;
-            color: rgba(255,255,255,0.9);
-            max-width: 800px;
-        }
-
-        .close-fullscreen {
-            position: absolute;
-            top: 30px;
-            right: 40px;
-            width: 50px;
-            height: 50px;
-            background: rgba(255,255,255,0.1);
-            border: 2px solid rgba(255,255,255,0.3);
-            border-radius: 50%;
-            color: white;
-            font-size: 24px;
             cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
             transition: all 0.3s ease;
+            padding: 8px 12px;
+            background: rgba(0,0,0,0.7);
+            border-radius: 4px;
             backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.2);
+            pointer-events: all;
+            white-space: nowrap;
+            max-width: 300px;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
 
-        .close-fullscreen:hover {
+        .floating-title:hover {
+            background: rgba(0,0,0,0.9);
+            border-color: white;
+            transform: scale(1.05);
+        }
+
+        .floating-title.selected {
             background: rgba(255,255,255,0.2);
             border-color: white;
         }
 
-        /* Custom scrollbar */
-        .project-details::-webkit-scrollbar {
+        .project-info {
+            position: fixed;
+            bottom: 40px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 1000;
+            text-align: center;
+            background: rgba(0,0,0,0.95);
+            backdrop-filter: blur(20px);
+            border-radius: 12px;
+            padding: 30px 40px;
+            border: 1px solid rgba(255,255,255,0.3);
+            opacity: 0;
+            transform: translateX(-50%) translateY(20px);
+            transition: all 0.5s ease;
+            max-width: 600px;
+            width: 90%;
+        }
+
+        .project-info.show {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
+        }
+
+        .info-title {
+            font-size: 24px;
+            font-weight: 300;
+            margin-bottom: 8px;
+            letter-spacing: 0.5px;
+        }
+
+        .info-year {
+            font-size: 18px;
+            color: rgba(255,255,255,0.8);
+            margin-bottom: 12px;
+        }
+
+        .info-materials {
+            font-size: 16px;
+            color: rgba(255,255,255,0.9);
+            font-style: italic;
+            line-height: 1.4;
+        }
+
+        /* Custom scrollbar for overflow */
+        ::-webkit-scrollbar {
             width: 8px;
         }
 
-        .project-details::-webkit-scrollbar-track {
+        ::-webkit-scrollbar-track {
             background: rgba(255,255,255,0.1);
             border-radius: 4px;
         }
 
-        .project-details::-webkit-scrollbar-thumb {
+        ::-webkit-scrollbar-thumb {
             background: rgba(255,255,255,0.3);
             border-radius: 4px;
         }
@@ -357,34 +191,27 @@
                 font-size: 14px;
             }
             
-            .center-controls {
-                width: 95%;
-                padding: 0 10px;
+            .floating-title {
+                font-size: 14px;
+                padding: 6px 10px;
+                max-width: 200px;
             }
-            
-            .project-details {
-                padding: 20px;
-                max-height: 70vh;
+
+            .project-info {
+                padding: 20px 25px;
+                bottom: 20px;
             }
-            
-            .project-title {
+
+            .info-title {
                 font-size: 20px;
             }
 
-            .fullscreen-overlay {
-                padding: 40px 20px 20px;
+            .info-year {
+                font-size: 16px;
             }
 
-            .fullscreen-title {
-                font-size: 24px;
-            }
-
-            .close-fullscreen {
-                top: 20px;
-                right: 20px;
-                width: 40px;
-                height: 40px;
-                font-size: 20px;
+            .info-materials {
+                font-size: 14px;
             }
         }
     </style>
@@ -397,27 +224,9 @@
         <a href="contact.html">CONTACT</a>
     </nav>
 
-    <div class="slider-container" id="slider"></div>
-
-    <div class="center-controls">
-        <select class="project-dropdown" id="projectSelect">
-            <option value="">Select a Project</option>
-        </select>
-        
-        <div class="project-details" id="projectDetails"></div>
-    </div>
-
-    <div class="slide-counter" id="slideCounter">1 / 1</div>
-    <div class="slider-nav" id="sliderNav"></div>
-
-    <!-- Fullscreen Modal -->
-    <div class="fullscreen-modal" id="fullscreenModal">
-        <div class="fullscreen-media-container">
-            <button class="close-fullscreen" onclick="closeFullscreen()">&times;</button>
-            <div class="fullscreen-media" id="fullscreenMedia"></div>
-            <div class="fullscreen-overlay" id="fullscreenOverlay"></div>
-        </div>
-    </div>
+    <div class="background-media" id="backgroundMedia"></div>
+    <div class="floating-container" id="floatingContainer"></div>
+    <div class="project-info" id="projectInfo"></div>
 
     <script>
         function linkToCV() {
@@ -425,19 +234,11 @@
             window.location.href = `cv.html?from=${currentPage}`;
         }
 
+        // Chronologically organized projects (most recent first)
         const projects = [
             {
-                title: "Right Over Left: DMV Runway Review (2018–Present)",
-                date: "Jan 25–Feb 22, 2025",
-                year: 2025,
-                media: "Curatorial Project",
-                mediaType: "image",
-                mediaUrl: "Right Over Left-rejected flyer.png",
-                description: "Group exhibition featuring Boom Boom Von Dutch Balenciaga, Corey Von Dutch Lanvin, Kiko Old Navy Revlon, and Lolita Leopard Juicy Couture Miyake Mugler which celebrates Runway in DC, Maryland and Virginia over the last seven years. The exhibition, composed of video projections of the four artists' clips and ephemera from their personal archives, seeks to hirstoricize the artists' relationships to craft and performance within the call-and-response timescale of runway as a practice determined on the floor."
-            },
-            {
                 title: "the Teas",
-                date: "Jan 2025",
+                date: "ongoing",
                 year: 2025,
                 media: "pvc tubes, hoses, tub, water, pump, seedlings, dried herbs, acrylic, tea kettle, cups, mic, pillows, a few gworls",
                 mediaType: "image",
@@ -446,7 +247,7 @@
             },
             {
                 title: "Eye Always Feel Like: Black Transgender Speaking and Operationalizing the Clock",
-                date: "Jan 2025",
+                date: "ongoing",
                 year: 2025,
                 media: "Critical Writing",
                 mediaType: "image",
@@ -454,23 +255,68 @@
                 description: "Original research on black trans gaze perception, read through Hortense Spillers' 'interior intersubjectivity' and Alan Pegna's 2013 blindsight for gaze experimental protocol."
             },
             {
-                title: "Stamina Night (8-16-4 12/14)",
-                date: "Dec 15, 2024",
-                year: 2024,
-                media: "voguers, DJ Tony Play, speaker, live cam feed, free clothing, free canned goods, confidential HIV testing",
-                mediaType: "youtube",
-                mediaUrl: "2FN0QGuwTq0",
-                runTime: "05:00:00",
-                description: "Vogue sesh DC Center OTA non-affiliation non-competitive moving locations for the comfortability of the security guards in the Franklin D. Reeves Municipal Building."
+                title: "ULTRAUNCANCELED",
+                date: "June 7, 2025",
+                year: 2025,
+                media: "Curatorial Project",
+                mediaType: "image",
+                mediaUrl: "placeholder-curatorial.jpg",
+                description: "Curatorial project for Queer Art Salon, Dupont Underground, Washington DC"
             },
             {
-                title: "untitled (Casa Ruby Plaque)",
-                date: "Nov 1, 2024",
-                year: 2024,
-                media: "Wood Stain on MDF",
+                title: "Do We See With Eyes Or With The Psyche?",
+                date: "May 10, 2025",
+                year: 2025,
+                media: "Performance",
                 mediaType: "image",
-                mediaUrl: "casa ruby award-supremacy.png",
-                description: "One of 30 Appreciation Award which I fabricated and presented to DC health agencies and CBOs at the Supremacy Kiki Ball hosted by DMV Kiki Nights with support from Damien Ministries and ViiV Healthcare. This award will be presented to Ruby Corado when she is released."
+                mediaUrl: "placeholder-performance.jpg",
+                description: "Performance at Dance Institute of Washington, DC"
+            },
+            {
+                title: "Right Over Left: DMV Runway Review",
+                date: "January 25–March 1, 2025",
+                year: 2025,
+                media: "Curatorial Project",
+                mediaType: "image",
+                mediaUrl: "Right Over Left-rejected flyer.png",
+                description: "Group exhibition featuring Boom Boom Von Dutch Balenciaga, Corey Von Dutch Lanvin, Kiko Old Navy Revlon, and Lolita Leopard Juicy Couture Miyake Mugler which celebrates Runway in DC, Maryland and Virginia over the last seven years. The exhibition, composed of video projections of the four artists' clips and ephemera from their personal archives, seeks to hirstoricize the artists' relationships to craft and performance within the call-and-response timescale of runway as a practice determined on the floor."
+            },
+            {
+                title: "#OpenToWork",
+                date: "November 8, 2024",
+                year: 2024,
+                media: "Performance",
+                mediaType: "video",
+                mediaUrl: "https://www.dropbox.com/scl/fi/sb2b58xj06zz7le3k21qz/OpenToWork-2024.mov?rlkey=0c47bxx9rj8z2vgzljd56y943&raw=1",
+                runTime: "00:03:00",
+                description: "Performance at SerformanceP, São Paulo, Brazil"
+            },
+            {
+                title: "untitled (fresh to death)",
+                date: "August 17, 2024",
+                year: 2024,
+                media: "Photography",
+                mediaType: "image",
+                mediaUrl: "untitled (fresh to death).jpg",
+                description: "Collaborative project at Hamiltonian Artists, Washington DC"
+            },
+            {
+                title: "~~FRiENDZ0NE~~",
+                date: "July 18, 2024",
+                year: 2024,
+                media: "Curatorial Project",
+                mediaType: "image",
+                mediaUrl: "placeholder-curatorial.jpg",
+                description: "Curatorial project at Performance Space New York, New York, NY"
+            },
+            {
+                title: "______: Performance@QAS",
+                date: "June 28, 2024",
+                year: 2024,
+                media: "Curatorial Project",
+                mediaType: "image",
+                mediaUrl: "*__* Performance @ QAS.jpg",
+                description: "Curatorial project for Queer Art Salon X Art Roving, Washington DC"
             },
             {
                 title: "Trying It",
@@ -483,23 +329,32 @@
                 description: "Land art DMV Kiki Nights collab troubling the notion of an 'underground' ballroom culture featuring hillock-covered speaker looping recorded-audio of Rocheny Pricien's 6/1/24 kiki ball (DJ: VJtheDJ, MC: Tony Play, Judge: Danyela). Bodiless footprint of the work reflects the fungibility of time-based queer genres. Presented in Sound Scene 2024 at Hirshhorn sculpture garden."
             },
             {
-                title: "untitled (fresh to death)",
+                title: "DEARoldPS122",
                 date: "2024",
                 year: 2024,
-                media: "Photography",
-                mediaType: "image",
-                mediaUrl: "untitled (fresh to death).jpg",
-                description: "Portrait series"
+                media: "Critical Writing",
+                mediaType: "pdf",
+                mediaUrl: "DearOldPS122 (pg1).pdf",
+                description: "Published in Meet Me There, Another Time, edited by Lexie Bean (Jessica Kingsley Publishers)"
             },
             {
-                title: "#OpenToWork",
+                title: "Out The Doll House II",
                 date: "2024",
                 year: 2024,
                 media: "Video",
-                mediaType: "video",
-                mediaUrl: "https://www.dropbox.com/scl/fi/sb2b58xj06zz7le3k21qz/OpenToWork-2024.mov?rlkey=0c47bxx9rj8z2vgzljd56y943&raw=1",
-                runTime: "00:03:00",
-                description: "Video performance"
+                mediaType: "youtube",
+                mediaUrl: "ETBAGdcVCH8",
+                runTime: "00:15:00",
+                description: "Part of figure group exhibition at Touchstone Gallery, Washington DC"
+            },
+            {
+                title: "*__*: Performance @ QAS",
+                date: "2023",
+                year: 2023,
+                media: "Performance",
+                mediaType: "image",
+                mediaUrl: "*__* Performance @ QAS.jpg",
+                description: "Curatorial project/performance"
             },
             {
                 title: "Unpaid Internship",
@@ -511,50 +366,13 @@
                 description: "Digital artwork exploring labor and value"
             },
             {
-                title: "*__*: Performance @ QAS",
-                date: "2023",
-                year: 2023,
-                media: "Performance",
+                title: "Ràsánblaj",
+                date: "April 1–May 1, 2022",
+                year: 2022,
+                media: "Curatorial Project",
                 mediaType: "image",
-                mediaUrl: "*__* Performance @ QAS.jpg",
-                description: "Live performance at QAS"
-            },
-            {
-                title: "Out The Doll House II",
-                date: "2023",
-                year: 2023,
-                media: "Video",
-                mediaType: "youtube",
-                mediaUrl: "ETBAGdcVCH8",
-                runTime: "00:15:00",
-                description: "Video performance piece"
-            },
-            {
-                title: "If U Care 2 Look",
-                date: "2025",
-                year: 2025,
-                media: "UV markers, unrealized performance scores, Black light LEDs, Epsom salt, Graveyard dirt, found seeding tray, Morning Glory seeds, Marshmallow plant, personal iphone and charger, Spring water, Spackle, Optical viewfinder, Raspberry Pi and charger, toilet paper holders, toilet paper rolls, butcher paper, performance transcripts, projector, iphone footage under bridge",
-                mediaType: "image",
-                mediaUrl: "if-u-care-2-look.jpg",
-                description: "1st year crit at bard"
-            },
-            {
-                title: "DEARoldPS122",
-                date: "2023",
-                year: 2023,
-                media: "PDF",
-                mediaType: "pdf",
-                mediaUrl: "DearOldPS122 (pg1).pdf",
-                description: "Written work"
-            },
-            {
-                title: "Tea Party 2 Traverse",
-                date: "2023",
-                year: 2023,
-                media: "Photography",
-                mediaType: "image",
-                mediaUrl: "tea party 2 traverse.jpg",
-                description: "Photographic documentation of performance"
+                mediaUrl: "placeholder-curatorial.jpg",
+                description: "Curatorial project for Ra Bacchus at The NLA, New York NY"
             },
             {
                 title: "The Nosebleed",
@@ -564,16 +382,16 @@
                 mediaType: "video",
                 mediaUrl: "https://www.dropbox.com/scl/fi/1tvjqoc78es8ukv6kcdm5/the-Nosebleed-2022.mp4?rlkey=njzkg2sidg8mimqatuku4dvpx&raw=1",
                 runTime: "00:10:00",
-                description: "Video performance"
+                description: "Part of LES Young Artists of Color Group Show at FABnyc, New York NY"
             },
             {
                 title: "Confessional",
-                date: "2022",
-                year: 2022,
-                media: "Photography",
+                date: "2020",
+                year: 2020,
+                media: "Performance",
                 mediaType: "image",
                 mediaUrl: "Confessional logbook-10.16.jpg",
-                description: "Photographic documentation"
+                description: "Performance at Performance Space New York, New York NY (Fridays 8/7–11/13)"
             },
             {
                 title: "Out The Doll Haus",
@@ -592,231 +410,141 @@
                 media: "Digital Image",
                 mediaType: "image",
                 mediaUrl: "dear marsha's.png",
-                description: "Digital artwork"
+                description: "Collaborative project at Project Renewal Marsha's House, Bronx NY"
             },
             {
-                title: "Taxonomy of Transgendered Gesture",
-                date: "2020",
-                year: 2020,
-                media: "Photography",
+                title: "untitled (Project Renewal Fall Ball)",
+                date: "2019",
+                year: 2019,
+                media: "Performance",
                 mediaType: "image",
-                mediaUrl: "Taxonomy of Transgendered Gesture.jpg",
-                description: "Photographic study"
+                mediaUrl: "placeholder-performance.jpg",
+                description: "Performance work"
             }
         ];
 
-        let currentSlide = 0;
-        let slideInterval;
+        let floatingElements = [];
+        let currentSelectedIndex = -1;
 
-        // Parse dates to create sortable date objects
-        function parseDateString(dateStr) {
-            if (dateStr.includes('–')) {
-                dateStr = dateStr.split('–')[0].trim();
-            }
-            
-            if (dateStr.match(/[A-Za-z]+\s+\d{4}/)) {
-                const parts = dateStr.split(' ');
-                const month = new Date(Date.parse(parts[0] + " 1, " + parts[1])).getMonth();
-                const year = parseInt(parts[1]);
-                return new Date(year, month, 1);
-            }
-            
-            if (dateStr.match(/^\d{4}$/)) {
-                return new Date(parseInt(dateStr), 0, 1);
-            }
-            
-            return new Date(Date.parse(dateStr));
-        }
-
-        // Sort projects by date, most recent first
-        const sortedProjects = [...projects].sort((a, b) => {
-            const dateA = parseDateString(a.date);
-            const dateB = parseDateString(b.date);
-            return dateB - dateA;
-        });
-
-        function getBackgroundImage(project) {
-            if (project.mediaType === 'image') {
-                return `url('${project.mediaUrl}')`;
-            } else if (project.mediaType === 'youtube') {
-                return `url('https://img.youtube.com/vi/${project.mediaUrl}/maxresdefault.jpg')`;
-            }
-            return 'linear-gradient(45deg, #1a1a1a, #2a2a2a)';
-        }
-
-        function createSlides() {
-            const sliderContainer = document.getElementById('slider');
-            const sliderNav = document.getElementById('sliderNav');
-            
-            sortedProjects.forEach((project, index) => {
-                // Create slide
-                const slide = document.createElement('div');
-                slide.className = 'slide';
-                slide.style.backgroundImage = getBackgroundImage(project);
-                slide.addEventListener('click', () => selectProject(index));
-                sliderContainer.appendChild(slide);
+        class FloatingTitle {
+            constructor(project, index, container) {
+                this.project = project;
+                this.index = index;
+                this.container = container;
+                this.element = document.createElement('div');
+                this.element.className = 'floating-title';
+                this.element.textContent = project.title;
                 
-                // Create nav dot
-                const dot = document.createElement('div');
-                dot.className = 'nav-dot';
-                dot.addEventListener('click', () => goToSlide(index));
-                sliderNav.appendChild(dot);
-            });
-        }
-
-        function updateSlider() {
-            const slides = document.querySelectorAll('.slide');
-            const dots = document.querySelectorAll('.nav-dot');
-            
-            slides.forEach((slide, index) => {
-                slide.classList.toggle('active', index === currentSlide);
-            });
-            
-            dots.forEach((dot, index) => {
-                dot.classList.toggle('active', index === currentSlide);
-            });
-            
-            document.getElementById('slideCounter').textContent = `${currentSlide + 1} / ${sortedProjects.length}`;
-        }
-
-        function goToSlide(index) {
-            currentSlide = index;
-            updateSlider();
-            resetSlideTimer();
-        }
-
-        function nextSlide() {
-            currentSlide = (currentSlide + 1) % sortedProjects.length;
-            updateSlider();
-        }
-
-        function resetSlideTimer() {
-            clearInterval(slideInterval);
-            slideInterval = setInterval(nextSlide, 4000);
-        }
-
-        function populateDropdown() {
-            const select = document.getElementById('projectSelect');
-            sortedProjects.forEach((project, index) => {
-                const option = document.createElement('option');
-                option.value = index;
-                option.textContent = `${project.title} (${project.year})`;
-                select.appendChild(option);
-            });
-        }
-
-        function openFullscreen(project) {
-            const modal = document.getElementById('fullscreenModal');
-            const mediaContainer = document.getElementById('fullscreenMedia');
-            const overlay = document.getElementById('fullscreenOverlay');
-            
-            let mediaHTML = '';
-            switch (project.mediaType) {
-                case 'image':
-                    mediaHTML = `<img src="${project.mediaUrl}" alt="${project.title}" class="fullscreen-media">`;
-                    break;
-                case 'youtube':
-                    mediaHTML = `<iframe src="https://www.youtube.com/embed/${project.mediaUrl}?autoplay=1" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen class="fullscreen-media"></iframe>`;
-                    break;
-                case 'video':
-                    mediaHTML = `<video controls autoplay class="fullscreen-media"><source src="${project.mediaUrl}" type="video/mp4"></video>`;
-                    break;
-                case 'pdf':
-                    mediaHTML = `<iframe src="${project.mediaUrl}" class="fullscreen-media" style="width: 90vw; height: 90vh;"></iframe>`;
-                    break;
+                // Random starting position
+                this.x = Math.random() * (window.innerWidth - 300);
+                this.y = Math.random() * (window.innerHeight - 200) + 100; // Avoid nav area
+                
+                // Random velocity
+                this.vx = (Math.random() - 0.5) * 2;
+                this.vy = (Math.random() - 0.5) * 2;
+                
+                this.element.style.left = this.x + 'px';
+                this.element.style.top = this.y + 'px';
+                
+                this.element.addEventListener('click', () => {
+                    selectProject(this.index);
+                });
+                
+                this.container.appendChild(this.element);
             }
             
-            mediaContainer.innerHTML = mediaHTML;
-            
-            overlay.innerHTML = `
-                <div class="fullscreen-title">${project.title}</div>
-                <div class="fullscreen-year">${project.year}</div>
-                <div class="fullscreen-materials">${project.media}</div>
-                <div class="fullscreen-description">${project.description}</div>
-            `;
-            
-            modal.classList.add('active');
-            document.body.style.overflow = 'hidden';
+            update() {
+                this.x += this.vx;
+                this.y += this.vy;
+                
+                // Bounce off edges
+                if (this.x <= 0 || this.x >= window.innerWidth - this.element.offsetWidth) {
+                    this.vx *= -1;
+                    this.x = Math.max(0, Math.min(this.x, window.innerWidth - this.element.offsetWidth));
+                }
+                
+                if (this.y <= 80 || this.y >= window.innerHeight - this.element.offsetHeight - 20) { // Account for nav and bottom margin
+                    this.vy *= -1;
+                    this.y = Math.max(80, Math.min(this.y, window.innerHeight - this.element.offsetHeight - 20));
+                }
+                
+                this.element.style.left = this.x + 'px';
+                this.element.style.top = this.y + 'px';
+            }
         }
 
-        function closeFullscreen() {
-            const modal = document.getElementById('fullscreenModal');
-            modal.classList.remove('active');
-            document.body.style.overflow = 'hidden'; // Keep overflow hidden for the main page
+        function createFloatingTitles() {
+            const container = document.getElementById('floatingContainer');
             
-            // Stop any playing videos
-            const mediaContainer = document.getElementById('fullscreenMedia');
-            mediaContainer.innerHTML = '';
+            projects.forEach((project, index) => {
+                const floatingTitle = new FloatingTitle(project, index, container);
+                floatingElements.push(floatingTitle);
+            });
+        }
+
+        function animateFloatingTitles() {
+            floatingElements.forEach(element => element.update());
+            requestAnimationFrame(animateFloatingTitles);
         }
 
         function selectProject(index) {
-            const project = sortedProjects[index];
-            const select = document.getElementById('projectSelect');
-            const details = document.getElementById('projectDetails');
+            const project = projects[index];
+            const backgroundMedia = document.getElementById('backgroundMedia');
+            const projectInfo = document.getElementById('projectInfo');
             
-            select.value = index;
+            // Update selected state
+            floatingElements.forEach((element, i) => {
+                element.element.classList.toggle('selected', i === index);
+            });
             
-            // Open fullscreen immediately
-            openFullscreen(project);
+            currentSelectedIndex = index;
             
+            // Create media HTML
             let mediaHTML = '';
             switch (project.mediaType) {
                 case 'image':
-                    mediaHTML = `<div class="project-media"><img src="${project.mediaUrl}" alt="${project.title}"></div>`;
+                    mediaHTML = `<img src="${project.mediaUrl}" alt="${project.title}">`;
                     break;
                 case 'youtube':
-                    mediaHTML = `<div class="project-media"><iframe src="https://www.youtube.com/embed/${project.mediaUrl}" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe></div>`;
+                    mediaHTML = `<iframe src="https://www.youtube.com/embed/${project.mediaUrl}?autoplay=1&mute=1&loop=1&playlist=${project.mediaUrl}" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>`;
                     break;
                 case 'video':
-                    mediaHTML = `<div class="project-media"><video controls src="${project.mediaUrl}"></video></div>`;
+                    mediaHTML = `<video autoplay muted loop><source src="${project.mediaUrl}" type="video/mp4"></video>`;
                     break;
                 case 'pdf':
-                    mediaHTML = `<div class="project-media"><iframe src="${project.mediaUrl}" style="height: 300px;"></iframe></div>`;
+                    // For PDFs, show a placeholder or first page preview
+                    mediaHTML = `<div style="background: linear-gradient(45deg, #333, #666); display: flex; align-items: center; justify-content: center; font-size: 48px; color: white;">PDF</div>`;
                     break;
             }
             
-            details.innerHTML = `
-                <div class="project-title">${project.title}</div>
-                <div class="project-meta">
-                    <div class="meta-item">
-                        <span class="meta-label">Date</span>
-                        ${project.date}
-                    </div>
-                    <div class="meta-item">
-                        <span class="meta-label">Media</span>
-                        ${project.media}
-                    </div>
-                    ${project.runTime ? `<div class="meta-item"><span class="meta-label">Run Time</span>${project.runTime}</div>` : ''}
-                </div>
-                ${mediaHTML}
-                <div class="project-description">${project.description}</div>
-            `;
+            // Update background media
+            backgroundMedia.innerHTML = mediaHTML;
+            backgroundMedia.classList.add('active');
             
-            details.classList.add('show');
+            // Update project info
+            projectInfo.innerHTML = `
+                <div class="info-title">${project.title}</div>
+                <div class="info-year">${project.year}</div>
+                <div class="info-materials">${project.media}</div>
+            `;
+            projectInfo.classList.add('show');
         }
 
-        // Close fullscreen with Escape key
-        document.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape') {
-                closeFullscreen();
-            }
+        // Handle window resize
+        window.addEventListener('resize', () => {
+            // Reset positions if needed to stay in bounds
+            floatingElements.forEach(element => {
+                element.x = Math.min(element.x, window.innerWidth - element.element.offsetWidth);
+                element.y = Math.min(element.y, window.innerHeight - element.element.offsetHeight - 20);
+                element.x = Math.max(0, element.x);
+                element.y = Math.max(80, element.y);
+            });
         });
 
         // Initialize
         document.addEventListener('DOMContentLoaded', () => {
-            createSlides();
-            populateDropdown();
-            updateSlider();
-            resetSlideTimer();
-            
-            document.getElementById('projectSelect').addEventListener('change', (e) => {
-                if (e.target.value !== '') {
-                    selectProject(parseInt(e.target.value));
-                    goToSlide(parseInt(e.target.value));
-                } else {
-                    document.getElementById('projectDetails').classList.remove('show');
-                }
-            });
+            createFloatingTitles();
+            animateFloatingTitles();
         });
     </script>
 </body>
