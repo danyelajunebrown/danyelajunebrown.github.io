@@ -363,16 +363,81 @@
         }
 
         .report-text {
-            background: #f8f9fa;
+            background: white;
             padding: 20px;
             border-radius: 12px;
-            white-space: pre-wrap;
-            font-family: monospace;
-            font-size: 0.9rem;
-            line-height: 1.5;
-            max-height: 400px;
+            font-family: Arial, sans-serif;
+            font-size: 12px;
+            line-height: 1.4;
+            max-height: 600px;
             overflow-y: auto;
-            border: 1px solid #e1e5e9;
+            border: 2px solid #333;
+        }
+
+        .diary-template {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 0;
+        }
+
+        .diary-template th,
+        .diary-template td {
+            border: 1px solid #333;
+            padding: 8px;
+            text-align: center;
+            vertical-align: top;
+            min-height: 40px;
+            font-size: 11px;
+        }
+
+        .diary-template th {
+            background-color: #f5f5f5;
+            font-weight: bold;
+        }
+
+        .day-header {
+            width: 14%;
+            font-weight: bold;
+            background-color: #e8e8e8;
+        }
+
+        .category-label {
+            width: 8%;
+            font-weight: bold;
+            background-color: #f0f0f0;
+            text-align: left;
+            padding-left: 4px;
+        }
+
+        .data-cell {
+            height: 50px;
+            position: relative;
+        }
+
+        .entry-item {
+            background: #f8f9fa;
+            margin: 1px;
+            padding: 2px;
+            border-radius: 3px;
+            font-size: 9px;
+            line-height: 1.2;
+        }
+
+        .skills-cell {
+            height: 60px;
+        }
+
+        .template-header {
+            text-align: center;
+            margin-bottom: 15px;
+            font-weight: bold;
+            font-size: 16px;
+        }
+
+        .week-dates {
+            text-align: center;
+            margin-bottom: 10px;
+            font-size: 12px;
         }
 
         .success-alert {
@@ -837,7 +902,7 @@
                 
                 // Group entries by day of week
                 const dayGroups = {
-                    'MON': [], 'TUE': [], 'WED': [], 'THU': [], 'FRI': [], 'SAT': [], 'SUN': []
+                    'SUN': [], 'MON': [], 'TUE': [], 'WED': [], 'THU': [], 'FRI': [], 'SAT': []
                 };
                 
                 filteredReports.forEach(report => {
@@ -852,72 +917,81 @@
                     dayGroups[day].sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
                 });
                 
-                let reportText = `DBT Skills Diary Card\n`;
-                reportText += `Current Week: ${startDate.toLocaleDateString()} - ${endDate.toLocaleDateString()}\n`;
-                reportText += '=========================================================================\n\n';
+                // Generate HTML template
+                let htmlContent = `
+                    <div class="template-header">DBT Skills Diary Card</div>
+                    <div class="week-dates">Week Dates: ${startDate.toLocaleDateString()} - ${endDate.toLocaleDateString()}</div>
+                    
+                    <table class="diary-template">
+                        <thead>
+                            <tr>
+                                <th class="category-label"></th>
+                                <th class="day-header">SUN</th>
+                                <th class="day-header">MON</th>
+                                <th class="day-header">TUE</th>
+                                <th class="day-header">WED</th>
+                                <th class="day-header">THU</th>
+                                <th class="day-header">FRI</th>
+                                <th class="day-header">SAT</th>
+                            </tr>
+                        </thead>
+                        <tbody>`;
                 
-                // Create horizontal layout
-                const days = ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN'];
+                // Feelings/Emotions rows
+                const maxEntriesPerDay = Math.max(...Object.values(dayGroups).map(entries => entries.length), 3);
                 
-                // Header row
-                reportText += days.map(day => day.padEnd(10)).join(' | ') + '\n';
-                reportText += days.map(() => '----------').join(' | ') + '\n';
-                
-                // Find max entries for any day to determine number of rows needed
-                const maxEntries = Math.max(...days.map(day => dayGroups[day].length));
-                
-                // Create rows for entries
-                for (let row = 0; row < Math.max(maxEntries, 1); row++) {
-                    const rowData = days.map(day => {
-                        if (row < dayGroups[day].length) {
+                for (let row = 0; row < maxEntriesPerDay; row++) {
+                    htmlContent += `<tr>`;
+                    htmlContent += `<td class="category-label">${row === 0 ? 'FEELINGS' : ''}</td>`;
+                    
+                    ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'].forEach(day => {
+                        htmlContent += `<td class="data-cell">`;
+                        if (dayGroups[day][row]) {
                             const entry = dayGroups[day][row];
                             const time = new Date(entry.timestamp).toLocaleTimeString('en-US', {
                                 hour: '2-digit',
                                 minute: '2-digit',
                                 hour12: true
                             });
-                            return `${time}\n${entry.feeling}\n(${entry.intensity})`.padEnd(10);
-                        } else if (row === 0 && dayGroups[day].length === 0) {
-                            return '---'.padEnd(10);
-                        } else {
-                            return ''.padEnd(10);
+                            htmlContent += `<div class="entry-item">${time}<br/>${entry.feeling}<br/>(${entry.intensity}/5)</div>`;
                         }
+                        htmlContent += `</td>`;
                     });
-                    reportText += rowData.join(' | ') + '\n';
+                    htmlContent += `</tr>`;
                 }
                 
-                reportText += '\n';
-                reportText += 'SKILLS USED:\n';
-                reportText += days.map(day => day.padEnd(10)).join(' | ') + '\n';
-                reportText += days.map(() => '----------').join(' | ') + '\n';
+                // Empty tracking rows (for manual entry)
+                const trackingCategories = ['ENERGY', 'SLEEP', 'EATING', 'EXERCISE'];
+                trackingCategories.forEach(category => {
+                    htmlContent += `<tr>`;
+                    htmlContent += `<td class="category-label">${category}</td>`;
+                    for (let i = 0; i < 7; i++) {
+                        htmlContent += `<td class="data-cell"></td>`;
+                    }
+                    htmlContent += `</tr>`;
+                });
                 
-                // Skills row
-                const skillsData = days.map(day => {
+                // Skills section
+                htmlContent += `<tr>`;
+                htmlContent += `<td class="category-label">SKILLS</td>`;
+                
+                ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'].forEach(day => {
+                    htmlContent += `<td class="skills-cell">`;
                     const skills = dayGroups[day].map(entry => entry.dbt_skill);
                     const uniqueSkills = [...new Set(skills)];
-                    return uniqueSkills.slice(0, 2).join('\n').padEnd(10);
-                });
-                reportText += skillsData.join(' | ') + '\n';
-                
-                // If more than 2 skills per day, add additional rows
-                const maxSkills = Math.max(...days.map(day => {
-                    const skills = dayGroups[day].map(entry => entry.dbt_skill);
-                    return [...new Set(skills)].length;
-                }));
-                
-                for (let row = 2; row < maxSkills; row++) {
-                    const skillsRowData = days.map(day => {
-                        const skills = dayGroups[day].map(entry => entry.dbt_skill);
-                        const uniqueSkills = [...new Set(skills)];
-                        return (uniqueSkills[row] || '').padEnd(10);
+                    uniqueSkills.forEach(skill => {
+                        htmlContent += `<div class="entry-item">${skill}</div>`;
                     });
-                    reportText += skillsRowData.join(' | ') + '\n';
-                }
+                    htmlContent += `</td>`;
+                });
+                htmlContent += `</tr>`;
                 
-                reportText += '\n=========================================================================\n';
-                reportText += `Generated by DBT Skills Tracker for ${currentUser.email}`;
+                htmlContent += `
+                        </tbody>
+                    </table>
+                `;
                 
-                document.getElementById('reportText').textContent = reportText;
+                document.getElementById('reportText').innerHTML = htmlContent;
                 reportModal.style.display = 'block';
             } catch (error) {
                 console.error('Error generating report:', error);
