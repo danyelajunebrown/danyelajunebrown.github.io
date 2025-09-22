@@ -1,567 +1,4 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DBT Skills Tracker</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-            line-height: 1.6;
-            color: #333;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-        }
-
-        .container {
-            max-width: 600px;
-            margin: 0 auto;
-            padding: 20px;
-        }
-
-        .card {
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(20px);
-            border-radius: 20px;
-            padding: 30px;
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            margin-bottom: 20px;
-        }
-
-        .header {
-            text-align: center;
-            margin-bottom: 30px;
-        }
-
-        .header h1 {
-            font-size: 2.5rem;
-            font-weight: 700;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-            margin-bottom: 10px;
-        }
-
-        .header p {
-            color: #666;
-            font-size: 1.1rem;
-        }
-
-        .form-group {
-            margin-bottom: 25px;
-        }
-
-        .form-group label {
-            display: block;
-            font-weight: 600;
-            margin-bottom: 8px;
-            color: #333;
-            font-size: 1.1rem;
-        }
-
-        .form-group input,
-        .form-group select {
-            width: 100%;
-            padding: 12px 16px;
-            border: 2px solid #e1e5e9;
-            border-radius: 12px;
-            font-size: 16px;
-            transition: all 0.3s ease;
-            background: rgba(255, 255, 255, 0.8);
-        }
-
-        .form-group input:focus,
-        .form-group select:focus {
-            outline: none;
-            border-color: #667eea;
-            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
-            background: rgba(255, 255, 255, 1);
-        }
-
-        .intensity-container {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-            margin-top: 8px;
-        }
-
-        .intensity-container span {
-            color: #666;
-            font-weight: 500;
-        }
-
-        .intensity-slider {
-            flex: 1;
-            height: 6px;
-            border-radius: 3px;
-            background: #e1e5e9;
-            outline: none;
-            -webkit-appearance: none;
-        }
-
-        .intensity-slider::-webkit-slider-thumb {
-            -webkit-appearance: none;
-            appearance: none;
-            width: 20px;
-            height: 20px;
-            border-radius: 50%;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            cursor: pointer;
-        }
-
-        .intensity-slider::-moz-range-thumb {
-            width: 20px;
-            height: 20px;
-            border-radius: 50%;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            cursor: pointer;
-            border: none;
-        }
-
-        .intensity-display {
-            font-size: 0.9rem;
-            color: #666;
-            margin-top: 5px;
-        }
-
-        .submit-btn {
-            width: 100%;
-            padding: 16px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            border: none;
-            border-radius: 12px;
-            font-size: 1.1rem;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            margin-top: 10px;
-        }
-
-        .submit-btn:hover:not(:disabled) {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
-        }
-
-        .submit-btn:disabled {
-            background: #ccc;
-            cursor: not-allowed;
-            transform: none;
-            box-shadow: none;
-        }
-
-        .recent-reports {
-            margin-top: 30px;
-        }
-
-        .recent-reports h3 {
-            margin-bottom: 20px;
-            color: #333;
-            font-size: 1.3rem;
-        }
-
-        .report-item {
-            background: rgba(102, 126, 234, 0.05);
-            border: 1px solid rgba(102, 126, 234, 0.1);
-            border-radius: 12px;
-            padding: 16px;
-            margin-bottom: 12px;
-            transition: all 0.3s ease;
-        }
-
-        .report-item:hover {
-            background: rgba(102, 126, 234, 0.08);
-            border-color: rgba(102, 126, 234, 0.2);
-        }
-
-        .report-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 8px;
-        }
-
-        .report-feeling {
-            font-weight: 600;
-            color: #333;
-            text-transform: capitalize;
-        }
-
-        .intensity-badge {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 4px 12px;
-            border-radius: 20px;
-            font-size: 0.8rem;
-            font-weight: 500;
-        }
-
-        .report-skill {
-            color: #666;
-            font-size: 0.9rem;
-            margin-bottom: 4px;
-        }
-
-        .report-time {
-            color: #999;
-            font-size: 0.8rem;
-        }
-
-        .share-section {
-            text-align: center;
-            margin-top: 30px;
-            padding-top: 20px;
-            border-top: 1px solid #e1e5e9;
-        }
-
-        .share-btn {
-            background: rgba(102, 126, 234, 0.1);
-            color: #667eea;
-            border: 2px solid #667eea;
-            padding: 12px 24px;
-            border-radius: 12px;
-            cursor: pointer;
-            font-weight: 600;
-            transition: all 0.3s ease;
-        }
-
-        .share-btn:hover {
-            background: #667eea;
-            color: white;
-            transform: translateY(-2px);
-        }
-
-        .modal {
-            display: none;
-            position: fixed;
-            z-index: 1000;
-            left: 0;
-            top: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.5);
-            backdrop-filter: blur(5px);
-        }
-
-        .modal-content {
-            background: white;
-            margin: 5% auto;
-            padding: 30px;
-            border-radius: 20px;
-            width: 90%;
-            max-width: 500px;
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
-        }
-
-        .modal h3 {
-            margin-bottom: 20px;
-            color: #333;
-        }
-
-        .date-inputs {
-            display: grid;
-            gap: 15px;
-            margin-bottom: 20px;
-        }
-
-        .modal-buttons {
-            display: flex;
-            gap: 10px;
-            justify-content: flex-end;
-        }
-
-        .modal-btn {
-            padding: 10px 20px;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-            font-weight: 500;
-        }
-
-        .modal-btn.primary {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-        }
-
-        .modal-btn.secondary {
-            background: #f0f0f0;
-            color: #333;
-        }
-
-        .report-text {
-            background: #f8f9fa;
-            padding: 20px;
-            border-radius: 12px;
-            white-space: pre-wrap;
-            font-family: monospace;
-            font-size: 0.9rem;
-            line-height: 1.5;
-            max-height: 400px;
-            overflow-y: auto;
-            border: 1px solid #e1e5e9;
-        }
-
-        .success-alert {
-            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
-            color: white;
-            padding: 16px;
-            border-radius: 12px;
-            margin-bottom: 20px;
-            text-align: center;
-            font-weight: 500;
-            display: none;
-        }
-
-        @media (max-width: 640px) {
-            .container {
-                padding: 15px;
-            }
-            
-            .card {
-                padding: 20px;
-            }
-            
-            .header h1 {
-                font-size: 2rem;
-            }
-            
-            .modal-content {
-                margin: 10% auto;
-                padding: 20px;
-                width: 95%;
-            }
-        }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <div class="card">
-            <div class="success-alert" id="successAlert">
-                Report submitted successfully! 🎉
-            </div>
-
-            <div class="header">
-                <h1>DBT Skills Tracker</h1>
-                <p>Track your feelings and coping skills</p>
-            </div>
-
-            <form id="reportForm">
-                <div class="form-group">
-                    <label for="feeling">What are you feeling?</label>
-                    <input type="text" id="feeling" placeholder="e.g., anxious, sad, angry, overwhelmed" required>
-                </div>
-
-                <div class="form-group">
-                    <label for="intensity">Intensity Level</label>
-                    <div class="intensity-container">
-                        <span>1</span>
-                        <input type="range" id="intensity" class="intensity-slider" min="1" max="5" value="1">
-                        <span>5</span>
-                    </div>
-                    <div class="intensity-display" id="intensityDisplay">Current: 1 - Very Mild</div>
-                </div>
-
-                <div class="form-group">
-                    <label for="skill">DBT Skill Used</label>
-                    <select id="skill" required>
-                        <option value="">Select a skill...</option>
-                        <option value="Half Smile">Half Smile</option>
-                        <option value="Opposite Action">Opposite Action</option>
-                        <option value="Distract">Distract</option>
-                        <option value="TIPP">TIPP</option>
-                        <option value="Check the Facts">Check the Facts</option>
-                        <option value="DEAR MAN">DEAR MAN</option>
-                        <option value="Observe">Observe</option>
-                        <option value="Describe">Describe</option>
-                        <option value="Participate">Participate</option>
-                    </select>
-                </div>
-
-                <button type="submit" class="submit-btn" id="submitBtn">Submit Report</button>
-            </form>
-
-            <div class="recent-reports" id="recentReports" style="display: none;">
-                <h3>Recent Reports</h3>
-                <div id="reportsList"></div>
-            </div>
-
-            <div class="share-section">
-                <button class="share-btn" id="shareBtn">Share Diary Card</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Date Range Modal -->
-    <div id="dateModal" class="modal">
-        <div class="modal-content">
-            <h3>Select Date Range</h3>
-            <div class="date-inputs">
-                <div class="form-group">
-                    <label for="startDate">Start Date</label>
-                    <input type="date" id="startDate">
-                </div>
-                <div class="form-group">
-                    <label for="endDate">End Date</label>
-                    <input type="date" id="endDate">
-                </div>
-            </div>
-            <div class="modal-buttons">
-                <button class="modal-btn secondary" id="cancelBtn">Cancel</button>
-                <button class="modal-btn primary" id="generateBtn">Generate Report</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Report Display Modal -->
-    <div id="reportModal" class="modal">
-        <div class="modal-content">
-            <h3>Diary Card</h3>
-            <div class="report-text" id="reportText"></div>
-            <div class="modal-buttons" style="margin-top: 20px;">
-                <button class="modal-btn secondary" id="closeReportBtn">Close</button>
-                <button class="modal-btn primary" id="copyBtn">Copy Text</button>
-            </div>
-        </div>
-    </div>
-
-    <script>
-        // App state
-        let reports = JSON.parse(localStorage.getItem('dbtReports') || '[]');
-
-        // DOM elements
-        const form = document.getElementById('reportForm');
-        const feelingInput = document.getElementById('feeling');
-        const intensitySlider = document.getElementById('intensity');
-        const intensityDisplay = document.getElementById('intensityDisplay');
-        const skillSelect = document.getElementById('skill');
-        const submitBtn = document.getElementById('submitBtn');
-        const successAlert = document.getElementById('successAlert');
-        const recentReports = document.getElementById('recentReports');
-        const reportsList = document.getElementById('reportsList');
-        const shareBtn = document.getElementById('shareBtn');
-        const dateModal = document.getElementById('dateModal');
-        const reportModal = document.getElementById('reportModal');
-
-        // Initialize app
-        function init() {
-            updateIntensityDisplay();
-            updateRecentReports();
-            setupEventListeners();
-            
-            // Set default date range (last 7 days)
-            const endDate = new Date();
-            const startDate = new Date();
-            startDate.setDate(endDate.getDate() - 7);
-            document.getElementById('startDate').valueAsDate = startDate;
-            document.getElementById('endDate').valueAsDate = endDate;
-        }
-
-        function setupEventListeners() {
-            // Intensity slider
-            intensitySlider.addEventListener('input', updateIntensityDisplay);
-            
-            // Form submission
-            form.addEventListener('submit', handleSubmit);
-            
-            // Share functionality
-            shareBtn.addEventListener('click', showDateModal);
-            document.getElementById('cancelBtn').addEventListener('click', hideDateModal);
-            document.getElementById('generateBtn').addEventListener('click', generateReport);
-            document.getElementById('closeReportBtn').addEventListener('click', hideReportModal);
-            document.getElementById('copyBtn').addEventListener('click', copyReport);
-            
-            // Close modals when clicking outside
-            window.addEventListener('click', (e) => {
-                if (e.target === dateModal) hideDateModal();
-                if (e.target === reportModal) hideReportModal();
-            });
-        }
-
-        function updateIntensityDisplay() {
-            const value = intensitySlider.value;
-            const descriptions = {
-                1: 'Very Mild',
-                2: 'Mild',
-                3: 'Moderate',
-                4: 'Strong',
-                5: 'Very Strong'
-            };
-            intensityDisplay.textContent = `Current: ${value} - ${descriptions[value]}`;
-        }
-
-        function handleSubmit(e) {
-            e.preventDefault();
-            
-            const newReport = {
-                id: Date.now(),
-                feeling: feelingInput.value.trim(),
-                intensity: parseInt(intensitySlider.value),
-                dbtSkill: skillSelect.value,
-                timestamp: new Date().toISOString()
-            };
-            
-            reports.push(newReport);
-            localStorage.setItem('dbtReports', JSON.stringify(reports));
-            
-            // Reset form
-            form.reset();
-            intensitySlider.value = 1;
-            updateIntensityDisplay();
-            
-            // Show success message
-            successAlert.style.display = 'block';
-            setTimeout(() => {
-                successAlert.style.display = 'none';
-            }, 3000);
-            
-            updateRecentReports();
-        }
-
-        function updateRecentReports() {
-            if (reports.length === 0) {
-                recentReports.style.display = 'none';
-                return;
-            }
-            
-            recentReports.style.display = 'block';
-            const recentThree = reports.slice(-3).reverse();
-            
-            reportsList.innerHTML = recentThree.map(report => {
-                const date = new Date(report.timestamp);
-                return `
-                    <div class="report-item">
-                        <div class="report-header">
-                            <div class="report-feeling">${report.feeling}</div>
-                            <div class="intensity-badge">Intensity: ${report.intensity}</div>
-                        </div>
-                        <div class="report-skill">Used: ${report.dbtSkill}</div>
-                        <div class="report-time">${date.toLocaleString()}</div>
-                    </div>
-                `;
-            }).join('');
-        }
-
-        function showDateModal() {
-            dateModal.style.display = 'block';
-        }
-
-        function hideDateModal() {
-            dateModal.style.display = 'none';
-        }
-
-        function hideReportModal() {
-            reportModal.style.display = 'none';
-        }
-
-        function generateReport() {
+function generateReport() {
             const startDate = new Date(document.getElementById('startDate').value);
             const endDate = new Date(document.getElementById('endDate').value);
             endDate.setHours(23, 59, 59, 999); // Include full end date
@@ -571,71 +8,89 @@
                 return reportDate >= startDate && reportDate <= endDate;
             });
             
-            let reportText = `DBT Skills Diary Card\n`;
-            reportText += `Period: ${startDate.toLocaleDateString()} - ${endDate.toLocaleDateString()}\n`;
-            reportText += '========================================\n\n';
+            // Group entries by day of week
+            const dayGroups = {
+                'MON': [], 'TUE': [], 'WED': [], 'THU': [], 'FRI': [], 'SAT': [], 'SUN': []
+            };
             
-            if (filteredReports.length === 0) {
-                reportText += 'DAILY ENTRIES:\n';
-                reportText += 'No entries recorded for this period.\n\n';
-                reportText += 'SKILLS PRACTICED:\n';
-                reportText += 'No skills recorded for this period.\n\n';
-                reportText += 'NOTES:\n';
-                reportText += 'This diary card is ready for your entries.\n';
-                reportText += 'Use the app to track your feelings and DBT skills.\n\n';
-            } else {
-                reportText += 'DAILY ENTRIES:\n';
-                filteredReports.forEach(report => {
-                    const date = new Date(report.timestamp);
-                    reportText += `• ${date.toLocaleDateString()}\n`;
-                    reportText += `  Feeling: ${report.feeling} (Intensity: ${report.intensity}/5)\n`;
-                    reportText += `  DBT Skill Used: ${report.dbtSkill}\n\n`;
+            filteredReports.forEach(report => {
+                const date = new Date(report.timestamp);
+                const dayNames = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
+                const dayName = dayNames[date.getDay()];
+                dayGroups[dayName].push(report);
+            });
+            
+            // Sort entries within each day by time
+            Object.keys(dayGroups).forEach(day => {
+                dayGroups[day].sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+            });
+            
+            let reportText = `DBT Skills Diary Card\n`;
+            reportText += `Week Dates: ${startDate.toLocaleDateString()} - ${endDate.toLocaleDateString()}\n`;
+            reportText += '=========================================================================\n\n';
+            
+            // Create horizontal layout
+            const days = ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN'];
+            
+            // Header row
+            reportText += days.map(day => day.padEnd(10)).join(' | ') + '\n';
+            reportText += days.map(() => '----------').join(' | ') + '\n';
+            
+            // Find max entries for any day to determine number of rows needed
+            const maxEntries = Math.max(...days.map(day => dayGroups[day].length));
+            
+            // Create rows for entries
+            for (let row = 0; row < Math.max(maxEntries, 1); row++) {
+                const rowData = days.map(day => {
+                    if (row < dayGroups[day].length) {
+                        const entry = dayGroups[day][row];
+                        const time = new Date(entry.timestamp).toLocaleTimeString('en-US', {
+                            hour: '2-digit',
+                            minute: '2-digit',
+                            hour12: true
+                        });
+                        return `${time}\n${entry.feeling}\n(${entry.intensity})`.padEnd(10);
+                    } else if (row === 0 && dayGroups[day].length === 0) {
+                        return '---'.padEnd(10);
+                    } else {
+                        return ''.padEnd(10);
+                    }
                 });
-                
-                const skillCounts = {};
-                filteredReports.forEach(report => {
-                    skillCounts[report.dbtSkill] = (skillCounts[report.dbtSkill] || 0) + 1;
-                });
-                
-                reportText += 'SKILLS PRACTICED:\n';
-                Object.keys(skillCounts).sort().forEach(skill => {
-                    const count = skillCounts[skill];
-                    reportText += `• ${skill} (${count} time${count === 1 ? '' : 's'})\n`;
-                });
-                reportText += '\n';
+                reportText += rowData.join(' | ') + '\n';
             }
             
-            reportText += '========================================\n';
+            reportText += '\n';
+            reportText += 'SKILLS USED:\n';
+            reportText += days.map(day => day.padEnd(10)).join(' | ') + '\n';
+            reportText += days.map(() => '----------').join(' | ') + '\n';
+            
+            // Skills row
+            const skillsData = days.map(day => {
+                const skills = dayGroups[day].map(entry => entry.dbtSkill);
+                const uniqueSkills = [...new Set(skills)];
+                return uniqueSkills.slice(0, 2).join('\n').padEnd(10);
+            });
+            reportText += skillsData.join(' | ') + '\n';
+            
+            // If more than 2 skills per day, add additional rows
+            const maxSkills = Math.max(...days.map(day => {
+                const skills = dayGroups[day].map(entry => entry.dbtSkill);
+                return [...new Set(skills)].length;
+            }));
+            
+            for (let row = 2; row < maxSkills; row++) {
+                const skillsRowData = days.map(day => {
+                    const skills = dayGroups[day].map(entry => entry.dbtSkill);
+                    const uniqueSkills = [...new Set(skills)];
+                    return (uniqueSkills[row] || '').padEnd(10);
+                });
+                reportText += skillsRowData.join(' | ') + '\n';
+            }
+            
+            reportText += '\n=========================================================================\n';
             reportText += 'Generated by DBT Skills Tracker';
             
             document.getElementById('reportText').textContent = reportText;
             hideDateModal();
             reportModal.style.display = 'block';
         }
-
-        function copyReport() {
-            const reportText = document.getElementById('reportText').textContent;
-            navigator.clipboard.writeText(reportText).then(() => {
-                const copyBtn = document.getElementById('copyBtn');
-                const originalText = copyBtn.textContent;
-                copyBtn.textContent = 'Copied!';
-                setTimeout(() => {
-                    copyBtn.textContent = originalText;
-                }, 2000);
-            }).catch(() => {
-                // Fallback for older browsers
-                const textArea = document.createElement('textarea');
-                textArea.value = reportText;
-                document.body.appendChild(textArea);
-                textArea.select();
-                document.execCommand('copy');
-                document.body.removeChild(textArea);
-                alert('Report copied to clipboard!');
-            });
-        }
-
-        // Initialize the app
-        init();
-    </script>
-</body>
-</html>
