@@ -1032,8 +1032,8 @@
 
         function updateSelectedFeeling() {
             // Calculate which feeling is at the top (selection notch)
-            // SVG coordinates: 0° = 3 o'clock, 270° = 12 o'clock (top)
-            let selectionAngle = (270 - wheelRotation) % 360;
+            // Try flipping the rotation direction
+            let selectionAngle = (270 + wheelRotation) % 360;
             if (selectionAngle < 0) selectionAngle += 360;
             
             const selectedData = feelingsData.find(item => {
