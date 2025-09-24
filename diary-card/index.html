@@ -874,6 +874,7 @@
                 const startAngle = (item.startAngle * Math.PI) / 180;
                 const endAngle = (item.endAngle * Math.PI) / 180;
                 const midAngle = (startAngle + endAngle) / 2;
+                const midAngleDegrees = (item.startAngle + item.endAngle) / 2;
                 
                 const x1 = centerX + radius * Math.cos(startAngle);
                 const y1 = centerY + radius * Math.sin(startAngle);
@@ -894,11 +895,20 @@
                 const textX = centerX + (radius * 0.75) * Math.cos(midAngle);
                 const textY = centerY + (radius * 0.75) * Math.sin(midAngle);
                 
+                // Calculate text rotation - align with slice direction
+                let textRotation = midAngleDegrees;
+                
+                // Flip text if it would be upside down (between 90 and 270 degrees)
+                if (midAngleDegrees > 90 && midAngleDegrees < 270) {
+                    textRotation = midAngleDegrees + 180;
+                }
+                
                 svg += `
                     <path d="${pathData}" fill="${item.color}" stroke="#fff" stroke-width="2" 
                           class="wheel-segment" data-feeling="${item.feeling}" data-index="${index}"/>
                     <text x="${textX}" y="${textY}" text-anchor="middle" dominant-baseline="central" 
-                          font-size="12" font-weight="bold" fill="#333" pointer-events="none">
+                          font-size="12" font-weight="bold" fill="#333" pointer-events="none"
+                          transform="rotate(${textRotation}, ${textX}, ${textY})">
                         ${item.feeling}
                     </text>
                 `;
