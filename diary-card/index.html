@@ -783,44 +783,69 @@
         let selectedFeeling = null;
         let wheelRotation = 0;
 
-        // Feelings wheel data with all emotions from the original wheel
+        // Complete feelings wheel data with ALL outer ring emotions from the reference image
         const feelingsData = [
-            // Happy section (yellow)
-            { feeling: "Joyful", color: "#FFE680", startAngle: 0, endAngle: 12 },
-            { feeling: "Free", color: "#FFE680", startAngle: 12, endAngle: 24 },
-            { feeling: "Content", color: "#FFE680", startAngle: 24, endAngle: 36 },
-            { feeling: "Playful", color: "#FFE680", startAngle: 36, endAngle: 48 },
-            { feeling: "Cheerful", color: "#FFE680", startAngle: 48, endAngle: 60 },
+            // Happy section (yellow) - approximately 90 degrees
+            { feeling: "Playful", color: "#FFE680", startAngle: 0, endAngle: 6 },
+            { feeling: "Content", color: "#FFE680", startAngle: 6, endAngle: 12 },
+            { feeling: "Interested", color: "#FFE680", startAngle: 12, endAngle: 18 },
+            { feeling: "Proud", color: "#FFE680", startAngle: 18, endAngle: 24 },
+            { feeling: "Accepted", color: "#FFE680", startAngle: 24, endAngle: 30 },
+            { feeling: "Powerful", color: "#FFE680", startAngle: 30, endAngle: 36 },
+            { feeling: "Peaceful", color: "#FFE680", startAngle: 36, endAngle: 42 },
+            { feeling: "Trusting", color: "#FFE680", startAngle: 42, endAngle: 48 },
+            { feeling: "Optimistic", color: "#FFE680", startAngle: 48, endAngle: 54 },
+            { feeling: "Intimate", color: "#FFE680", startAngle: 54, endAngle: 60 },
+            { feeling: "Loving", color: "#FFE680", startAngle: 60, endAngle: 66 },
+            { feeling: "Thankful", color: "#FFE680", startAngle: 66, endAngle: 72 },
+            { feeling: "Sensitive", color: "#FFE680", startAngle: 72, endAngle: 78 },
+            { feeling: "Hopeful", color: "#FFE680", startAngle: 78, endAngle: 84 },
+            { feeling: "Joyful", color: "#FFE680", startAngle: 84, endAngle: 90 },
             
-            // Surprised section (purple)
-            { feeling: "Excited", color: "#DDA0DD", startAngle: 60, endAngle: 75 },
-            { feeling: "Energetic", color: "#DDA0DD", startAngle: 75, endAngle: 90 },
-            
-            // Bad section (green)
-            { feeling: "Bored", color: "#98FB98", startAngle: 90, endAngle: 105 },
-            { feeling: "Busy", color: "#98FB98", startAngle: 105, endAngle: 120 },
-            { feeling: "Stressed", color: "#98FB98", startAngle: 120, endAngle: 135 },
-            { feeling: "Tired", color: "#98FB98", startAngle: 135, endAngle: 150 },
-            
-            // Fearful section (orange)
-            { feeling: "Helpless", color: "#FFB347", startAngle: 150, endAngle: 165 },
-            { feeling: "Frightened", color: "#FFB347", startAngle: 165, endAngle: 180 },
-            { feeling: "Overwhelmed", color: "#FFB347", startAngle: 180, endAngle: 195 },
-            { feeling: "Worried", color: "#FFB347", startAngle: 195, endAngle: 210 },
-            { feeling: "Anxious", color: "#FFB347", startAngle: 210, endAngle: 225 },
-            
-            // Angry section (red)
-            { feeling: "Let down", color: "#FF6B6B", startAngle: 225, endAngle: 240 },
-            { feeling: "Humiliated", color: "#FF6B6B", startAngle: 240, endAngle: 255 },
-            { feeling: "Bitter", color: "#FF6B6B", startAngle: 255, endAngle: 270 },
-            { feeling: "Mad", color: "#FF6B6B", startAngle: 270, endAngle: 285 },
-            { feeling: "Aggressive", color: "#FF6B6B", startAngle: 285, endAngle: 300 },
-            { feeling: "Frustrated", color: "#FF6B6B", startAngle: 300, endAngle: 315 },
-            
-            // Sad section (blue)
-            { feeling: "Guilty", color: "#87CEEB", startAngle: 315, endAngle: 330 },
-            { feeling: "Despair", color: "#87CEEB", startAngle: 330, endAngle: 345 },
-            { feeling: "Depressed", color: "#87CEEB", startAngle: 345, endAngle: 360 }
+            // Surprised section (purple) - approximately 45 degrees
+            { feeling: "Free", color: "#DDA0DD", startAngle: 90, endAngle: 99 },
+            { feeling: "Cheeky", color: "#DDA0DD", startAngle: 99, endAngle: 108 },
+            { feeling: "Aroused", color: "#DDA0DD", startAngle: 108, endAngle: 117 },
+            { feeling: "Energetic", color: "#DDA0DD", startAngle: 117, endAngle: 126 },
+            { feeling: "Ecstatic", color: "#DDA0DD", startAngle: 126, endAngle: 135 },
+
+            // Bad/Disgusted section (green) - approximately 90 degrees  
+            { feeling: "Disapproving", color: "#98FB98", startAngle: 135, endAngle: 141 },
+            { feeling: "Disappointed", color: "#98FB98", startAngle: 141, endAngle: 147 },
+            { feeling: "Awful", color: "#98FB98", startAngle: 147, endAngle: 153 },
+            { feeling: "Repugnant", color: "#98FB98", startAngle: 153, endAngle: 159 },
+            { feeling: "Revolted", color: "#98FB98", startAngle: 159, endAngle: 165 },
+            { feeling: "Detestable", color: "#98FB98", startAngle: 165, endAngle: 171 },
+            { feeling: "Hesitant", color: "#98FB98", startAngle: 171, endAngle: 177 },
+            { feeling: "Embarrassed", color: "#98FB98", startAngle: 177, endAngle: 183 },
+            { feeling: "Disgusted", color: "#98FB98", startAngle: 183, endAngle: 189 },
+            { feeling: "Loathing", color: "#98FB98", startAngle: 189, endAngle: 195 },
+            { feeling: "Bored", color: "#98FB98", startAngle: 195, endAngle: 201 },
+            { feeling: "Busy", color: "#98FB98", startAngle: 201, endAngle: 207 },
+            { feeling: "Stressed", color: "#98FB98", startAngle: 207, endAngle: 213 },
+            { feeling: "Tired", color: "#98FB98", startAngle: 213, endAngle: 219 },
+            { feeling: "Sleepy", color: "#98FB98", startAngle: 219, endAngle: 225 },
+
+            // Fearful section (orange) - approximately 45 degrees
+            { feeling: "Scared", color: "#FFB347", startAngle: 225, endAngle: 234 },
+            { feeling: "Anxious", color: "#FFB347", startAngle: 234, endAngle: 243 },
+            { feeling: "Insecure", color: "#FFB347", startAngle: 243, endAngle: 252 },
+            { feeling: "Weak", color: "#FFB347", startAngle: 252, endAngle: 261 },
+            { feeling: "Rejected", color: "#FFB347", startAngle: 261, endAngle: 270 },
+
+            // Angry section (red) - approximately 45 degrees
+            { feeling: "Humiliated", color: "#FF6B6B", startAngle: 270, endAngle: 279 },
+            { feeling: "Bitter", color: "#FF6B6B", startAngle: 279, endAngle: 288 },
+            { feeling: "Mad", color: "#FF6B6B", startAngle: 288, endAngle: 297 },
+            { feeling: "Aggressive", color: "#FF6B6B", startAngle: 297, endAngle: 306 },
+            { feeling: "Frustrated", color: "#FF6B6B", startAngle: 306, endAngle: 315 },
+
+            // Sad section (blue) - approximately 45 degrees
+            { feeling: "Distant", color: "#87CEEB", startAngle: 315, endAngle: 324 },
+            { feeling: "Critical", color: "#87CEEB", startAngle: 324, endAngle: 333 },
+            { feeling: "Disappointed", color: "#87CEEB", startAngle: 333, endAngle: 342 },
+            { feeling: "Alone", color: "#87CEEB", startAngle: 342, endAngle: 351 },
+            { feeling: "Depressed", color: "#87CEEB", startAngle: 351, endAngle: 360 }
         ];
 
         // DOM elements
