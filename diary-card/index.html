@@ -929,7 +929,7 @@
             // Logout
             logoutBtn.addEventListener('click', handleLogout);
             
-            // Feelings wheel rotation
+            // Feelings wheel rotation - Mouse events
             let isDragging = false;
             let startAngle = 0;
             
@@ -959,6 +959,40 @@
             });
             
             document.addEventListener('mouseup', () => {
+                isDragging = false;
+            });
+
+            // Feelings wheel rotation - Touch events for mobile
+            feelingsWheel.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                isDragging = true;
+                const touch = e.touches[0];
+                const rect = feelingsWheel.getBoundingClientRect();
+                const centerX = rect.left + rect.width / 2;
+                const centerY = rect.top + rect.height / 2;
+                startAngle = Math.atan2(touch.clientY - centerY, touch.clientX - centerX);
+            });
+            
+            document.addEventListener('touchmove', (e) => {
+                if (isDragging) {
+                    e.preventDefault();
+                    const touch = e.touches[0];
+                    const rect = feelingsWheel.getBoundingClientRect();
+                    const centerX = rect.left + rect.width / 2;
+                    const centerY = rect.top + rect.height / 2;
+                    const currentAngle = Math.atan2(touch.clientY - centerY, touch.clientX - centerX);
+                    const deltaAngle = currentAngle - startAngle;
+                    wheelRotation += deltaAngle * (180 / Math.PI);
+                    wheelRotation = wheelRotation % 360;
+                    if (wheelRotation < 0) wheelRotation += 360;
+                    
+                    feelingsWheel.style.transform = `rotate(${wheelRotation}deg)`;
+                    updateSelectedFeeling();
+                    startAngle = currentAngle;
+                }
+            });
+            
+            document.addEventListener('touchend', () => {
                 isDragging = false;
             });
 
