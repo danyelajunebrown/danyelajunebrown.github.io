@@ -778,33 +778,44 @@
         let selectedFeeling = null;
         let wheelRotation = 0;
 
-        // Feelings wheel data (organized by segments)
+        // Feelings wheel data with all emotions from the original wheel
         const feelingsData = [
-            // Happy section
-            { feeling: "Joyful", category: "Happy", color: "#FFE680", startAngle: 0, endAngle: 25.7 },
-            { feeling: "Free", category: "Happy", color: "#FFE680", startAngle: 25.7, endAngle: 51.4 },
-            { feeling: "Content", category: "Happy", color: "#FFE680", startAngle: 51.4, endAngle: 77.1 },
+            // Happy section (yellow)
+            { feeling: "Joyful", color: "#FFE680", startAngle: 0, endAngle: 12 },
+            { feeling: "Free", color: "#FFE680", startAngle: 12, endAngle: 24 },
+            { feeling: "Content", color: "#FFE680", startAngle: 24, endAngle: 36 },
+            { feeling: "Playful", color: "#FFE680", startAngle: 36, endAngle: 48 },
+            { feeling: "Cheerful", color: "#FFE680", startAngle: 48, endAngle: 60 },
             
-            // Surprised section  
-            { feeling: "Excited", category: "Surprised", color: "#DDA0DD", startAngle: 77.1, endAngle: 102.8 },
-            { feeling: "Energetic", category: "Surprised", color: "#DDA0DD", startAngle: 102.8, endAngle: 128.5 },
+            // Surprised section (purple)
+            { feeling: "Excited", color: "#DDA0DD", startAngle: 60, endAngle: 75 },
+            { feeling: "Energetic", color: "#DDA0DD", startAngle: 75, endAngle: 90 },
             
-            // Bad section
-            { feeling: "Bored", category: "Bad", color: "#98FB98", startAngle: 128.5, endAngle: 154.2 },
-            { feeling: "Tired", category: "Bad", color: "#98FB98", startAngle: 154.2, endAngle: 179.9 },
-            { feeling: "Stressed", category: "Bad", color: "#98FB98", startAngle: 179.9, endAngle: 205.6 },
+            // Bad section (green)
+            { feeling: "Bored", color: "#98FB98", startAngle: 90, endAngle: 105 },
+            { feeling: "Busy", color: "#98FB98", startAngle: 105, endAngle: 120 },
+            { feeling: "Stressed", color: "#98FB98", startAngle: 120, endAngle: 135 },
+            { feeling: "Tired", color: "#98FB98", startAngle: 135, endAngle: 150 },
             
-            // Fearful section
-            { feeling: "Worried", category: "Fearful", color: "#FFB347", startAngle: 205.6, endAngle: 231.3 },
-            { feeling: "Overwhelmed", category: "Fearful", color: "#FFB347", startAngle: 231.3, endAngle: 257 },
-            { feeling: "Anxious", category: "Fearful", color: "#FFB347", startAngle: 257, endAngle: 282.7 },
+            // Fearful section (orange)
+            { feeling: "Helpless", color: "#FFB347", startAngle: 150, endAngle: 165 },
+            { feeling: "Frightened", color: "#FFB347", startAngle: 165, endAngle: 180 },
+            { feeling: "Overwhelmed", color: "#FFB347", startAngle: 180, endAngle: 195 },
+            { feeling: "Worried", color: "#FFB347", startAngle: 195, endAngle: 210 },
+            { feeling: "Anxious", color: "#FFB347", startAngle: 210, endAngle: 225 },
             
-            // Angry section
-            { feeling: "Mad", category: "Angry", color: "#FF6B6B", startAngle: 282.7, endAngle: 308.4 },
-            { feeling: "Frustrated", category: "Angry", color: "#FF6B6B", startAngle: 308.4, endAngle: 334.1 },
+            // Angry section (red)
+            { feeling: "Let down", color: "#FF6B6B", startAngle: 225, endAngle: 240 },
+            { feeling: "Humiliated", color: "#FF6B6B", startAngle: 240, endAngle: 255 },
+            { feeling: "Bitter", color: "#FF6B6B", startAngle: 255, endAngle: 270 },
+            { feeling: "Mad", color: "#FF6B6B", startAngle: 270, endAngle: 285 },
+            { feeling: "Aggressive", color: "#FF6B6B", startAngle: 285, endAngle: 300 },
+            { feeling: "Frustrated", color: "#FF6B6B", startAngle: 300, endAngle: 315 },
             
-            // Sad section
-            { feeling: "Disappointed", category: "Sad", color: "#87CEEB", startAngle: 334.1, endAngle: 360 }
+            // Sad section (blue)
+            { feeling: "Guilty", color: "#87CEEB", startAngle: 315, endAngle: 330 },
+            { feeling: "Despair", color: "#87CEEB", startAngle: 330, endAngle: 345 },
+            { feeling: "Depressed", color: "#87CEEB", startAngle: 345, endAngle: 360 }
         ];
 
         // DOM elements
@@ -855,53 +866,46 @@
         function createFeelingsWheel() {
             const centerX = 200;
             const centerY = 200;
-            const outerRadius = 180;
-            const innerRadius = 80;
+            const radius = 150;
             
             let svg = '';
             
             feelingsData.forEach((item, index) => {
-                const startAngleRad = (item.startAngle * Math.PI) / 180;
-                const endAngleRad = (item.endAngle * Math.PI) / 180;
+                const startAngle = (item.startAngle * Math.PI) / 180;
+                const endAngle = (item.endAngle * Math.PI) / 180;
+                const midAngle = (startAngle + endAngle) / 2;
                 
-                const x1 = centerX + innerRadius * Math.cos(startAngleRad);
-                const y1 = centerY + innerRadius * Math.sin(startAngleRad);
-                const x2 = centerX + outerRadius * Math.cos(startAngleRad);
-                const y2 = centerY + outerRadius * Math.sin(startAngleRad);
-                const x3 = centerX + outerRadius * Math.cos(endAngleRad);
-                const y3 = centerY + outerRadius * Math.sin(endAngleRad);
-                const x4 = centerX + innerRadius * Math.cos(endAngleRad);
-                const y4 = centerY + innerRadius * Math.sin(endAngleRad);
+                const x1 = centerX + radius * Math.cos(startAngle);
+                const y1 = centerY + radius * Math.sin(startAngle);
+                const x2 = centerX + radius * Math.cos(endAngle);
+                const y2 = centerY + radius * Math.sin(endAngle);
                 
-                const largeArcFlag = (item.endAngle - item.startAngle) > 180 ? 1 : 0;
+                const largeArcFlag = (endAngle - startAngle) > Math.PI ? 1 : 0;
                 
-                const path = [
-                    `M ${x1} ${y1}`,
-                    `L ${x2} ${y2}`,
-                    `A ${outerRadius} ${outerRadius} 0 ${largeArcFlag} 1 ${x3} ${y3}`,
-                    `L ${x4} ${y4}`,
-                    `A ${innerRadius} ${innerRadius} 0 ${largeArcFlag} 0 ${x1} ${y1}`,
+                // Create path for pie slice
+                const pathData = [
+                    `M ${centerX} ${centerY}`,
+                    `L ${x1} ${y1}`,
+                    `A ${radius} ${radius} 0 ${largeArcFlag} 1 ${x2} ${y2}`,
                     'Z'
                 ].join(' ');
                 
-                // Calculate text position
-                const midAngleRad = ((item.startAngle + item.endAngle) / 2 * Math.PI) / 180;
-                const textRadius = (innerRadius + outerRadius) / 2;
-                const textX = centerX + textRadius * Math.cos(midAngleRad);
-                const textY = centerY + textRadius * Math.sin(midAngleRad);
+                // Text position
+                const textX = centerX + (radius * 0.7) * Math.cos(midAngle);
+                const textY = centerY + (radius * 0.7) * Math.sin(midAngle);
                 
                 svg += `
-                    <path d="${path}" fill="${item.color}" stroke="white" stroke-width="2" 
+                    <path d="${pathData}" fill="${item.color}" stroke="#fff" stroke-width="2" 
                           class="wheel-segment" data-feeling="${item.feeling}" data-index="${index}"/>
                     <text x="${textX}" y="${textY}" text-anchor="middle" dominant-baseline="central" 
-                          font-size="11" font-weight="bold" fill="#333" pointer-events="none"
-                          transform="rotate(${(item.startAngle + item.endAngle) / 2}, ${textX}, ${textY})">
+                          font-size="14" font-weight="bold" fill="#333" pointer-events="none">
                         ${item.feeling}
                     </text>
                 `;
             });
             
             feelingsWheel.innerHTML = svg;
+            console.log('Feelings wheel created'); // Debug log
         }
 
         function setupEventListeners() {
