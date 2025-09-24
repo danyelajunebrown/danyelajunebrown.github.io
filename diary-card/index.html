@@ -133,6 +133,11 @@
             height: 100%;
             cursor: grab;
             transition: transform 0.2s ease;
+            touch-action: none;
+            user-select: none;
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
         }
 
         .feelings-wheel:active {
@@ -965,17 +970,19 @@
             // Feelings wheel rotation - Touch events for mobile
             feelingsWheel.addEventListener('touchstart', (e) => {
                 e.preventDefault();
+                console.log('Touch start detected');
                 isDragging = true;
                 const touch = e.touches[0];
                 const rect = feelingsWheel.getBoundingClientRect();
                 const centerX = rect.left + rect.width / 2;
                 const centerY = rect.top + rect.height / 2;
                 startAngle = Math.atan2(touch.clientY - centerY, touch.clientX - centerX);
-            });
+            }, { passive: false });
             
-            document.addEventListener('touchmove', (e) => {
-                if (isDragging) {
+            feelingsWheel.addEventListener('touchmove', (e) => {
+                if (isDragging && e.touches.length > 0) {
                     e.preventDefault();
+                    console.log('Touch move detected');
                     const touch = e.touches[0];
                     const rect = feelingsWheel.getBoundingClientRect();
                     const centerX = rect.left + rect.width / 2;
@@ -990,11 +997,13 @@
                     updateSelectedFeeling();
                     startAngle = currentAngle;
                 }
-            });
+            }, { passive: false });
             
-            document.addEventListener('touchend', () => {
+            feelingsWheel.addEventListener('touchend', (e) => {
+                e.preventDefault();
+                console.log('Touch end detected');
                 isDragging = false;
-            });
+            }, { passive: false });
 
             // Step navigation
             document.getElementById('nextToIntensity').addEventListener('click', () => showStep(2));
