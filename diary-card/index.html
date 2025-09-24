@@ -890,22 +890,22 @@
                     'Z'
                 ].join(' ');
                 
-                // Text position
-                const textX = centerX + (radius * 0.7) * Math.cos(midAngle);
-                const textY = centerY + (radius * 0.7) * Math.sin(midAngle);
+                // Text position (closer to edge for readability)
+                const textX = centerX + (radius * 0.75) * Math.cos(midAngle);
+                const textY = centerY + (radius * 0.75) * Math.sin(midAngle);
                 
                 svg += `
                     <path d="${pathData}" fill="${item.color}" stroke="#fff" stroke-width="2" 
                           class="wheel-segment" data-feeling="${item.feeling}" data-index="${index}"/>
                     <text x="${textX}" y="${textY}" text-anchor="middle" dominant-baseline="central" 
-                          font-size="14" font-weight="bold" fill="#333" pointer-events="none">
+                          font-size="12" font-weight="bold" fill="#333" pointer-events="none">
                         ${item.feeling}
                     </text>
                 `;
             });
             
             feelingsWheel.innerHTML = svg;
-            console.log('Feelings wheel created'); // Debug log
+            console.log('Feelings wheel created with', feelingsData.length, 'segments');
         }
 
         function setupEventListeners() {
@@ -979,18 +979,12 @@
 
         function updateSelectedFeeling() {
             // Calculate which feeling is at the top (selection notch)
-            const selectionAngle = (360 - wheelRotation) % 360; // Invert for clockwise rotation
+            // Adjust for the fact that 0 degrees is at 3 o'clock, but we want top to be 0
+            let selectionAngle = (90 - wheelRotation) % 360;
+            if (selectionAngle < 0) selectionAngle += 360;
             
             const selectedData = feelingsData.find(item => {
-                let start = item.startAngle;
-                let end = item.endAngle;
-                
-                // Handle wraparound case
-                if (start > end) {
-                    return selectionAngle >= start || selectionAngle <= end;
-                }
-                
-                return selectionAngle >= start && selectionAngle <= end;
+                return selectionAngle >= item.startAngle && selectionAngle < item.endAngle;
             });
             
             if (selectedData) {
@@ -1004,6 +998,8 @@
                 selectedFeelingDisplay.style.color = '#667eea';
                 document.getElementById('nextToIntensity').disabled = true;
             }
+            
+            console.log('Wheel rotation:', wheelRotation, 'Selection angle:', selectionAngle, 'Selected:', selectedFeeling);
         }
 
         function showStep(stepNumber) {
