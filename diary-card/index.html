@@ -1253,7 +1253,8 @@
             let normalizedRotation = ((wheelRotation % 360) + 360) % 360;
             
             // Calculate which angle is currently at the top (under the notch)
-            let selectionAngle = (360 - normalizedRotation) % 360;
+            // The notch is at 12 o'clock (270° in SVG coordinates), so we need to adjust
+            let selectionAngle = (270 - normalizedRotation + 360) % 360;
             
             // Find all emotions that could be selected at this angle
             const possibleSelections = selectableEmotions.filter(item => {
@@ -1281,13 +1282,13 @@
                 selectedFeelingDisplay.textContent = selectedData.feeling;
                 selectedFeelingDisplay.style.color = selectedData.color;
                 document.getElementById('nextToDetails').disabled = false;
-                console.log('Selected:', selectedFeeling, 'from', selectedData.ring, 'ring at angle:', selectionAngle.toFixed(1));
+                console.log('Selected:', selectedFeeling, 'from', selectedData.ring, 'ring at angle:', selectionAngle.toFixed(1), 'wheel rotation:', normalizedRotation.toFixed(1));
             } else {
                 selectedFeeling = null;
                 selectedFeelingDisplay.textContent = 'Rotate the wheel to select a feeling';
                 selectedFeelingDisplay.style.color = '#667eea';
                 document.getElementById('nextToDetails').disabled = true;
-                console.log('No emotion selected at angle:', selectionAngle.toFixed(1));
+                console.log('No emotion selected at angle:', selectionAngle.toFixed(1), 'wheel rotation:', normalizedRotation.toFixed(1));
             }
         }
 
