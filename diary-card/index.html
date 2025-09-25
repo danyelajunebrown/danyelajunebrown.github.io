@@ -132,7 +132,6 @@
             width: 100%;
             height: 100%;
             cursor: grab;
-            /* Remove the transition that causes springing */
             touch-action: none;
             user-select: none;
             -webkit-user-select: none;
@@ -181,35 +180,6 @@
         .step-btn:disabled {
             background: #ccc;
             cursor: not-allowed;
-        }
-
-        .step-progress {
-            display: flex;
-            justify-content: center;
-            margin-bottom: 20px;
-        }
-
-        .progress-step {
-            width: 30px;
-            height: 30px;
-            border-radius: 50%;
-            background: #e1e5e9;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin: 0 10px;
-            font-weight: 600;
-            color: #666;
-        }
-
-        .progress-step.active {
-            background: #667eea;
-            color: white;
-        }
-
-        .progress-step.completed {
-            background: #28a745;
-            color: white;
         }
 
         .form-group label {
@@ -772,14 +742,13 @@
         let selectedFeeling = null;
         let wheelRotation = 0;
 
-        // Complete emotion wheel data exactly matching the provided structure
+        // Complete emotion wheel data with corrected angles
         const emotionWheelData = {
-            // Each section contains: emoji, main emotion, middle emotions, and outer emotions
             "Happy": {
                 emoji: "😀",
                 color: "#FFE680",
-                startAngle: 0,
-                endAngle: 90,
+                startAngle: -90,  // Start at top (12 o'clock position)
+                endAngle: -45,    // 45 degrees clockwise
                 middleEmotions: [
                     {name: "Playful", outerEmotions: ["Aroused", "Cheeky"]},
                     {name: "Content", outerEmotions: ["Free", "Joyful"]},
@@ -795,8 +764,8 @@
             "Surprised": {
                 emoji: "😲",
                 color: "#DDA0DD",
-                startAngle: 90,
-                endAngle: 135,
+                startAngle: -45,
+                endAngle: -22.5,
                 middleEmotions: [
                     {name: "Startled", outerEmotions: ["Shocked", "Dismayed"]},
                     {name: "Confused", outerEmotions: ["Disillusioned", "Perplexed"]},
@@ -807,8 +776,8 @@
             "Disgusted": {
                 emoji: "🤢",
                 color: "#90EE90",
-                startAngle: 135,
-                endAngle: 180,
+                startAngle: -22.5,
+                endAngle: 0,
                 middleEmotions: [
                     {name: "Disapproving", outerEmotions: ["Judgmental", "Embarrassed"]},
                     {name: "Disappointed", outerEmotions: ["Appalled", "Revolted"]},
@@ -819,8 +788,8 @@
             "Bad": {
                 emoji: "😐",
                 color: "#D3D3D3",
-                startAngle: 180,
-                endAngle: 225,
+                startAngle: 0,
+                endAngle: 45,
                 middleEmotions: [
                     {name: "Bored", outerEmotions: ["Indifferent", "Apathetic"]},
                     {name: "Busy", outerEmotions: ["Pressured", "Rushed"]},
@@ -831,8 +800,8 @@
             "Fearful": {
                 emoji: "😨",
                 color: "#FFB347",
-                startAngle: 225,
-                endAngle: 270,
+                startAngle: 45,
+                endAngle: 90,
                 middleEmotions: [
                     {name: "Scared", outerEmotions: ["Helpless", "Frightened"]},
                     {name: "Anxious", outerEmotions: ["Overwhelmed", "Worried"]},
@@ -845,8 +814,8 @@
             "Angry": {
                 emoji: "😡",
                 color: "#FF6B6B",
-                startAngle: 270,
-                endAngle: 315,
+                startAngle: 90,
+                endAngle: 135,
                 middleEmotions: [
                     {name: "Let down", outerEmotions: ["Betrayed", "Resentful"]},
                     {name: "Humiliated", outerEmotions: ["Disrespected", "Ridiculed"]},
@@ -861,8 +830,8 @@
             "Sad": {
                 emoji: "😢",
                 color: "#87CEEB",
-                startAngle: 315,
-                endAngle: 360,
+                startAngle: 135,
+                endAngle: 180,
                 middleEmotions: [
                     {name: "Hurt", outerEmotions: ["Embarrassed", "Disappointed"]},
                     {name: "Depressed", outerEmotions: ["Inferior", "Empty"]},
@@ -874,11 +843,17 @@
             }
         };
 
-        // Generate flattened selectable emotions array
+        // Generate flattened selectable emotions array with correct angles
         let selectableEmotions = [];
 
         Object.entries(emotionWheelData).forEach(([mainEmotion, data]) => {
-            const sectionSpan = data.endAngle - data.startAngle;
+            let sectionSpan = data.endAngle - data.startAngle;
+            
+            // Handle angle wrapping (if startAngle > endAngle, it crosses 0°)
+            if (sectionSpan < 0) {
+                sectionSpan += 360;
+            }
+            
             const totalMiddleEmotions = data.middleEmotions.length;
             
             // Add main emotion (inner ring) - covers entire section
@@ -897,14 +872,24 @@
             
             data.middleEmotions.forEach((middleEmotion, midIndex) => {
                 const middleStartAngle = currentMiddleAngle;
-                const middleEndAngle = currentMiddleAngle + middleAngleStep;
+                let middleEndAngle = currentMiddleAngle + middleAngleStep;
+                
+                // Normalize angles to -180 to 180 range
+                function normalizeAngle(angle) {
+                    while (angle > 180) angle -= 360;
+                    while (angle <= -180) angle += 360;
+                    return angle;
+                }
+                
+                const normalizedMiddleStart = normalizeAngle(middleStartAngle);
+                const normalizedMiddleEnd = normalizeAngle(middleEndAngle);
                 
                 // Add middle emotion
                 selectableEmotions.push({
                     feeling: middleEmotion.name,
                     color: data.color,
-                    startAngle: middleStartAngle,
-                    endAngle: middleEndAngle,
+                    startAngle: normalizedMiddleStart,
+                    endAngle: normalizedMiddleEnd,
                     ring: "middle"
                 });
                 
@@ -913,11 +898,14 @@
                 let currentOuterAngle = middleStartAngle;
                 
                 middleEmotion.outerEmotions.forEach((outerEmotion, outerIndex) => {
+                    const outerStart = normalizeAngle(currentOuterAngle);
+                    const outerEnd = normalizeAngle(currentOuterAngle + outerAngleStep);
+                    
                     selectableEmotions.push({
                         feeling: outerEmotion,
                         color: data.color,
-                        startAngle: currentOuterAngle,
-                        endAngle: currentOuterAngle + outerAngleStep,
+                        startAngle: outerStart,
+                        endAngle: outerEnd,
                         ring: "outer"
                     });
                     currentOuterAngle += outerAngleStep;
@@ -982,6 +970,45 @@
             
             let svg = '';
             
+            // Helper function to convert degrees to radians
+            function degToRad(deg) {
+                return (deg * Math.PI) / 180;
+            }
+            
+            // Helper function to create SVG arc path
+            function createArcPath(startAngle, endAngle, innerR, outerR) {
+                let start = startAngle;
+                let end = endAngle;
+                
+                // Handle angle wrapping
+                if (end < start) {
+                    end += 360;
+                }
+                
+                const startAngleRad = degToRad(start);
+                const endAngleRad = degToRad(end);
+                
+                const x1 = centerX + innerR * Math.cos(startAngleRad);
+                const y1 = centerY + innerR * Math.sin(startAngleRad);
+                const x2 = centerX + outerR * Math.cos(startAngleRad);
+                const y2 = centerY + outerR * Math.sin(startAngleRad);
+                const x3 = centerX + outerR * Math.cos(endAngleRad);
+                const y3 = centerY + outerR * Math.sin(endAngleRad);
+                const x4 = centerX + innerR * Math.cos(endAngleRad);
+                const y4 = centerY + innerR * Math.sin(endAngleRad);
+                
+                const largeArcFlag = (end - start) > 180 ? 1 : 0;
+                
+                return [
+                    `M ${x1} ${y1}`,
+                    `L ${x2} ${y2}`,
+                    `A ${outerR} ${outerR} 0 ${largeArcFlag} 1 ${x3} ${y3}`,
+                    `L ${x4} ${y4}`,
+                    `A ${innerR} ${innerR} 0 ${largeArcFlag} 0 ${x1} ${y1}`,
+                    'Z'
+                ].join(' ');
+            }
+            
             // Group emotions by ring
             const innerRingEmotions = selectableEmotions.filter(item => item.ring === "inner");
             const middleRingEmotions = selectableEmotions.filter(item => item.ring === "middle");
@@ -989,37 +1016,12 @@
             
             // Draw inner ring with emojis and main categories
             innerRingEmotions.forEach((item) => {
-                const startAngle = (item.startAngle * Math.PI) / 180;
-                const endAngle = (item.endAngle * Math.PI) / 180;
-                const midAngle = (startAngle + endAngle) / 2;
-                
-                const x1 = centerX + centerRadius * Math.cos(startAngle);
-                const y1 = centerY + centerRadius * Math.sin(startAngle);
-                const x2 = centerX + innerRadius * Math.cos(startAngle);
-                const y2 = centerY + innerRadius * Math.sin(startAngle);
-                const x3 = centerX + innerRadius * Math.cos(endAngle);
-                const y3 = centerY + innerRadius * Math.sin(endAngle);
-                const x4 = centerX + centerRadius * Math.cos(endAngle);
-                const y4 = centerY + centerRadius * Math.sin(endAngle);
-                
-                const largeArcFlag = (item.endAngle - item.startAngle) > 180 ? 1 : 0;
-                
-                const path = [
-                    `M ${x1} ${y1}`,
-                    `L ${x2} ${y2}`,
-                    `A ${innerRadius} ${innerRadius} 0 ${largeArcFlag} 1 ${x3} ${y3}`,
-                    `L ${x4} ${y4}`,
-                    `A ${centerRadius} ${centerRadius} 0 ${largeArcFlag} 0 ${x1} ${y1}`,
-                    'Z'
-                ].join(' ');
+                const path = createArcPath(item.startAngle, item.endAngle, centerRadius, innerRadius);
+                const midAngle = degToRad((item.startAngle + item.endAngle) / 2);
                 
                 // Position for emoji
                 const emojiX = centerX + (centerRadius + 15) * Math.cos(midAngle);
                 const emojiY = centerY + (centerRadius + 15) * Math.sin(midAngle);
-                
-                // Position for text
-                const textX = centerX + (innerRadius - 10) * Math.cos(midAngle);
-                const textY = centerY + (innerRadius - 10) * Math.sin(midAngle);
                 
                 let textRotation = (item.startAngle + item.endAngle) / 2;
                 if (textRotation > 90 && textRotation < 270) {
@@ -1038,29 +1040,8 @@
             
             // Draw middle ring
             middleRingEmotions.forEach((item) => {
-                const startAngle = (item.startAngle * Math.PI) / 180;
-                const endAngle = (item.endAngle * Math.PI) / 180;
-                const midAngle = (startAngle + endAngle) / 2;
-                
-                const x1 = centerX + innerRadius * Math.cos(startAngle);
-                const y1 = centerY + innerRadius * Math.sin(startAngle);
-                const x2 = centerX + middleRadius * Math.cos(startAngle);
-                const y2 = centerY + middleRadius * Math.sin(startAngle);
-                const x3 = centerX + middleRadius * Math.cos(endAngle);
-                const y3 = centerY + middleRadius * Math.sin(endAngle);
-                const x4 = centerX + innerRadius * Math.cos(endAngle);
-                const y4 = centerY + innerRadius * Math.sin(endAngle);
-                
-                const largeArcFlag = (endAngle - startAngle) > Math.PI ? 1 : 0;
-                
-                const path = [
-                    `M ${x1} ${y1}`,
-                    `L ${x2} ${y2}`,
-                    `A ${middleRadius} ${middleRadius} 0 ${largeArcFlag} 1 ${x3} ${y3}`,
-                    `L ${x4} ${y4}`,
-                    `A ${innerRadius} ${innerRadius} 0 ${largeArcFlag} 0 ${x1} ${y1}`,
-                    'Z'
-                ].join(' ');
+                const path = createArcPath(item.startAngle, item.endAngle, innerRadius, middleRadius);
+                const midAngle = degToRad((item.startAngle + item.endAngle) / 2);
                 
                 const textX = centerX + ((innerRadius + middleRadius) / 2) * Math.cos(midAngle);
                 const textY = centerY + ((innerRadius + middleRadius) / 2) * Math.sin(midAngle);
@@ -1083,29 +1064,8 @@
             
             // Draw outer ring
             outerRingEmotions.forEach((item) => {
-                const startAngle = (item.startAngle * Math.PI) / 180;
-                const endAngle = (item.endAngle * Math.PI) / 180;
-                const midAngle = (startAngle + endAngle) / 2;
-                
-                const x1 = centerX + middleRadius * Math.cos(startAngle);
-                const y1 = centerY + middleRadius * Math.sin(startAngle);
-                const x2 = centerX + outerRadius * Math.cos(startAngle);
-                const y2 = centerY + outerRadius * Math.sin(startAngle);
-                const x3 = centerX + outerRadius * Math.cos(endAngle);
-                const y3 = centerY + outerRadius * Math.sin(endAngle);
-                const x4 = centerX + middleRadius * Math.cos(endAngle);
-                const y4 = centerY + middleRadius * Math.sin(endAngle);
-                
-                const largeArcFlag = (endAngle - startAngle) > Math.PI ? 1 : 0;
-                
-                const path = [
-                    `M ${x1} ${y1}`,
-                    `L ${x2} ${y2}`,
-                    `A ${outerRadius} ${outerRadius} 0 ${largeArcFlag} 1 ${x3} ${y3}`,
-                    `L ${x4} ${y4}`,
-                    `A ${middleRadius} ${middleRadius} 0 ${largeArcFlag} 0 ${x1} ${y1}`,
-                    'Z'
-                ].join(' ');
+                const path = createArcPath(item.startAngle, item.endAngle, middleRadius, outerRadius);
+                const midAngle = degToRad((item.startAngle + item.endAngle) / 2);
                 
                 const textX = centerX + ((middleRadius + outerRadius) / 2) * Math.cos(midAngle);
                 const textY = centerY + ((middleRadius + outerRadius) / 2) * Math.sin(midAngle);
@@ -1168,23 +1128,7 @@
                     
                     wheelRotation += deltaRotationDegrees;
                     
-                    // Debug the rotation mechanics
-                    console.log('=== ROTATION DEBUG ===');
-                    console.log('Mouse position:', e.clientX, e.clientY);
-                    console.log('Center:', centerX, centerY);
-                    console.log('Current angle (rad):', currentAngle);
-                    console.log('Delta angle (rad):', deltaAngle);
-                    console.log('Delta rotation (deg):', deltaRotationDegrees);
-                    console.log('New wheel rotation:', wheelRotation);
-                    
-                    // Normalize for display
-                    let displayRotation = wheelRotation % 360;
-                    if (displayRotation < 0) displayRotation += 360;
-                    
                     feelingsWheel.style.transform = `rotate(${wheelRotation}deg)`;
-                    console.log('Applied CSS rotation:', wheelRotation);
-                    console.log('======================');
-                    
                     updateSelectedFeeling();
                     startAngle = currentAngle;
                 }
@@ -1200,7 +1144,6 @@
             // Feelings wheel rotation - Touch events for mobile
             feelingsWheel.addEventListener('touchstart', (e) => {
                 e.preventDefault();
-                console.log('Touch start detected');
                 isDragging = true;
                 feelingsWheel.classList.add('dragging');
                 const touch = e.touches[0];
@@ -1220,8 +1163,6 @@
                     const currentAngle = Math.atan2(touch.clientY - centerY, touch.clientX - centerX);
                     const deltaAngle = currentAngle - startAngle;
                     wheelRotation += deltaAngle * (180 / Math.PI);
-                    wheelRotation = wheelRotation % 360;
-                    if (wheelRotation < 0) wheelRotation += 360;
                     
                     feelingsWheel.style.transform = `rotate(${wheelRotation}deg)`;
                     updateSelectedFeeling();
@@ -1231,7 +1172,6 @@
             
             feelingsWheel.addEventListener('touchend', (e) => {
                 e.preventDefault();
-                console.log('Touch end detected');
                 if (isDragging) {
                     isDragging = false;
                     feelingsWheel.classList.remove('dragging');
@@ -1262,77 +1202,26 @@
         }
 
         function updateSelectedFeeling() {
-            // Normalize wheel rotation
-            let normalizedRotation = ((wheelRotation % 360) + 360) % 360;
+            // Calculate which emotion is currently at the top (under the notch)
+            // The notch points straight up (at -90 degrees)
+            let selectionAngle = -wheelRotation - 90;
             
-            // Calculate which angle is currently at the top (under the notch)
-            // Add 180° to correct the coordinate system offset
-            let selectionAngle = (normalizedRotation + 180) % 360;
-            
-            // Debug logging to help identify the issue
-            console.log('=== SELECTION DEBUG ===');
-            console.log('Raw wheel rotation:', wheelRotation);
-            console.log('Normalized rotation:', normalizedRotation.toFixed(1));
-            console.log('Selection angle:', selectionAngle.toFixed(1));
-            
-            // Debug: Show what emotions should be at key angles
-            console.log('--- Emotion ranges for reference ---');
-            console.log('Happy (0-90°):', selectableEmotions.filter(e => e.feeling === 'Happy')[0]);
-            console.log('Surprised (90-135°):', selectableEmotions.filter(e => e.feeling === 'Surprised')[0]);
-            console.log('Disgusted (135-180°):', selectableEmotions.filter(e => e.feeling === 'Disgusted')[0]);
-            console.log('Bad (180-225°):', selectableEmotions.filter(e => e.feeling === 'Bad')[0]);
-            console.log('Fearful (225-270°):', selectableEmotions.filter(e => e.feeling === 'Fearful')[0]);
-            console.log('Angry (270-315°):', selectableEmotions.filter(e => e.feeling === 'Angry')[0]);
-            console.log('Sad (315-360°):', selectableEmotions.filter(e => e.feeling === 'Sad')[0]);
-            
-            // Try multiple selection angle calculations to see which works
-            const testAngles = [
-                { name: 'Direct', angle: normalizedRotation },
-                { name: '+180', angle: (normalizedRotation + 180) % 360 },
-                { name: '-180', angle: (normalizedRotation - 180 + 360) % 360 },
-                { name: '+90', angle: (normalizedRotation + 90) % 360 },
-                { name: '-90', angle: (normalizedRotation - 90 + 360) % 360 },
-                { name: '360-rot', angle: (360 - normalizedRotation) % 360 }
-            ];
-            
-            console.log('--- Testing different angle calculations ---');
-            testAngles.forEach(test => {
-                const matches = selectableEmotions.filter(item => {
-                    if (item.endAngle < item.startAngle) {
-                        return test.angle >= item.startAngle || test.angle < item.endAngle;
-                    } else {
-                        return test.angle >= item.startAngle && test.angle < item.endAngle;
-                    }
-                }).filter(item => item.ring === "outer" || item.ring === "middle" || item.ring === "inner");
-                
-                const topMatch = matches.find(item => item.ring === "outer") ||
-                               matches.find(item => item.ring === "middle") ||
-                               matches.find(item => item.ring === "inner");
-                               
-                console.log(`${test.name} (${test.angle.toFixed(1)}°):`, topMatch ? topMatch.feeling : 'none');
-            });
-            
-            // Use the +180 calculation as our selection angle
-            selectionAngle = (normalizedRotation + 180) % 360;
+            // Normalize to -180 to 180 range
+            while (selectionAngle > 180) selectionAngle -= 360;
+            while (selectionAngle <= -180) selectionAngle += 360;
             
             // Find all emotions that could be selected at this angle
             const possibleSelections = selectableEmotions.filter(item => {
                 let itemStart = item.startAngle;
                 let itemEnd = item.endAngle;
                 
-                let isInRange = false;
-                // Handle the 360/0 degree boundary
+                // Handle angle wrapping
                 if (itemEnd < itemStart) {
-                    isInRange = selectionAngle >= itemStart || selectionAngle < itemEnd;
+                    // Crosses the -180/180 boundary
+                    return selectionAngle >= itemStart || selectionAngle < itemEnd;
                 } else {
-                    isInRange = selectionAngle >= itemStart && selectionAngle < itemEnd;
+                    return selectionAngle >= itemStart && selectionAngle < itemEnd;
                 }
-                
-                if (isInRange) {
-                    console.log(`Final match: ${item.feeling} (${item.ring}) at ${itemStart}-${itemEnd}°`);
-                }
-                
-                return isInRange;
             });
             
             // Priority: outer ring > middle ring > inner ring (most specific first)
@@ -1348,15 +1237,12 @@
                 selectedFeelingDisplay.textContent = selectedData.feeling;
                 selectedFeelingDisplay.style.color = selectedData.color;
                 document.getElementById('nextToDetails').disabled = false;
-                console.log('FINAL SELECTION:', selectedFeeling, 'from', selectedData.ring, 'ring');
             } else {
                 selectedFeeling = null;
                 selectedFeelingDisplay.textContent = 'Rotate the wheel to select a feeling';
                 selectedFeelingDisplay.style.color = '#667eea';
                 document.getElementById('nextToDetails').disabled = true;
-                console.log('FINAL SELECTION: No emotion selected');
             }
-            console.log('========================');
         }
 
         function showStep(stepNumber) {
@@ -1525,7 +1411,7 @@
                 updateIntensityDisplay();
                 showStep(1); // Go back to step 1
                 
-                showSuccess('Report submitted successfully! 🎉');
+                showSuccess('Report submitted successfully!');
                 updateRecentReports();
             } catch (error) {
                 console.error('Error submitting report:', error);
