@@ -1250,8 +1250,8 @@
             let normalizedRotation = ((wheelRotation % 360) + 360) % 360;
             
             // Calculate which angle is currently at the top (under the notch)
-            // Add 90° offset to align coordinate systems
-            let selectionAngle = (360 - normalizedRotation + 90) % 360;
+            // Adjust for coordinate system where 0° = top of wheel (12 o'clock)
+            let selectionAngle = (90 - normalizedRotation + 360) % 360;
             
             // Debug logging to help identify the issue
             console.log('=== Debug Info ===');
