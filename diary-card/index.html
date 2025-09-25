@@ -1250,8 +1250,8 @@
             let normalizedRotation = ((wheelRotation % 360) + 360) % 360;
             
             // Calculate which angle is currently at the top (under the notch)
-            // Adjust for coordinate system where 0° = top of wheel (12 o'clock)
-            let selectionAngle = (90 - normalizedRotation + 360) % 360;
+            // Try direct mapping: when wheel hasn't rotated (0°), we want to select Happy section (0°)
+            let selectionAngle = normalizedRotation;
             
             // Debug logging to help identify the issue
             console.log('=== Debug Info ===');
