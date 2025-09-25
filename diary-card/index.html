@@ -675,6 +675,8 @@
 
                     <!-- Step 2: Intensity & Skill -->
                     <div class="form-step" id="detailsStep">
+                        <div class="selected-emotion-reminder" id="selectedEmotionReminder" style="text-align: center; margin-bottom: 20px; padding: 15px; background: rgba(102, 126, 234, 0.1); border-radius: 12px; font-size: 1.2rem; font-weight: 600;"></div>
+                        
                         <div class="form-group">
                             <label for="intensity">Intensity Level</label>
                             <div class="intensity-container">
@@ -1028,13 +1030,8 @@
                     <path d="${path}" fill="${item.color}" stroke="#fff" stroke-width="3" opacity="0.9"
                           class="wheel-segment" data-feeling="${item.feeling}" data-ring="inner"/>
                     <text x="${emojiX}" y="${emojiY}" text-anchor="middle" dominant-baseline="central" 
-                          font-size="18" pointer-events="none">
+                          font-size="45" pointer-events="none">
                         ${item.emoji}
-                    </text>
-                    <text x="${textX}" y="${textY}" text-anchor="middle" dominant-baseline="central" 
-                          font-size="10" font-weight="bold" fill="#333" pointer-events="none"
-                          transform="rotate(${textRotation}, ${textX}, ${textY})">
-                        ${item.feeling}
                     </text>
                 `;
             });
@@ -1253,9 +1250,8 @@
             let normalizedRotation = ((wheelRotation % 360) + 360) % 360;
             
             // Calculate which angle is currently at the top (under the notch)
-            // The notch is at the top (0° in our emotion coordinate system)
-            // When wheel rotates clockwise, what's at the top was originally at a smaller angle
-            let selectionAngle = (360 - normalizedRotation) % 360;
+            // Add 90° offset to align coordinate systems
+            let selectionAngle = (360 - normalizedRotation + 90) % 360;
             
             // Debug logging to help identify the issue
             console.log('=== Debug Info ===');
@@ -1317,6 +1313,14 @@
                 document.getElementById('feelingStep').classList.add('active');
             } else if (stepNumber === 2) {
                 document.getElementById('detailsStep').classList.add('active');
+                // Update the selected emotion reminder
+                const reminderDiv = document.getElementById('selectedEmotionReminder');
+                if (selectedFeeling) {
+                    reminderDiv.textContent = `Recording details for: ${selectedFeeling}`;
+                    reminderDiv.style.display = 'block';
+                } else {
+                    reminderDiv.style.display = 'none';
+                }
             }
             
             currentStep = stepNumber;
