@@ -1253,20 +1253,33 @@
             let normalizedRotation = ((wheelRotation % 360) + 360) % 360;
             
             // Calculate which angle is currently at the top (under the notch)
-            // The notch is at 12 o'clock (270° in SVG coordinates), so we need to adjust
-            let selectionAngle = (270 - normalizedRotation + 360) % 360;
+            // The notch is at the top (0° in our emotion coordinate system)
+            // When wheel rotates clockwise, what's at the top was originally at a smaller angle
+            let selectionAngle = (360 - normalizedRotation) % 360;
+            
+            // Debug logging to help identify the issue
+            console.log('=== Debug Info ===');
+            console.log('Wheel rotation:', normalizedRotation.toFixed(1));
+            console.log('Selection angle:', selectionAngle.toFixed(1));
             
             // Find all emotions that could be selected at this angle
             const possibleSelections = selectableEmotions.filter(item => {
                 let itemStart = item.startAngle;
                 let itemEnd = item.endAngle;
                 
+                let isInRange = false;
                 // Handle the 360/0 degree boundary
                 if (itemEnd < itemStart) {
-                    return selectionAngle >= itemStart || selectionAngle < itemEnd;
+                    isInRange = selectionAngle >= itemStart || selectionAngle < itemEnd;
                 } else {
-                    return selectionAngle >= itemStart && selectionAngle < itemEnd;
+                    isInRange = selectionAngle >= itemStart && selectionAngle < itemEnd;
                 }
+                
+                if (isInRange) {
+                    console.log(`Found match: ${item.feeling} (${item.ring}) at ${itemStart}-${itemEnd}°`);
+                }
+                
+                return isInRange;
             });
             
             // Priority: outer ring > middle ring > inner ring (most specific first)
@@ -1282,14 +1295,15 @@
                 selectedFeelingDisplay.textContent = selectedData.feeling;
                 selectedFeelingDisplay.style.color = selectedData.color;
                 document.getElementById('nextToDetails').disabled = false;
-                console.log('Selected:', selectedFeeling, 'from', selectedData.ring, 'ring at angle:', selectionAngle.toFixed(1), 'wheel rotation:', normalizedRotation.toFixed(1));
+                console.log('Final selection:', selectedFeeling, 'from', selectedData.ring, 'ring');
             } else {
                 selectedFeeling = null;
                 selectedFeelingDisplay.textContent = 'Rotate the wheel to select a feeling';
                 selectedFeelingDisplay.style.color = '#667eea';
                 document.getElementById('nextToDetails').disabled = true;
-                console.log('No emotion selected at angle:', selectionAngle.toFixed(1), 'wheel rotation:', normalizedRotation.toFixed(1));
+                console.log('No emotion selected');
             }
+            console.log('=================');
         }
 
         function showStep(stepNumber) {
