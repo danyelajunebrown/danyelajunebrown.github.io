@@ -742,13 +742,13 @@
         let selectedFeeling = null;
         let wheelRotation = 0;
 
-        // Complete emotion wheel data with corrected angles
+        // Simple and clean emotion wheel data - back to basics
         const emotionWheelData = {
             "Happy": {
                 emoji: "😀",
                 color: "#FFE680",
-                startAngle: -90,  // Start at top (12 o'clock position)
-                endAngle: -45,    // 45 degrees clockwise
+                startAngle: 0,
+                endAngle: 51.43, // 360/7 sections
                 middleEmotions: [
                     {name: "Playful", outerEmotions: ["Aroused", "Cheeky"]},
                     {name: "Content", outerEmotions: ["Free", "Joyful"]},
@@ -764,8 +764,8 @@
             "Surprised": {
                 emoji: "😲",
                 color: "#DDA0DD",
-                startAngle: -45,
-                endAngle: -22.5,
+                startAngle: 51.43,
+                endAngle: 102.86,
                 middleEmotions: [
                     {name: "Startled", outerEmotions: ["Shocked", "Dismayed"]},
                     {name: "Confused", outerEmotions: ["Disillusioned", "Perplexed"]},
@@ -776,8 +776,8 @@
             "Disgusted": {
                 emoji: "🤢",
                 color: "#90EE90",
-                startAngle: -22.5,
-                endAngle: 0,
+                startAngle: 102.86,
+                endAngle: 154.29,
                 middleEmotions: [
                     {name: "Disapproving", outerEmotions: ["Judgmental", "Embarrassed"]},
                     {name: "Disappointed", outerEmotions: ["Appalled", "Revolted"]},
@@ -788,8 +788,8 @@
             "Bad": {
                 emoji: "😐",
                 color: "#D3D3D3",
-                startAngle: 0,
-                endAngle: 45,
+                startAngle: 154.29,
+                endAngle: 205.71,
                 middleEmotions: [
                     {name: "Bored", outerEmotions: ["Indifferent", "Apathetic"]},
                     {name: "Busy", outerEmotions: ["Pressured", "Rushed"]},
@@ -800,8 +800,8 @@
             "Fearful": {
                 emoji: "😨",
                 color: "#FFB347",
-                startAngle: 45,
-                endAngle: 90,
+                startAngle: 205.71,
+                endAngle: 257.14,
                 middleEmotions: [
                     {name: "Scared", outerEmotions: ["Helpless", "Frightened"]},
                     {name: "Anxious", outerEmotions: ["Overwhelmed", "Worried"]},
@@ -814,8 +814,8 @@
             "Angry": {
                 emoji: "😡",
                 color: "#FF6B6B",
-                startAngle: 90,
-                endAngle: 135,
+                startAngle: 257.14,
+                endAngle: 308.57,
                 middleEmotions: [
                     {name: "Let down", outerEmotions: ["Betrayed", "Resentful"]},
                     {name: "Humiliated", outerEmotions: ["Disrespected", "Ridiculed"]},
@@ -830,8 +830,8 @@
             "Sad": {
                 emoji: "😢",
                 color: "#87CEEB",
-                startAngle: 135,
-                endAngle: 180,
+                startAngle: 308.57,
+                endAngle: 360,
                 middleEmotions: [
                     {name: "Hurt", outerEmotions: ["Embarrassed", "Disappointed"]},
                     {name: "Depressed", outerEmotions: ["Inferior", "Empty"]},
@@ -843,18 +843,14 @@
             }
         };
 
-        // Generate flattened selectable emotions array with correct angles
+        // Generate flattened selectable emotions array
         let selectableEmotions = [];
 
         Object.entries(emotionWheelData).forEach(([mainEmotion, data]) => {
-            let sectionSpan = data.endAngle - data.startAngle;
-            
-            // Handle angle wrapping (if startAngle > endAngle, it crosses 0°)
-            if (sectionSpan < 0) {
-                sectionSpan += 360;
-            }
-            
+            const sectionSpan = data.endAngle - data.startAngle;
             const totalMiddleEmotions = data.middleEmotions.length;
+            
+            console.log(`Processing ${mainEmotion}: ${data.startAngle}° - ${data.endAngle}° (span: ${sectionSpan}°)`);
             
             // Add main emotion (inner ring) - covers entire section
             selectableEmotions.push({
@@ -872,42 +868,33 @@
             
             data.middleEmotions.forEach((middleEmotion, midIndex) => {
                 const middleStartAngle = currentMiddleAngle;
-                let middleEndAngle = currentMiddleAngle + middleAngleStep;
-                
-                // Normalize angles to -180 to 180 range
-                function normalizeAngle(angle) {
-                    while (angle > 180) angle -= 360;
-                    while (angle <= -180) angle += 360;
-                    return angle;
-                }
-                
-                const normalizedMiddleStart = normalizeAngle(middleStartAngle);
-                const normalizedMiddleEnd = normalizeAngle(middleEndAngle);
+                const middleEndAngle = currentMiddleAngle + middleAngleStep;
                 
                 // Add middle emotion
                 selectableEmotions.push({
                     feeling: middleEmotion.name,
                     color: data.color,
-                    startAngle: normalizedMiddleStart,
-                    endAngle: normalizedMiddleEnd,
+                    startAngle: middleStartAngle,
+                    endAngle: middleEndAngle,
                     ring: "middle"
                 });
+                
+                console.log(`  Middle: ${middleEmotion.name} (${middleStartAngle.toFixed(1)}° - ${middleEndAngle.toFixed(1)}°)`);
                 
                 // Add outer emotions for this middle emotion
                 const outerAngleStep = middleAngleStep / middleEmotion.outerEmotions.length;
                 let currentOuterAngle = middleStartAngle;
                 
                 middleEmotion.outerEmotions.forEach((outerEmotion, outerIndex) => {
-                    const outerStart = normalizeAngle(currentOuterAngle);
-                    const outerEnd = normalizeAngle(currentOuterAngle + outerAngleStep);
-                    
                     selectableEmotions.push({
                         feeling: outerEmotion,
                         color: data.color,
-                        startAngle: outerStart,
-                        endAngle: outerEnd,
+                        startAngle: currentOuterAngle,
+                        endAngle: currentOuterAngle + outerAngleStep,
                         ring: "outer"
                     });
+                    
+                    console.log(`    Outer: ${outerEmotion} (${currentOuterAngle.toFixed(1)}° - ${(currentOuterAngle + outerAngleStep).toFixed(1)}°)`);
                     currentOuterAngle += outerAngleStep;
                 });
                 
@@ -940,6 +927,8 @@
 
         // Initialize app
         async function init() {
+            console.log('Initializing app...');
+            
             // Check if user is already logged in
             const { data: { user } } = await supabaseClient.auth.getUser();
             if (user) {
@@ -958,9 +947,14 @@
             startDate.setDate(endDate.getDate() - 7);
             document.getElementById('startDate').valueAsDate = startDate;
             document.getElementById('endDate').valueAsDate = endDate;
+            
+            console.log('App initialized successfully');
         }
 
         function createFeelingsWheel() {
+            console.log('Creating feelings wheel...');
+            console.log('Total selectable emotions:', selectableEmotions.length);
+            
             const centerX = 250;
             const centerY = 250;
             const outerRadius = 240;
@@ -970,23 +964,12 @@
             
             let svg = '';
             
-            // Helper function to convert degrees to radians
-            function degToRad(deg) {
-                return (deg * Math.PI) / 180;
-            }
-            
             // Helper function to create SVG arc path
             function createArcPath(startAngle, endAngle, innerR, outerR) {
-                let start = startAngle;
-                let end = endAngle;
+                console.log(`Creating arc: ${startAngle.toFixed(1)}° - ${endAngle.toFixed(1)}°, radius: ${innerR} - ${outerR}`);
                 
-                // Handle angle wrapping
-                if (end < start) {
-                    end += 360;
-                }
-                
-                const startAngleRad = degToRad(start);
-                const endAngleRad = degToRad(end);
+                const startAngleRad = (startAngle * Math.PI) / 180;
+                const endAngleRad = (endAngle * Math.PI) / 180;
                 
                 const x1 = centerX + innerR * Math.cos(startAngleRad);
                 const y1 = centerY + innerR * Math.sin(startAngleRad);
@@ -997,7 +980,7 @@
                 const x4 = centerX + innerR * Math.cos(endAngleRad);
                 const y4 = centerY + innerR * Math.sin(endAngleRad);
                 
-                const largeArcFlag = (end - start) > 180 ? 1 : 0;
+                const largeArcFlag = (endAngle - startAngle) > 180 ? 1 : 0;
                 
                 return [
                     `M ${x1} ${y1}`,
@@ -1014,34 +997,39 @@
             const middleRingEmotions = selectableEmotions.filter(item => item.ring === "middle");
             const outerRingEmotions = selectableEmotions.filter(item => item.ring === "outer");
             
+            console.log('Ring counts:', {
+                inner: innerRingEmotions.length,
+                middle: middleRingEmotions.length,
+                outer: outerRingEmotions.length
+            });
+            
             // Draw inner ring with emojis and main categories
             innerRingEmotions.forEach((item) => {
+                console.log(`Drawing inner ring: ${item.feeling} (${item.startAngle}° - ${item.endAngle}°)`);
+                
                 const path = createArcPath(item.startAngle, item.endAngle, centerRadius, innerRadius);
-                const midAngle = degToRad((item.startAngle + item.endAngle) / 2);
+                const midAngle = ((item.startAngle + item.endAngle) / 2) * Math.PI / 180;
                 
                 // Position for emoji
                 const emojiX = centerX + (centerRadius + 15) * Math.cos(midAngle);
                 const emojiY = centerY + (centerRadius + 15) * Math.sin(midAngle);
                 
-                let textRotation = (item.startAngle + item.endAngle) / 2;
-                if (textRotation > 90 && textRotation < 270) {
-                    textRotation = textRotation + 180;
-                }
-                
                 svg += `
                     <path d="${path}" fill="${item.color}" stroke="#fff" stroke-width="3" opacity="0.9"
                           class="wheel-segment" data-feeling="${item.feeling}" data-ring="inner"/>
                     <text x="${emojiX}" y="${emojiY}" text-anchor="middle" dominant-baseline="central" 
-                          font-size="45" pointer-events="none">
+                          font-size="32" pointer-events="none">
                         ${item.emoji}
                     </text>
                 `;
             });
             
-            // Draw middle ring
+            // Draw middle ring (only if there are segments)
             middleRingEmotions.forEach((item) => {
+                console.log(`Drawing middle ring: ${item.feeling} (${item.startAngle}° - ${item.endAngle}°)`);
+                
                 const path = createArcPath(item.startAngle, item.endAngle, innerRadius, middleRadius);
-                const midAngle = degToRad((item.startAngle + item.endAngle) / 2);
+                const midAngle = ((item.startAngle + item.endAngle) / 2) * Math.PI / 180;
                 
                 const textX = centerX + ((innerRadius + middleRadius) / 2) * Math.cos(midAngle);
                 const textY = centerY + ((innerRadius + middleRadius) / 2) * Math.sin(midAngle);
@@ -1055,17 +1043,19 @@
                     <path d="${path}" fill="${item.color}" stroke="#fff" stroke-width="2" opacity="0.8"
                           class="wheel-segment" data-feeling="${item.feeling}" data-ring="middle"/>
                     <text x="${textX}" y="${textY}" text-anchor="middle" dominant-baseline="central" 
-                          font-size="10" font-weight="600" fill="#333" pointer-events="none"
+                          font-size="9" font-weight="600" fill="#333" pointer-events="none"
                           transform="rotate(${textRotation}, ${textX}, ${textY})">
                         ${item.feeling}
                     </text>
                 `;
             });
             
-            // Draw outer ring
+            // Draw outer ring (only if there are segments)
             outerRingEmotions.forEach((item) => {
+                console.log(`Drawing outer ring: ${item.feeling} (${item.startAngle}° - ${item.endAngle}°)`);
+                
                 const path = createArcPath(item.startAngle, item.endAngle, middleRadius, outerRadius);
-                const midAngle = degToRad((item.startAngle + item.endAngle) / 2);
+                const midAngle = ((item.startAngle + item.endAngle) / 2) * Math.PI / 180;
                 
                 const textX = centerX + ((middleRadius + outerRadius) / 2) * Math.cos(midAngle);
                 const textY = centerY + ((middleRadius + outerRadius) / 2) * Math.sin(midAngle);
@@ -1079,7 +1069,7 @@
                     <path d="${path}" fill="${item.color}" stroke="#fff" stroke-width="1" opacity="0.7"
                           class="wheel-segment" data-feeling="${item.feeling}" data-ring="outer"/>
                     <text x="${textX}" y="${textY}" text-anchor="middle" dominant-baseline="central" 
-                          font-size="8" font-weight="500" fill="#333" pointer-events="none"
+                          font-size="7" font-weight="500" fill="#333" pointer-events="none"
                           transform="rotate(${textRotation}, ${textX}, ${textY})">
                         ${item.feeling}
                     </text>
@@ -1087,10 +1077,9 @@
             });
             
             feelingsWheel.innerHTML = svg;
-            console.log('Complete emotion wheel created:', 
-                       innerRingEmotions.length, 'main categories,',
-                       middleRingEmotions.length, 'middle emotions,', 
-                       outerRingEmotions.length, 'specific emotions');
+            
+            console.log('Feelings wheel created successfully');
+            console.log('SVG length:', svg.length);
         }
 
         function setupEventListeners() {
@@ -1178,7 +1167,7 @@
                 }
             }, { passive: false });
 
-            // Step navigation - simplified to 2 steps
+            // Step navigation
             document.getElementById('nextToDetails').addEventListener('click', () => showStep(2));
             document.getElementById('backToFeeling').addEventListener('click', () => showStep(1));
             
@@ -1203,25 +1192,33 @@
 
         function updateSelectedFeeling() {
             // Calculate which emotion is currently at the top (under the notch)
-            // The notch points straight up (at -90 degrees)
-            let selectionAngle = -wheelRotation - 90;
+            // The notch points straight up (at 0 degrees, but adjusted for CSS rotation)
+            let selectionAngle = (-wheelRotation + 270) % 360;
+            if (selectionAngle < 0) selectionAngle += 360;
             
-            // Normalize to -180 to 180 range
-            while (selectionAngle > 180) selectionAngle -= 360;
-            while (selectionAngle <= -180) selectionAngle += 360;
+            console.log(`=== SELECTION DEBUG ===`);
+            console.log(`Wheel rotation: ${wheelRotation.toFixed(1)}°`);
+            console.log(`Selection angle: ${selectionAngle.toFixed(1)}°`);
             
             // Find all emotions that could be selected at this angle
             const possibleSelections = selectableEmotions.filter(item => {
                 let itemStart = item.startAngle;
                 let itemEnd = item.endAngle;
                 
-                // Handle angle wrapping
+                // Check if selection angle is within this segment
+                let isInRange = false;
                 if (itemEnd < itemStart) {
-                    // Crosses the -180/180 boundary
-                    return selectionAngle >= itemStart || selectionAngle < itemEnd;
+                    // Handle crossing 0°/360° boundary
+                    isInRange = selectionAngle >= itemStart || selectionAngle < itemEnd;
                 } else {
-                    return selectionAngle >= itemStart && selectionAngle < itemEnd;
+                    isInRange = selectionAngle >= itemStart && selectionAngle < itemEnd;
                 }
+                
+                if (isInRange) {
+                    console.log(`Possible match: ${item.feeling} (${item.ring}) at ${itemStart.toFixed(1)}° - ${itemEnd.toFixed(1)}°`);
+                }
+                
+                return isInRange;
             });
             
             // Priority: outer ring > middle ring > inner ring (most specific first)
@@ -1237,12 +1234,15 @@
                 selectedFeelingDisplay.textContent = selectedData.feeling;
                 selectedFeelingDisplay.style.color = selectedData.color;
                 document.getElementById('nextToDetails').disabled = false;
+                console.log(`SELECTED: ${selectedFeeling} (${selectedData.ring} ring)`);
             } else {
                 selectedFeeling = null;
                 selectedFeelingDisplay.textContent = 'Rotate the wheel to select a feeling';
                 selectedFeelingDisplay.style.color = '#667eea';
                 document.getElementById('nextToDetails').disabled = true;
+                console.log('SELECTED: None');
             }
+            console.log('========================');
         }
 
         function showStep(stepNumber) {
@@ -1384,7 +1384,7 @@
             try {
                 const newReport = {
                     user_id: currentUser.id,
-                    feeling: selectedFeeling, // Use selected feeling from wheel
+                    feeling: selectedFeeling,
                     intensity: parseInt(intensitySlider.value),
                     dbt_skill: skillSelect.value,
                     timestamp: new Date().toISOString()
@@ -1409,7 +1409,7 @@
                 intensitySlider.value = 1;
                 skillSelect.value = '';
                 updateIntensityDisplay();
-                showStep(1); // Go back to step 1
+                showStep(1);
                 
                 showSuccess('Report submitted successfully!');
                 updateRecentReports();
@@ -1460,14 +1460,12 @@
         async function generateCurrentWeekReport() {
             // Calculate current week (Sunday to Saturday)
             const today = new Date();
-            const dayOfWeek = today.getDay(); // 0 = Sunday, 1 = Monday, etc.
+            const dayOfWeek = today.getDay();
             
-            // Find this week's Sunday
             const startDate = new Date(today);
             startDate.setDate(today.getDate() - dayOfWeek);
             startDate.setHours(0, 0, 0, 0);
             
-            // Find this week's Saturday
             const endDate = new Date(startDate);
             endDate.setDate(startDate.getDate() + 6);
             endDate.setHours(23, 59, 59, 999);
