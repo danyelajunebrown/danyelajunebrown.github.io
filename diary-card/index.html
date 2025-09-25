@@ -1164,11 +1164,27 @@
                     const centerY = rect.top + rect.height / 2;
                     const currentAngle = Math.atan2(e.clientY - centerY, e.clientX - centerX);
                     const deltaAngle = currentAngle - startAngle;
-                    wheelRotation += deltaAngle * (180 / Math.PI);
-                    wheelRotation = wheelRotation % 360;
-                    if (wheelRotation < 0) wheelRotation += 360;
+                    const deltaRotationDegrees = deltaAngle * (180 / Math.PI);
+                    
+                    wheelRotation += deltaRotationDegrees;
+                    
+                    // Debug the rotation mechanics
+                    console.log('=== ROTATION DEBUG ===');
+                    console.log('Mouse position:', e.clientX, e.clientY);
+                    console.log('Center:', centerX, centerY);
+                    console.log('Current angle (rad):', currentAngle);
+                    console.log('Delta angle (rad):', deltaAngle);
+                    console.log('Delta rotation (deg):', deltaRotationDegrees);
+                    console.log('New wheel rotation:', wheelRotation);
+                    
+                    // Normalize for display
+                    let displayRotation = wheelRotation % 360;
+                    if (displayRotation < 0) displayRotation += 360;
                     
                     feelingsWheel.style.transform = `rotate(${wheelRotation}deg)`;
+                    console.log('Applied CSS rotation:', wheelRotation);
+                    console.log('======================');
+                    
                     updateSelectedFeeling();
                     startAngle = currentAngle;
                 }
@@ -1250,13 +1266,54 @@
             let normalizedRotation = ((wheelRotation % 360) + 360) % 360;
             
             // Calculate which angle is currently at the top (under the notch)
-            // Try direct mapping: when wheel hasn't rotated (0°), we want to select Happy section (0°)
-            let selectionAngle = normalizedRotation;
+            // Add 180° to correct the coordinate system offset
+            let selectionAngle = (normalizedRotation + 180) % 360;
             
             // Debug logging to help identify the issue
-            console.log('=== Debug Info ===');
-            console.log('Wheel rotation:', normalizedRotation.toFixed(1));
+            console.log('=== SELECTION DEBUG ===');
+            console.log('Raw wheel rotation:', wheelRotation);
+            console.log('Normalized rotation:', normalizedRotation.toFixed(1));
             console.log('Selection angle:', selectionAngle.toFixed(1));
+            
+            // Debug: Show what emotions should be at key angles
+            console.log('--- Emotion ranges for reference ---');
+            console.log('Happy (0-90°):', selectableEmotions.filter(e => e.feeling === 'Happy')[0]);
+            console.log('Surprised (90-135°):', selectableEmotions.filter(e => e.feeling === 'Surprised')[0]);
+            console.log('Disgusted (135-180°):', selectableEmotions.filter(e => e.feeling === 'Disgusted')[0]);
+            console.log('Bad (180-225°):', selectableEmotions.filter(e => e.feeling === 'Bad')[0]);
+            console.log('Fearful (225-270°):', selectableEmotions.filter(e => e.feeling === 'Fearful')[0]);
+            console.log('Angry (270-315°):', selectableEmotions.filter(e => e.feeling === 'Angry')[0]);
+            console.log('Sad (315-360°):', selectableEmotions.filter(e => e.feeling === 'Sad')[0]);
+            
+            // Try multiple selection angle calculations to see which works
+            const testAngles = [
+                { name: 'Direct', angle: normalizedRotation },
+                { name: '+180', angle: (normalizedRotation + 180) % 360 },
+                { name: '-180', angle: (normalizedRotation - 180 + 360) % 360 },
+                { name: '+90', angle: (normalizedRotation + 90) % 360 },
+                { name: '-90', angle: (normalizedRotation - 90 + 360) % 360 },
+                { name: '360-rot', angle: (360 - normalizedRotation) % 360 }
+            ];
+            
+            console.log('--- Testing different angle calculations ---');
+            testAngles.forEach(test => {
+                const matches = selectableEmotions.filter(item => {
+                    if (item.endAngle < item.startAngle) {
+                        return test.angle >= item.startAngle || test.angle < item.endAngle;
+                    } else {
+                        return test.angle >= item.startAngle && test.angle < item.endAngle;
+                    }
+                }).filter(item => item.ring === "outer" || item.ring === "middle" || item.ring === "inner");
+                
+                const topMatch = matches.find(item => item.ring === "outer") ||
+                               matches.find(item => item.ring === "middle") ||
+                               matches.find(item => item.ring === "inner");
+                               
+                console.log(`${test.name} (${test.angle.toFixed(1)}°):`, topMatch ? topMatch.feeling : 'none');
+            });
+            
+            // Use the +180 calculation as our selection angle
+            selectionAngle = (normalizedRotation + 180) % 360;
             
             // Find all emotions that could be selected at this angle
             const possibleSelections = selectableEmotions.filter(item => {
@@ -1272,7 +1329,7 @@
                 }
                 
                 if (isInRange) {
-                    console.log(`Found match: ${item.feeling} (${item.ring}) at ${itemStart}-${itemEnd}°`);
+                    console.log(`Final match: ${item.feeling} (${item.ring}) at ${itemStart}-${itemEnd}°`);
                 }
                 
                 return isInRange;
@@ -1291,15 +1348,15 @@
                 selectedFeelingDisplay.textContent = selectedData.feeling;
                 selectedFeelingDisplay.style.color = selectedData.color;
                 document.getElementById('nextToDetails').disabled = false;
-                console.log('Final selection:', selectedFeeling, 'from', selectedData.ring, 'ring');
+                console.log('FINAL SELECTION:', selectedFeeling, 'from', selectedData.ring, 'ring');
             } else {
                 selectedFeeling = null;
                 selectedFeelingDisplay.textContent = 'Rotate the wheel to select a feeling';
                 selectedFeelingDisplay.style.color = '#667eea';
                 document.getElementById('nextToDetails').disabled = true;
-                console.log('No emotion selected');
+                console.log('FINAL SELECTION: No emotion selected');
             }
-            console.log('=================');
+            console.log('========================');
         }
 
         function showStep(stepNumber) {
