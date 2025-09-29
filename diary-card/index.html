@@ -762,9 +762,9 @@
 
                 <div class="share-section">
                     <div class="form-group" style="margin-bottom: 15px;">
-                        <label for="weekSelector">Select Week</label>
+                        <label for="weekSelector">Select Time Period</label>
                         <select id="weekSelector" style="width: 100%; padding: 12px; border-radius: 8px; border: 2px solid #667eea;">
-                            <option value="current">Current Week</option>
+                            <option value="current">Last 7 Days (Current)</option>
                         </select>
                     </div>
                     <button class="share-btn" id="shareBtn">Generate Diary Card</button>
@@ -934,8 +934,6 @@
             const sectionSpan = data.endAngle - data.startAngle;
             const totalMiddleEmotions = data.middleEmotions.length;
             
-            console.log(`Processing ${mainEmotion}: ${data.startAngle}° - ${data.endAngle}° (span: ${sectionSpan}°)`);
-            
             // Add main emotion (inner ring) - covers entire section
             selectableEmotions.push({
                 feeling: mainEmotion,
@@ -963,8 +961,6 @@
                     ring: "middle"
                 });
                 
-                console.log(`  Middle: ${middleEmotion.name} (${middleStartAngle.toFixed(1)}° - ${middleEndAngle.toFixed(1)}°)`);
-                
                 // Add outer emotions for this middle emotion
                 const outerAngleStep = middleAngleStep / middleEmotion.outerEmotions.length;
                 let currentOuterAngle = middleStartAngle;
@@ -978,7 +974,6 @@
                         ring: "outer"
                     });
                     
-                    console.log(`    Outer: ${outerEmotion} (${currentOuterAngle.toFixed(1)}° - ${(currentOuterAngle + outerAngleStep).toFixed(1)}°)`);
                     currentOuterAngle += outerAngleStep;
                 });
                 
@@ -1036,9 +1031,6 @@
         }
 
         function createFeelingsWheel() {
-            console.log('Creating feelings wheel...');
-            console.log('Total selectable emotions:', selectableEmotions.length);
-            
             const centerX = 250;
             const centerY = 250;
             const outerRadius = 240;
@@ -1050,8 +1042,6 @@
             
             // Helper function to create SVG arc path
             function createArcPath(startAngle, endAngle, innerR, outerR) {
-                console.log(`Creating arc: ${startAngle.toFixed(1)}° - ${endAngle.toFixed(1)}°, radius: ${innerR} - ${outerR}`);
-                
                 const startAngleRad = (startAngle * Math.PI) / 180;
                 const endAngleRad = (endAngle * Math.PI) / 180;
                 
@@ -1081,16 +1071,8 @@
             const middleRingEmotions = selectableEmotions.filter(item => item.ring === "middle");
             const outerRingEmotions = selectableEmotions.filter(item => item.ring === "outer");
             
-            console.log('Ring counts:', {
-                inner: innerRingEmotions.length,
-                middle: middleRingEmotions.length,
-                outer: outerRingEmotions.length
-            });
-            
             // Draw inner ring with emojis and main categories
             innerRingEmotions.forEach((item) => {
-                console.log(`Drawing inner ring: ${item.feeling} (${item.startAngle}° - ${item.endAngle}°)`);
-                
                 const path = createArcPath(item.startAngle, item.endAngle, centerRadius, innerRadius);
                 const midAngle = ((item.startAngle + item.endAngle) / 2) * Math.PI / 180;
                 
@@ -1108,10 +1090,8 @@
                 `;
             });
             
-            // Draw middle ring (only if there are segments)
+            // Draw middle ring
             middleRingEmotions.forEach((item) => {
-                console.log(`Drawing middle ring: ${item.feeling} (${item.startAngle}° - ${item.endAngle}°)`);
-                
                 const path = createArcPath(item.startAngle, item.endAngle, innerRadius, middleRadius);
                 const midAngle = ((item.startAngle + item.endAngle) / 2) * Math.PI / 180;
                 
@@ -1134,10 +1114,8 @@
                 `;
             });
             
-            // Draw outer ring (only if there are segments)
+            // Draw outer ring
             outerRingEmotions.forEach((item) => {
-                console.log(`Drawing outer ring: ${item.feeling} (${item.startAngle}° - ${item.endAngle}°)`);
-                
                 const path = createArcPath(item.startAngle, item.endAngle, middleRadius, outerRadius);
                 const midAngle = ((item.startAngle + item.endAngle) / 2) * Math.PI / 180;
                 
@@ -1161,9 +1139,6 @@
             });
             
             feelingsWheel.innerHTML = svg;
-            
-            console.log('Feelings wheel created successfully');
-            console.log('SVG length:', svg.length);
         }
 
         function setupEventListeners() {
@@ -1276,13 +1251,8 @@
 
         function updateSelectedFeeling() {
             // Calculate which emotion is currently at the top (under the notch)
-            // The notch points straight up (at 0 degrees, but adjusted for CSS rotation)
             let selectionAngle = (-wheelRotation + 270) % 360;
             if (selectionAngle < 0) selectionAngle += 360;
-            
-            console.log(`=== SELECTION DEBUG ===`);
-            console.log(`Wheel rotation: ${wheelRotation.toFixed(1)}°`);
-            console.log(`Selection angle: ${selectionAngle.toFixed(1)}°`);
             
             // Find all emotions that could be selected at this angle
             const possibleSelections = selectableEmotions.filter(item => {
@@ -1296,10 +1266,6 @@
                     isInRange = selectionAngle >= itemStart || selectionAngle < itemEnd;
                 } else {
                     isInRange = selectionAngle >= itemStart && selectionAngle < itemEnd;
-                }
-                
-                if (isInRange) {
-                    console.log(`Possible match: ${item.feeling} (${item.ring}) at ${itemStart.toFixed(1)}° - ${itemEnd.toFixed(1)}°`);
                 }
                 
                 return isInRange;
@@ -1318,15 +1284,12 @@
                 selectedFeelingDisplay.textContent = selectedData.feeling;
                 selectedFeelingDisplay.style.color = selectedData.color;
                 document.getElementById('nextToDetails').disabled = false;
-                console.log(`SELECTED: ${selectedFeeling} (${selectedData.ring} ring)`);
             } else {
                 selectedFeeling = null;
                 selectedFeelingDisplay.textContent = 'Rotate the wheel to select a feeling';
                 selectedFeelingDisplay.style.color = '#667eea';
                 document.getElementById('nextToDetails').disabled = true;
-                console.log('SELECTED: None');
             }
-            console.log('========================');
         }
 
         function showStep(stepNumber) {
@@ -1546,7 +1509,7 @@
         function getMondayOfWeek(date) {
             const d = new Date(date);
             const day = d.getDay();
-            const diff = d.getDate() - day + (day === 0 ? -6 : 1); // Adjust when day is Sunday
+            const diff = d.getDate() - day + (day === 0 ? -6 : 1);
             return new Date(d.setDate(diff));
         }
 
@@ -1556,7 +1519,7 @@
             const weekSelector = document.getElementById('weekSelector');
             const weeks = new Map();
             
-            // Find all unique weeks in the reports
+            // Find all unique weeks in the reports (still group by Monday-Sunday for historical weeks)
             reports.forEach(report => {
                 const date = new Date(report.timestamp);
                 const monday = getMondayOfWeek(date);
@@ -1564,11 +1527,11 @@
                 const weekKey = monday.toISOString().split('T')[0];
                 
                 if (!weeks.has(weekKey)) {
-                    const nextMonday = new Date(monday);
-                    nextMonday.setDate(monday.getDate() + 7);
+                    const sunday = new Date(monday);
+                    sunday.setDate(monday.getDate() + 6);
                     weeks.set(weekKey, {
                         start: new Date(monday),
-                        end: new Date(nextMonday)
+                        end: new Date(sunday)
                     });
                 }
             });
@@ -1577,10 +1540,10 @@
             const sortedWeeks = Array.from(weeks.entries()).sort((a, b) => b[1].start - a[1].start);
             
             // Build options
-            let options = '<option value="current">Current Week</option>';
+            let options = '<option value="current">Last 7 Days (Current)</option>';
             sortedWeeks.forEach(([key, range]) => {
                 const startStr = range.start.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-                const endStr = new Date(range.end.getTime() - 1).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+                const endStr = range.end.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
                 options += `<option value="${key}">${startStr} - ${endStr}</option>`;
             });
             
@@ -1592,21 +1555,27 @@
                 // Parse the original timestamp
                 const originalDate = new Date(originalTimestamp);
                 
-                // Get the current week's Monday
+                // Get the week start date from the diary card header
                 const reportText = document.getElementById('reportText');
                 const weekDatesText = reportText.querySelector('.week-dates').textContent;
-                const startDateMatch = weekDatesText.match(/Week Dates: (.+?) -/);
+                const startDateMatch = weekDatesText.match(/(?:Last 7 Days|Week Dates): (.+?) -/);
                 if (!startDateMatch) return;
                 
                 const weekStartDate = new Date(startDateMatch[1]);
-                const weekMonday = getMondayOfWeek(weekStartDate);
+                
+                // Calculate which day of the week the start date is
+                const startDayOfWeek = weekStartDate.getDay(); // 0=Sun, 1=Mon, etc.
                 
                 // Calculate the target date based on the new day
                 const dayMap = { 'SUN': 0, 'MON': 1, 'TUE': 2, 'WED': 3, 'THU': 4, 'FRI': 5, 'SAT': 6 };
-                const targetDayOffset = dayMap[newDay];
+                const targetDayOfWeek = dayMap[newDay];
                 
-                const newDate = new Date(weekMonday);
-                newDate.setDate(weekMonday.getDate() + targetDayOffset);
+                // Calculate days to add to start date to get to target day
+                let daysToAdd = targetDayOfWeek - startDayOfWeek;
+                if (daysToAdd < 0) daysToAdd += 7;
+                
+                const newDate = new Date(weekStartDate);
+                newDate.setDate(weekStartDate.getDate() + daysToAdd);
                 
                 // Preserve the original time
                 newDate.setHours(originalDate.getHours());
@@ -1645,14 +1614,23 @@
             let startDate, endDate;
             
             if (selectedWeek === 'current') {
-                // Calculate current week (Monday to following Monday)
+                // Calculate last 7 days including today
                 const today = new Date();
-                startDate = getMondayOfWeek(today);
+                
+                // Start date is 6 days ago
+                startDate = new Date(today);
+                startDate.setDate(today.getDate() - 6);
                 startDate.setHours(0, 0, 0, 0);
                 
-                endDate = new Date(startDate);
-                endDate.setDate(startDate.getDate() + 7);
+                // End date is tomorrow (to include all of today)
+                endDate = new Date(today);
+                endDate.setDate(today.getDate() + 1);
                 endDate.setHours(0, 0, 0, 0);
+                
+                console.log('Current week calculation (last 7 days):');
+                console.log('Today:', today.toDateString());
+                console.log('Start (6 days ago):', startDate.toDateString());
+                console.log('End (tomorrow):', endDate.toDateString());
             } else {
                 // Use selected week
                 startDate = new Date(selectedWeek);
@@ -1679,7 +1657,7 @@
                 // Initialize editable entries for this report
                 editableEntries = {};
                 
-                // Group entries by day of week (Monday = 0, Sunday = 6)
+                // Group entries by day of week
                 const dayGroups = {
                     'MON': [], 'TUE': [], 'WED': [], 'THU': [], 'FRI': [], 'SAT': [], 'SUN': []
                 };
@@ -1712,14 +1690,14 @@
                     });
                 });
                 
-                // Calculate display end date (day before next Monday)
+                // Calculate display end date (today)
                 const displayEndDate = new Date(endDate);
                 displayEndDate.setDate(displayEndDate.getDate() - 1);
                 
                 // Generate HTML template with draggable entries
                 let htmlContent = `
                     <div class="template-header">DBT Skills Diary Card</div>
-                    <div class="week-dates">Week Dates: ${startDate.toLocaleDateString()} - ${displayEndDate.toLocaleDateString()}</div>
+                    <div class="week-dates">Last 7 Days: ${startDate.toLocaleDateString()} - ${displayEndDate.toLocaleDateString()}</div>
                     
                     <table class="diary-template">
                         <thead>
@@ -1767,8 +1745,10 @@
                             const b = parseInt(emotionColor.slice(5, 7), 16);
                             const bgColor = `rgba(${r}, ${g}, ${b}, ${opacity})`;
                             
+                            console.log(`Entry ${entry.feeling}: color=${emotionColor}, intensity=${entry.intensity}, bgColor=${bgColor}`);
+                            
                             htmlContent += `
-                                <div class="entry-item" draggable="true" data-entry-id="${entryId}" style="background: ${bgColor};">
+                                <div class="entry-item" draggable="true" data-entry-id="${entryId}" style="background: ${bgColor} !important; border: 1px solid rgba(0,0,0,0.2);">
                                     <div class="drag-handle">⋮⋮</div>
                                     <div class="entry-time">${time}</div>
                                     <div class="entry-feeling">${entry.feeling}</div>
@@ -1909,11 +1889,14 @@
                 const b = parseInt(emotionColor.slice(5, 7), 16);
                 const bgColor = `rgba(${r}, ${g}, ${b}, ${opacity})`;
                 
+                console.log(`Moved entry ${entry.feeling}: color=${emotionColor}, bgColor=${bgColor}`);
+                
                 const newEntryElement = document.createElement('div');
                 newEntryElement.className = 'entry-item';
                 newEntryElement.draggable = true;
                 newEntryElement.dataset.entryId = entryId;
                 newEntryElement.style.background = bgColor;
+                newEntryElement.style.border = '1px solid rgba(0,0,0,0.2)';
                 newEntryElement.innerHTML = `
                     <div class="drag-handle">⋮⋮</div>
                     <div class="entry-time">${time}</div>
