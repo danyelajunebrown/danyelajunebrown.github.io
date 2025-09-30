@@ -61,6 +61,31 @@
             margin-bottom: 30px;
         }
 
+        /* Spinning Emotion Wheel Styles */
+        .emotion-wheel-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-bottom: 30px;
+            padding: 20px 0;
+        }
+
+        .emotion-wheel-container img {
+            width: 250px;
+            height: 250px;
+            object-fit: contain;
+            animation: spin 60s linear infinite;
+        }
+
+        @keyframes spin {
+            from {
+                transform: rotate(0deg);
+            }
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
         .user-info {
             display: flex;
             justify-content: space-between;
@@ -654,6 +679,11 @@
                 width: 300px;
                 height: 300px;
             }
+
+            .emotion-wheel-container img {
+                width: 200px;
+                height: 200px;
+            }
         }
     </style>
 </head>
@@ -670,6 +700,11 @@
 
             <!-- Authentication Section -->
             <div id="authSection" class="auth-section">
+                <!-- Spinning Emotion Wheel -->
+                <div class="emotion-wheel-container">
+                    <img src="feelings wheel.jpeg" alt="Emotion Wheel" id="emotionWheelImage">
+                </div>
+                
                 <div class="auth-form">
                     <div class="auth-tabs">
                         <button class="auth-tab active" id="loginTab">Login</button>
@@ -1007,6 +1042,26 @@
         // Initialize app
         async function init() {
             console.log('Initializing app...');
+            
+            // Debug: Check emotion wheel image loading
+            const emotionWheelImg = document.getElementById('emotionWheelImage');
+            if (emotionWheelImg) {
+                console.log('✓ Emotion wheel image element found');
+                console.log('Image src:', emotionWheelImg.src);
+                
+                emotionWheelImg.onload = function() {
+                    console.log('✓ Emotion wheel image loaded successfully');
+                    console.log('Image dimensions:', this.naturalWidth, 'x', this.naturalHeight);
+                };
+                
+                emotionWheelImg.onerror = function() {
+                    console.error('✗ ERROR: Emotion wheel image failed to load');
+                    console.error('Expected path: feelings wheel.jpeg');
+                    console.error('Full src:', this.src);
+                };
+            } else {
+                console.error('✗ ERROR: Emotion wheel image element not found in DOM');
+            }
             
             // Check if user is already logged in
             const { data: { user } } = await supabaseClient.auth.getUser();
@@ -1373,6 +1428,8 @@
             authSection.classList.remove('hidden');
             appSection.classList.add('hidden');
             authForm.reset();
+            console.log('✓ Switched to auth view - emotion wheel should now be visible');
+            console.log('Auth section visible:', !authSection.classList.contains('hidden'));
         }
 
         function showApp() {
@@ -1380,6 +1437,8 @@
             appSection.classList.remove('hidden');
             userEmail.textContent = currentUser.email;
             updateRecentReports();
+            console.log('✓ Switched to app view - emotion wheel should now be hidden');
+            console.log('Auth section hidden:', authSection.classList.contains('hidden'));
         }
 
         async function loadReports() {
