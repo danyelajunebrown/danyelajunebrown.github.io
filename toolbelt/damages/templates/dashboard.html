@@ -1,0 +1,109 @@
+{% extends "base.html" %}
+{% block title %}Dashboard - WearAnalysis{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <div class="flex justify-between items-center">
+        <h1 class="text-3xl font-bold">Dashboard</h1>
+        <a href="/upload" class="bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded-lg">
+            Upload New Scan
+        </a>
+    </div>
+    
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+        <div class="bg-gray-800 p-6 rounded-lg">
+            <div class="text-2xl font-bold text-blue-400" id="total-scans">-</div>
+            <div class="text-gray-400">Total Scans</div>
+        </div>
+        <div class="bg-gray-800 p-6 rounded-lg">
+            <div class="text-2xl font-bold text-green-400" id="completed-scans">-</div>
+            <div class="text-gray-400">Completed</div>
+        </div>
+        <div class="bg-gray-800 p-6 rounded-lg">
+            <div class="text-2xl font-bold text-yellow-400" id="processing-scans">-</div>
+            <div class="text-gray-400">Processing</div>
+        </div>
+        <div class="bg-gray-800 p-6 rounded-lg">
+            <div class="text-2xl font-bold text-red-400" id="avg-wear">-</div>
+            <div class="text-gray-400">Avg Wear %</div>
+        </div>
+    </div>
+    
+    <div class="bg-gray-800 rounded-lg p-6">
+        <h2 class="text-xl font-bold mb-4">Recent Scans</h2>
+        <div class="overflow-x-auto">
+            <table class="w-full text-left">
+                <thead>
+                    <tr class="border-b border-gray-700">
+                        <th class="py-2">Date</th>
+                        <th class="py-2">Category</th>
+                        <th class="py-2">Object</th>
+                        <th class="py-2">Severity</th>
+                        <th class="py-2">Status</th>
+                        <th class="py-2">Action</th>
+                    </tr>
+                </thead>
+                <tbody id="sessions-table"></tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script>
+async function loadDashboard() {
+    try {
+        const response = await fetch('/api/sessions');
+        const sessions = await response.json();
+        
+        document.getElementById('total-scans').textContent = sessions.length;
+        document.getElementById('completed-scans').textContent = 
+            sessions.filter(s => s.processing_status === 'completed').length;
+        document.getElementById('processing-scans').textContent = 
+            sessions.filter(s => s.processing_status === 'processing').length;
+        
+        const tbody = document.getElementById('sessions-table');
+        tbody.innerHTML = sessions.map(session => `
+            <tr class="border-b border-gray-700 hover:bg-gray-700">
+                <td class="py-2">${new Date(session.timestamp).toLocaleDateString()}</td>
+                <td class="py-2">${session.category}</td>
+                <td class="py-2">${session.object_type} ${session.brand || ''}</td>
+                <td class="py-2">
+                    <span class="px-2 py-1 rounded text-xs ${getSeverityColor(session.damage_severity)}">
+                        ${session.damage_severity}/10
+                    </span>
+                </td>
+                <td class="py-2">
+                    <span class="px-2 py-1 rounded text-xs ${getStatusColor(session.processing_status)}">
+                        ${session.processing_status}
+                    </span>
+                </td>
+                <td class="py-2">
+                    <a href="/viewer/${session.id}" class="text-blue-400 hover:underline">View</a>
+                </td>
+            </tr>
+        `).join('');
+    } catch (error) {
+        console.error('Error loading dashboard:', error);
+    }
+}
+
+function getSeverityColor(severity) {
+    if (severity <= 3) return 'bg-green-600';
+    if (severity <= 6) return 'bg-yellow-600';
+    return 'bg-red-600';
+}
+
+function getStatusColor(status) {
+    const colors = {
+        'pending': 'bg-gray-600',
+        'processing': 'bg-blue-600',
+        'completed': 'bg-green-600',
+        'failed': 'bg-red-600',
+        'error': 'bg-red-600'
+    };
+    return colors[status] || 'bg-gray-600';
+}
+
+document.addEventListener('DOMContentLoaded', loadDashboard);
+</script>
+{% endblock %}
