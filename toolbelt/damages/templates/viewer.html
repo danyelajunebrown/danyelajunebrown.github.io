@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+{% block title %}Viewer - WearAnalysis{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <div class="flex justify-between items-center">
+        <h1 class="text-3xl font-bold">Scan Details</h1>
+        <a href="/" class="text-blue-400 hover:underline">← Dashboard</a>
+    </div>
+    
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div class="lg:col-span-2 bg-gray-800 rounded-lg p-6">
+            <h2 class="text-xl font-bold mb-4">3D Model</h2>
+            <div id="viewer-container" class="w-full h-96 bg-gray-900 rounded-lg flex items-center justify-center">
+                <div class="text-gray-500">3D Viewer (Processing...)</div>
+            </div>
+        </div>
+        
+        <div class="space-y-6">
+            <div class="bg-gray-800 rounded-lg p-6">
+                <h2 class="text-xl font-bold mb-4">Analysis</h2>
+                <div id="analysis-content" class="space-y-4">
+                    <div>Loading analysis...</div>
+                </div>
+            </div>
+            
+            <div class="bg-gray-800 rounded-lg p-6">
+                <h2 class="text-xl font-bold mb-4">Recommendations</h2>
+                <div id="recommendations">
+                    <div class="text-gray-500">Processing...</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+const sessionId = '{{ session_id }}';
+
+async function loadSessionData() {
+    try {
+        const response = await fetch(`/api/session/${sessionId}`);
+        const data = await response.json();
+        
+        const analysisContent = document.getElementById('analysis-content');
+        const recommendations = document.getElementById('recommendations');
+        
+        if (data.analysis) {
+            analysisContent.innerHTML = `
+                <div class="flex justify-between">
+                    <span>Wear Percentage:</span>
+                    <span class="font-bold text-red-400">${(data.analysis.wear_percentage * 100).toFixed(1)}%</span>
+                </div>
+                <div class="flex justify-between">
+                    <span>Predicted Failure:</span>
+                    <span class="font-bold">${data.analysis.predicted_failure_days} days</span>
+                </div>
+                <div class="flex justify-between">
+                    <span>Status:</span>
+                    <span class="px-2 py-1 bg-green-600 rounded text-xs">
+                        ${data.session.processing_status}
+                    </span>
+                </div>
+            `;
+            
+            recommendations.innerHTML = data.analysis.recommendations.map(rec => 
+                `<div class="p-3 bg-blue-900 rounded-lg text-sm mb-2">${rec}</div>`
+            ).join('');
+        } else {
+            analysisContent.innerHTML = '<div class="text-gray-400">Analysis in progress...</div>';
+        }
+    } catch (error) {
+        console.error('Error loading data:', error);
+    }
+}
+
+document.addEventListener('DOMContentLoaded', loadSessionData);
+</script>
+{% endblock %}
