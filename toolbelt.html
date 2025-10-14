@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Venus to Vixen - Tools</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 40px 20px;
+            color: white;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 60px;
+        }
+
+        .header h1 {
+            font-size: 3.5rem;
+            font-weight: 800;
+            margin-bottom: 15px;
+            text-shadow: 0 4px 20px rgba(0,0,0,0.3);
+        }
+
+        .header p {
+            font-size: 1.3rem;
+            opacity: 0.9;
+            font-weight: 300;
+        }
+
+        .tools-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 30px;
+            margin-bottom: 40px;
+        }
+
+        .tool-card {
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(20px);
+            border-radius: 24px;
+            padding: 40px 30px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            cursor: pointer;
+            text-decoration: none;
+            color: white;
+            display: block;
+        }
+
+        .tool-card:hover {
+            transform: translateY(-8px);
+            background: rgba(255, 255, 255, 0.25);
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.3);
+        }
+
+        .tool-icon {
+            font-size: 4rem;
+            margin-bottom: 20px;
+            display: block;
+            text-align: center;
+            filter: drop-shadow(0 4px 8px rgba(0,0,0,0.2));
+        }
+
+        .tool-title {
+            font-size: 1.8rem;
+            font-weight: 700;
+            margin-bottom: 12px;
+            text-align: center;
+        }
+
+        .tool-description {
+            font-size: 1rem;
+            opacity: 0.9;
+            line-height: 1.6;
+            text-align: center;
+        }
+
+        .footer {
+            text-align: center;
+            margin-top: 60px;
+            opacity: 0.8;
+            font-size: 0.95rem;
+        }
+
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 2.5rem;
+            }
+
+            .tools-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .tool-card {
+                padding: 30px 25px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Venus to Vixen</h1>
+            <p>Tools for Making Things</p>
+        </div>
+
+        <div class="tools-grid">
+            <a href="ButMakeItCunt.html" class="tool-card">
+                <span class="tool-icon">✂️</span>
+                <h2 class="tool-title">Make It Cunt</h2>
+                <p class="tool-description">Generate garment extension patterns for lengthening clothes with precision measurements</p>
+            </a>
+
+            <a href="KeepMeRollingJuice.html" class="tool-card">
+                <span class="tool-icon">🎥</span>
+                <h2 class="tool-title">Keep Me Rolling</h2>
+                <p class="tool-description">Record video with your phone camera while music keeps playing in the background</p>
+            </a>
+
+            <a href="plycutter.html" class="tool-card">
+                <span class="tool-icon">🔧</span>
+                <h2 class="tool-title">Plycutter</h2>
+                <p class="tool-description">Convert STL 3D models to finger-jointed DXF patterns for laser cutting</p>
+            </a>
+
+            <a href="STLSplitter.html" class="tool-card">
+                <span class="tool-icon">🪓</span>
+                <h2 class="tool-title">STL Buster</h2>
+                <p class="tool-description">Slice STL models into 4 parts with customizable tooth joints for assembly</p>
+            </a>
+
+            <a href="index.html" class="tool-card">
+                <span class="tool-icon">💭</span>
+                <h2 class="tool-title">The Feels</h2>
+                <p class="tool-description">Track your emotions and DBT skills practice with diary card generation</p>
+            </a>
+
+            <a href="damages.html" class="tool-card">
+                <span class="tool-icon">⛑️</span>
+                <h2 class="tool-title">For Damages</h2>
+                <p class="tool-description">Analyze wear patterns on belongings using photogrammetry and predictive maintenance</p>
+            </a>
+        </div>
+
+        <div class="footer">
+            <p>Built with love and spite</p>
+        </div>
+    </div>
+</body>
+</html>
