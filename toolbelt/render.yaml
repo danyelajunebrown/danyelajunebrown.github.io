@@ -1,0 +1,25 @@
+services:
+  - type: web
+    name: damages-api
+    env: python
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn app:app
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.0
+      - key: SECRET_KEY
+        generateValue: true
+      - key: WORKER_API_KEY
+        generateValue: true
+      - key: DATABASE_URL
+        fromDatabase:
+          name: damages-db
+          property: connectionString
+    healthCheckPath: /
+
+databases:
+  - name: damages-db
+    plan: free
+    databaseName: damages
+    user: damages
