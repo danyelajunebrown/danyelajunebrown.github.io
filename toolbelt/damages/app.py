@@ -1,4 +1,5 @@
-# app.py - Main Flask Application
+"""
+# app.py - Cloud Flask Application (for Render)
 from flask import Flask, request, jsonify, render_template, send_from_directory
 from flask_sqlalchemy import SQLAlchemy
 from flask_cors import CORS
@@ -6,37 +7,35 @@ import os
 import uuid
 import json
 from datetime import datetime
-from pathlib import Path
-import subprocess
-import shutil
 from werkzeug.utils import secure_filename
-import cv2
-import numpy as np
+import boto3
 from PIL import Image
+import io
 
 app = Flask(__name__)
 CORS(app)
 
 # Configuration
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///wear_analysis.db'
+app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL', 'sqlite:///damages.db').replace('postgres://', 'postgresql://')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-app.config['UPLOAD_FOLDER'] = 'data/raw'
-app.config['PROCESSED_FOLDER'] = 'data/processed'
 app.config['MAX_CONTENT_LENGTH'] = 100 * 1024 * 1024  # 100MB max
+app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'dev-key-change-in-production')
+app.config['WORKER_API_KEY'] = os.environ.get('WORKER_API_KEY', 'change-this-key')
+
+# AWS S3 for photo storage
+app.config['S3_BUCKET'] = os.environ.get('S3_BUCKET')
+app.config['S3_KEY'] = os.environ.get('AWS_ACCESS_KEY_ID')
+app.config['S3_SECRET'] = os.environ.get('AWS_SECRET_ACCESS_KEY')
+app.config['S3_REGION'] = os.environ.get('AWS_REGION', 'us-east-1')
 
 db = SQLAlchemy(app)
 
-# Create directories
-os.makedirs('data/raw/photogrammetry', exist_ok=True)
-os.makedirs('data/processed/3d_models', exist_ok=True)
-os.makedirs('data/processed/analysis_results', exist_ok=True)
-os.makedirs('static/uploads', exist_ok=True)
-os.makedirs('templates', exist_ok=True)
-
 # Database Models
 class CaptureSession(db.Model):
+    __tablename__ = 'capture_sessions'
+    
     id = db.Column(db.String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
-    timestamp = db.Column(db.DateTime, default=datetime.utcnow)
+    timestamp = db.Column(db.DateTime, default=datetime.utcnow, index=True)
     category = db.Column(db.String(50), nullable=False)
     object_type = db.Column(db.String(50), nullable=False)
     brand = db.Column(db.String(50))
@@ -45,45 +44,75 @@ class CaptureSession(db.Model):
     damage_severity = db.Column(db.Integer)
     damage_types = db.Column(db.Text)
     num_photos = db.Column(db.Integer)
-    processing_status = db.Column(db.String(20), default='pending')
+    processing_status = db.Column(db.String(20), default='pending', index=True)
     notes = db.Column(db.Text)
+    photos_url = db.Column(db.Text)
+    
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'timestamp': self.timestamp.isoformat(),
+            'category': self.category,
+            'object_type': self.object_type,
+            'brand': self.brand,
+            'model': self.model,
+            'age_months': self.age_months,
+            'damage_severity': self.damage_severity,
+            'damage_types': json.loads(self.damage_types) if self.damage_types else [],
+            'num_photos': self.num_photos,
+            'processing_status': self.processing_status,
+            'notes': self.notes,
+            'photos_url': json.loads(self.photos_url) if self.photos_url else []
+        }
 
-class ProcessedModel(db.Model):
+class ProcessingJob(db.Model):
+    __tablename__ = 'processing_jobs'
+    
     id = db.Column(db.String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
-    session_id = db.Column(db.String(36), db.ForeignKey('capture_session.id'))
-    model_path = db.Column(db.String(255))
-    mesh_vertices = db.Column(db.Integer)
-    mesh_faces = db.Column(db.Integer)
-    surface_area_mm2 = db.Column(db.Float)
-    processing_time_minutes = db.Column(db.Float)
-    quality_score = db.Column(db.Float)
+    session_id = db.Column(db.String(36), db.ForeignKey('capture_sessions.id'))
+    status = db.Column(db.String(20), default='queued', index=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    started_at = db.Column(db.DateTime)
+    completed_at = db.Column(db.DateTime)
+    worker_id = db.Column(db.String(100))
+    error_message = db.Column(db.Text)
+    result_data = db.Column(db.Text)
 
 class WearAnalysis(db.Model):
+    __tablename__ = 'wear_analysis'
+    
     id = db.Column(db.String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
-    model_id = db.Column(db.String(36), db.ForeignKey('processed_model.id'))
+    session_id = db.Column(db.String(36), db.ForeignKey('capture_sessions.id'))
     wear_percentage = db.Column(db.Float)
     critical_points = db.Column(db.Text)
     predicted_failure_days = db.Column(db.Integer)
     recommendations = db.Column(db.Text)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
-class StainAnalysis(db.Model):
-    id = db.Column(db.String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
-    session_id = db.Column(db.String(36), db.ForeignKey('capture_session.id'))
-    stain_type = db.Column(db.String(50))
-    area_mm2 = db.Column(db.Float)
-    location = db.Column(db.String(100))
-    color_change_percentage = db.Column(db.Float)
-    removability = db.Column(db.String(20))
-    treatment_recommendations = db.Column(db.Text)
-    before_cleaning_path = db.Column(db.String(255))
-    after_cleaning_path = db.Column(db.String(255))
-    cleaning_effectiveness = db.Column(db.Float)
+# Helper functions
+def upload_to_s3(file_data, filename):
+    if not app.config['S3_BUCKET']:
+        return f"/uploads/{filename}"
+    
+    s3 = boto3.client(
+        's3',
+        aws_access_key_id=app.config['S3_KEY'],
+        aws_secret_access_key=app.config['S3_SECRET'],
+        region_name=app.config['S3_REGION']
+    )
+    
+    s3.upload_fileobj(
+        file_data,
+        app.config['S3_BUCKET'],
+        filename,
+        ExtraArgs={'ContentType': 'image/jpeg'}
+    )
+    
+    return f"https://{app.config['S3_BUCKET']}.s3.{app.config['S3_REGION']}.amazonaws.com/{filename}"
 
-# API Routes
+# Routes
 @app.route('/')
-def dashboard():
+def index():
     return render_template('dashboard.html')
 
 @app.route('/upload')
@@ -101,40 +130,19 @@ def upload_photos():
     session_id = str(uuid.uuid4())
     timestamp = datetime.now()
     
-    date_str = timestamp.strftime('%Y-%m-%d')
-    session_folder = f"data/raw/photogrammetry/{date_str}/{session_id}"
-    images_folder = f"{session_folder}/images"
-    os.makedirs(images_folder, exist_ok=True)
-    
-    saved_files = []
+    photo_urls = []
     for i, file in enumerate(files):
         if file.filename:
-            filename = f"{timestamp.strftime('%Y%m%d_%H%M%S')}_{metadata.get('category', 'unknown')}_{i:03d}.jpg"
-            filepath = os.path.join(images_folder, filename)
-            file.save(filepath)
-            saved_files.append(filepath)
-    
-    session_metadata = {
-        "session_id": session_id,
-        "timestamp": timestamp.isoformat(),
-        "category": metadata.get('category', 'unknown'),
-        "object": {
-            "type": metadata.get('object_type', ''),
-            "brand": metadata.get('brand', ''),
-            "model": metadata.get('model', ''),
-            "age_months": metadata.get('age_months', 0),
-        },
-        "damage_assessment": {
-            "severity": metadata.get('damage_severity', 5),
-            "type": metadata.get('damage_types', []),
-            "location": metadata.get('damage_location', ''),
-        },
-        "num_photos": len(saved_files),
-        "notes": metadata.get('notes', '')
-    }
-    
-    with open(f"{session_folder}/metadata.json", 'w') as f:
-        json.dump(session_metadata, f, indent=2)
+            img = Image.open(file)
+            img.thumbnail((2048, 2048), Image.Resampling.LANCZOS)
+            
+            buffer = io.BytesIO()
+            img.save(buffer, format='JPEG', quality=85)
+            buffer.seek(0)
+            
+            filename = f"{session_id}/{i:03d}.jpg"
+            url = upload_to_s3(buffer, filename)
+            photo_urls.append(url)
     
     session = CaptureSession(
         id=session_id,
@@ -146,140 +154,147 @@ def upload_photos():
         age_months=metadata.get('age_months', 0),
         damage_severity=metadata.get('damage_severity', 5),
         damage_types=json.dumps(metadata.get('damage_types', [])),
-        num_photos=len(saved_files),
-        notes=metadata.get('notes', '')
+        num_photos=len(photo_urls),
+        notes=metadata.get('notes', ''),
+        photos_url=json.dumps(photo_urls)
     )
     db.session.add(session)
-    db.session.commit()
     
-    process_session_async(session_id, images_folder)
+    job = ProcessingJob(
+        session_id=session_id,
+        status='queued'
+    )
+    db.session.add(job)
+    db.session.commit()
     
     return jsonify({
         'session_id': session_id,
-        'message': f'Uploaded {len(saved_files)} photos successfully',
-        'processing_status': 'started'
+        'message': f'Uploaded {len(photo_urls)} photos successfully',
+        'processing_status': 'queued'
     })
-
-def process_session_async(session_id, images_folder):
-    try:
-        session = CaptureSession.query.get(session_id)
-        session.processing_status = 'processing'
-        db.session.commit()
-        
-        workspace = f"data/processed/3d_models/{session_id}"
-        os.makedirs(workspace, exist_ok=True)
-        
-        start_time = datetime.now()
-        
-        cmd = [
-            'colmap', 'automatic_reconstructor',
-            '--image_path', images_folder,
-            '--workspace_path', workspace,
-            '--camera_model', 'PINHOLE'
-        ]
-        
-        result = subprocess.run(cmd, capture_output=True, text=True)
-        
-        processing_time = (datetime.now() - start_time).total_seconds() / 60.0
-        
-        if result.returncode == 0:
-            model_path = find_model_file(workspace)
-            if model_path:
-                model = ProcessedModel(
-                    session_id=session_id,
-                    model_path=model_path,
-                    processing_time_minutes=processing_time,
-                    quality_score=0.85
-                )
-                db.session.add(model)
-                
-                run_wear_analysis(model.id, model_path)
-                
-                session.processing_status = 'completed'
-            else:
-                session.processing_status = 'failed'
-        else:
-            session.processing_status = 'failed'
-        
-        db.session.commit()
-        
-    except Exception as e:
-        session.processing_status = 'error'
-        db.session.commit()
-        print(f"Processing error: {e}")
-
-def find_model_file(workspace):
-    for root, dirs, files in os.walk(workspace):
-        for file in files:
-            if file.endswith('.ply'):
-                return os.path.join(root, file)
-    return None
-
-def run_wear_analysis(model_id, model_path):
-    analysis = WearAnalysis(
-        model_id=model_id,
-        wear_percentage=0.25,
-        critical_points=json.dumps([
-            {"location": [12.3, 4.5, 1.2], "severity": 8},
-            {"location": [15.1, 6.2, 0.8], "severity": 6}
-        ]),
-        predicted_failure_days=45,
-        recommendations=json.dumps([
-            "Apply reinforcement patch at heel area",
-            "Consider protective spray for fabric areas"
-        ])
-    )
-    db.session.add(analysis)
 
 @app.route('/api/sessions')
 def get_sessions():
-    sessions = CaptureSession.query.order_by(CaptureSession.timestamp.desc()).all()
-    return jsonify([{
-        'id': s.id,
-        'timestamp': s.timestamp.isoformat(),
-        'category': s.category,
-        'object_type': s.object_type,
-        'brand': s.brand,
-        'damage_severity': s.damage_severity,
-        'processing_status': s.processing_status,
-        'num_photos': s.num_photos
-    } for s in sessions])
+    sessions = CaptureSession.query.order_by(CaptureSession.timestamp.desc()).limit(100).all()
+    return jsonify([s.to_dict() for s in sessions])
 
 @app.route('/api/session/<session_id>')
 def get_session_details(session_id):
     session = CaptureSession.query.get_or_404(session_id)
-    model = ProcessedModel.query.filter_by(session_id=session_id).first()
-    analysis = None
-    if model:
-        analysis = WearAnalysis.query.filter_by(model_id=model.id).first()
+    analysis = WearAnalysis.query.filter_by(session_id=session_id).first()
+    job = ProcessingJob.query.filter_by(session_id=session_id).first()
     
     return jsonify({
-        'session': {
-            'id': session.id,
-            'timestamp': session.timestamp.isoformat(),
-            'category': session.category,
-            'object_type': session.object_type,
-            'brand': session.brand,
-            'processing_status': session.processing_status,
-            'notes': session.notes
-        },
-        'model': {
-            'id': model.id if model else None,
-            'quality_score': model.quality_score if model else None,
-            'processing_time': model.processing_time_minutes if model else None
-        } if model else None,
+        'session': session.to_dict(),
         'analysis': {
-            'wear_percentage': analysis.wear_percentage if analysis else None,
-            'predicted_failure_days': analysis.predicted_failure_days if analysis else None,
-            'recommendations': json.loads(analysis.recommendations) if analysis and analysis.recommendations else []
-        } if analysis else None
+            'wear_percentage': analysis.wear_percentage,
+            'predicted_failure_days': analysis.predicted_failure_days,
+            'recommendations': json.loads(analysis.recommendations) if analysis.recommendations else []
+        } if analysis else None,
+        'processing': {
+            'status': job.status,
+            'started_at': job.started_at.isoformat() if job.started_at else None,
+            'completed_at': job.completed_at.isoformat() if job.completed_at else None,
+            'error': job.error_message
+        } if job else None
     })
 
+# Worker API endpoints
+@app.route('/api/worker/jobs', methods=['GET'])
+def get_pending_jobs():
+    api_key = request.headers.get('X-API-Key')
+    if api_key != app.config['WORKER_API_KEY']:
+        return jsonify({'error': 'Unauthorized'}), 401
+    
+    jobs = ProcessingJob.query.filter_by(status='queued').order_by(ProcessingJob.created_at).limit(5).all()
+    
+    result = []
+    for job in jobs:
+        session = CaptureSession.query.get(job.session_id)
+        result.append({
+            'job_id': job.id,
+            'session_id': job.session_id,
+            'photos_url': json.loads(session.photos_url) if session.photos_url else [],
+            'metadata': {
+                'category': session.category,
+                'object_type': session.object_type,
+                'damage_severity': session.damage_severity
+            }
+        })
+    
+    return jsonify(result)
+
+@app.route('/api/worker/jobs/<job_id>/start', methods=['POST'])
+def start_job(job_id):
+    api_key = request.headers.get('X-API-Key')
+    if api_key != app.config['WORKER_API_KEY']:
+        return jsonify({'error': 'Unauthorized'}), 401
+    
+    job = ProcessingJob.query.get_or_404(job_id)
+    job.status = 'processing'
+    job.started_at = datetime.utcnow()
+    job.worker_id = request.json.get('worker_id', 'unknown')
+    
+    session = CaptureSession.query.get(job.session_id)
+    session.processing_status = 'processing'
+    
+    db.session.commit()
+    return jsonify({'success': True})
+
+@app.route('/api/worker/jobs/<job_id>/complete', methods=['POST'])
+def complete_job(job_id):
+    api_key = request.headers.get('X-API-Key')
+    if api_key != app.config['WORKER_API_KEY']:
+        return jsonify({'error': 'Unauthorized'}), 401
+    
+    job = ProcessingJob.query.get_or_404(job_id)
+    data = request.json
+    
+    job.status = 'completed'
+    job.completed_at = datetime.utcnow()
+    job.result_data = json.dumps(data.get('results', {}))
+    
+    session = CaptureSession.query.get(job.session_id)
+    session.processing_status = 'completed'
+    
+    if 'analysis' in data:
+        analysis = WearAnalysis(
+            session_id=job.session_id,
+            wear_percentage=data['analysis'].get('wear_percentage', 0),
+            critical_points=json.dumps(data['analysis'].get('critical_points', [])),
+            predicted_failure_days=data['analysis'].get('predicted_failure_days', 0),
+            recommendations=json.dumps(data['analysis'].get('recommendations', []))
+        )
+        db.session.add(analysis)
+    
+    db.session.commit()
+    return jsonify({'success': True})
+
+@app.route('/api/worker/jobs/<job_id>/fail', methods=['POST'])
+def fail_job(job_id):
+    api_key = request.headers.get('X-API-Key')
+    if api_key != app.config['WORKER_API_KEY']:
+        return jsonify({'error': 'Unauthorized'}), 401
+    
+    job = ProcessingJob.query.get_or_404(job_id)
+    job.status = 'failed'
+    job.completed_at = datetime.utcnow()
+    job.error_message = request.json.get('error', 'Unknown error')
+    
+    session = CaptureSession.query.get(job.session_id)
+    session.processing_status = 'failed'
+    
+    db.session.commit()
+    return jsonify({'success': True})
+
 @app.route('/viewer/<session_id>')
-def model_viewer(session_id):
+def viewer(session_id):
     return render_template('viewer.html', session_id=session_id)
 
 if __name__ == '__main__':
     with app.app_context():
         db.create_all()
     app.run(debug=True, host='0.0.0.0', port=5000)
+
+
+"""
