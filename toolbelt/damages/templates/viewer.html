@@ -1,39 +1,56 @@
 {% extends "base.html" %}
-{% block title %}Viewer - WearAnalysis{% endblock %}
+{% block title %}Viewer - damages{% endblock %}
+
+{% block extra_css %}
+<style>
+    .viewer-grid { display: grid; grid-template-columns: 2fr 1fr; gap: 2rem; }
+    .viewer-section { background: rgba(255, 255, 255, 0.05); border-radius: 12px; padding: 1.5rem; border: 1px solid rgba(255, 255, 255, 0.1); }
+    .model-viewer { width: 100%; height: 500px; background: rgba(0, 0, 0, 0.3); border-radius: 8px; display: flex; align-items: center; justify-content: center; color: rgba(255, 255, 255, 0.5); }
+    .info-row { display: flex; justify-content: space-between; padding: 0.75rem 0; border-bottom: 1px solid rgba(255, 255, 255, 0.05); }
+    .info-label { color: rgba(255, 255, 255, 0.6); }
+    .info-value { font-weight: 600; }
+    .recommendation { background: rgba(102, 126, 234, 0.1); border: 1px solid rgba(102, 126, 234, 0.3); padding: 1rem; border-radius: 8px; margin-bottom: 0.75rem; }
+    .loading { text-align: center; padding: 2rem; color: rgba(255, 255, 255, 0.6); }
+    .spinner { border: 3px solid rgba(255, 255, 255, 0.1); border-top-color: #667eea; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin: 0 auto 1rem; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .photos-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 0.5rem; margin-top: 1rem; }
+    .photos-grid img { width: 100%; height: 100px; object-fit: cover; border-radius: 6px; }
+    @media (max-width: 1024px) { .viewer-grid { grid-template-columns: 1fr; } }
+</style>
+{% endblock %}
 
 {% block content %}
-<div class="space-y-6">
-    <div class="flex justify-between items-center">
-        <h1 class="text-3xl font-bold">Scan Details</h1>
-        <a href="/" class="text-blue-400 hover:underline">← Dashboard</a>
-    </div>
-    
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div class="lg:col-span-2 bg-gray-800 rounded-lg p-6">
-            <h2 class="text-xl font-bold mb-4">3D Model</h2>
-            <div id="viewer-container" class="w-full h-96 bg-gray-900 rounded-lg flex items-center justify-center">
-                <div class="text-gray-500">3D Viewer (Processing...)</div>
-            </div>
+<div style="margin-bottom: 2rem;"><a href="/" style="color: rgba(255,255,255,0.6); text-decoration: none;">← Back to Dashboard</a></div>
+<h1 style="font-size: 2rem; font-weight: 700; margin-bottom: 2rem;">Scan Details</h1>
+<div class="viewer-grid">
+    <div>
+        <div class="viewer-section" style="margin-bottom: 2rem;">
+            <h2 style="font-size: 1.25rem; margin-bottom: 1rem;">3D Model</h2>
+            <div class="model-viewer" id="model-viewer"><div class="loading"><div class="spinner"></div><div>Loading model...</div></div></div>
         </div>
-        
-        <div class="space-y-6">
-            <div class="bg-gray-800 rounded-lg p-6">
-                <h2 class="text-xl font-bold mb-4">Analysis</h2>
-                <div id="analysis-content" class="space-y-4">
-                    <div>Loading analysis...</div>
-                </div>
-            </div>
-            
-            <div class="bg-gray-800 rounded-lg p-6">
-                <h2 class="text-xl font-bold mb-4">Recommendations</h2>
-                <div id="recommendations">
-                    <div class="text-gray-500">Processing...</div>
-                </div>
-            </div>
+        <div class="viewer-section">
+            <h2 style="font-size: 1.25rem; margin-bottom: 1rem;">Photos</h2>
+            <div id="photos-container" class="loading">Loading photos...</div>
+        </div>
+    </div>
+    <div>
+        <div class="viewer-section" style="margin-bottom: 2rem;">
+            <h2 style="font-size: 1.25rem; margin-bottom: 1rem;">Session Info</h2>
+            <div id="session-info" class="loading">Loading...</div>
+        </div>
+        <div class="viewer-section" style="margin-bottom: 2rem;">
+            <h2 style="font-size: 1.25rem; margin-bottom: 1rem;">Analysis</h2>
+            <div id="analysis-info" class="loading">Loading...</div>
+        </div>
+        <div class="viewer-section">
+            <h2 style="font-size: 1.25rem; margin-bottom: 1rem;">Recommendations</h2>
+            <div id="recommendations" class="loading">Loading...</div>
         </div>
     </div>
 </div>
+{% endblock %}
 
+{% block extra_js %}
 <script>
 const sessionId = '{{ session_id }}';
 
@@ -42,38 +59,61 @@ async function loadSessionData() {
         const response = await fetch(`/api/session/${sessionId}`);
         const data = await response.json();
         
-        const analysisContent = document.getElementById('analysis-content');
-        const recommendations = document.getElementById('recommendations');
+        const sessionInfo = document.getElementById('session-info');
+        sessionInfo.innerHTML = `
+            <div class="info-row"><span class="info-label">Category</span><span class="info-value" style="text-transform: capitalize;">${data.session.category}</span></div>
+            <div class="info-row"><span class="info-label">Object</span><span class="info-value">${data.session.object_type} ${data.session.brand || ''}</span></div>
+            <div class="info-row"><span class="info-label">Date</span><span class="info-value">${new Date(data.session.timestamp).toLocaleString()}</span></div>
+            <div class="info-row"><span class="info-label">Photos</span><span class="info-value">${data.session.num_photos}</span></div>
+            <div class="info-row"><span class="info-label">Status</span><span class="info-value" style="text-transform: capitalize;">${data.session.processing_status}</span></div>
+            ${data.session.notes ? `<div class="info-row"><span class="info-label">Notes</span><span class="info-value">${data.session.notes}</span></div>` : ''}
+        `;
         
+        const photosContainer = document.getElementById('photos-container');
+        if (data.session.photos_url && data.session.photos_url.length > 0) {
+            photosContainer.innerHTML = `<div class="photos-grid">${data.session.photos_url.map(url => `<img src="${url}" alt="Photo">`).join('')}</div>`;
+        } else { photosContainer.innerHTML = '<p style="color: rgba(255,255,255,0.5);">No photos available</p>'; }
+        
+        const analysisInfo = document.getElementById('analysis-info');
         if (data.analysis) {
-            analysisContent.innerHTML = `
-                <div class="flex justify-between">
-                    <span>Wear Percentage:</span>
-                    <span class="font-bold text-red-400">${(data.analysis.wear_percentage * 100).toFixed(1)}%</span>
-                </div>
-                <div class="flex justify-between">
-                    <span>Predicted Failure:</span>
-                    <span class="font-bold">${data.analysis.predicted_failure_days} days</span>
-                </div>
-                <div class="flex justify-between">
-                    <span>Status:</span>
-                    <span class="px-2 py-1 bg-green-600 rounded text-xs">
-                        ${data.session.processing_status}
-                    </span>
-                </div>
+            analysisInfo.innerHTML = `
+                <div class="info-row"><span class="info-label">Wear Percentage</span><span class="info-value" style="color: #fc8181;">${(data.analysis.wear_percentage * 100).toFixed(1)}%</span></div>
+                <div class="info-row"><span class="info-label">Predicted Failure</span><span class="info-value">${data.analysis.predicted_failure_days} days</span></div>
             `;
-            
-            recommendations.innerHTML = data.analysis.recommendations.map(rec => 
-                `<div class="p-3 bg-blue-900 rounded-lg text-sm mb-2">${rec}</div>`
-            ).join('');
-        } else {
-            analysisContent.innerHTML = '<div class="text-gray-400">Analysis in progress...</div>';
-        }
+        } else if (data.session.processing_status === 'processing' || data.session.processing_status === 'queued') {
+            analysisInfo.innerHTML = '<p style="color: rgba(255,255,255,0.5);">Processing in progress...</p>';
+        } else if (data.session.processing_status === 'failed') {
+            analysisInfo.innerHTML = '<p style="color: #fc8181;">Processing failed. Please try again.</p>';
+        } else { analysisInfo.innerHTML = '<p style="color: rgba(255,255,255,0.5);">No analysis available yet</p>'; }
+        
+        const recommendations = document.getElementById('recommendations');
+        if (data.analysis && data.analysis.recommendations && data.analysis.recommendations.length > 0) {
+            recommendations.innerHTML = data.analysis.recommendations.map(rec => `<div class="recommendation">${rec}</div>`).join('');
+        } else if (data.session.processing_status === 'processing' || data.session.processing_status === 'queued') {
+            recommendations.innerHTML = '<p style="color: rgba(255,255,255,0.5);">Processing in progress...</p>';
+        } else { recommendations.innerHTML = '<p style="color: rgba(255,255,255,0.5);">No recommendations available yet</p>'; }
+        
+        const modelViewer = document.getElementById('model-viewer');
+        if (data.session.processing_status === 'completed') {
+            modelViewer.innerHTML = '<div>3D Model Viewer<br><small style="color: rgba(255,255,255,0.5);">(Three.js viewer would go here)</small></div>';
+        } else if (data.session.processing_status === 'processing') {
+            modelViewer.innerHTML = '<div class="loading"><div class="spinner"></div><div>Processing 3D model...</div></div>';
+        } else if (data.session.processing_status === 'queued') {
+            modelViewer.innerHTML = '<div class="loading"><div class="spinner"></div><div>Waiting for processing...</div></div>';
+        } else { modelViewer.innerHTML = '<div style="color: #fc8181;">Processing failed</div>'; }
+        
     } catch (error) {
-        console.error('Error loading data:', error);
+        console.error('Error loading session:', error);
+        document.getElementById('session-info').innerHTML = '<p style="color: #fc8181;">Error loading data</p>';
     }
 }
 
 document.addEventListener('DOMContentLoaded', loadSessionData);
+setInterval(() => {
+    const modelViewer = document.getElementById('model-viewer');
+    if (modelViewer.textContent.includes('Processing') || modelViewer.textContent.includes('Waiting')) {
+        loadSessionData();
+    }
+}, 5000);
 </script>
 {% endblock %}
