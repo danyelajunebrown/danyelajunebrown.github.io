@@ -69,11 +69,9 @@ body {
     top: 0;
     left: 0;
     width: 100%;
-    background-color: rgba(0, 0, 0, 0.8);
     padding: 15px 0;
     z-index: 2000;
     text-align: center;
-    backdrop-filter: blur(5px);
 }
 
 .nav-menu a {
@@ -89,6 +87,71 @@ body {
 
 .nav-menu a:hover {
     border-bottom: 2px solid white;
+}
+
+#toolsBtn.active {
+    border-bottom: 2px solid white;
+}
+
+/* Tools Dropdown Styling */
+.tools-dropdown {
+    position: fixed;
+    top: 55px;
+    left: 50%;
+    transform: translateX(-50%);
+    padding: 10px 0;
+    z-index: 1999;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s ease;
+}
+
+.tools-dropdown.show {
+    opacity: 1;
+    pointer-events: all;
+}
+
+.tool-link {
+    color: white;
+    text-decoration: none;
+    padding: 10px 20px;
+    font-size: 18px;
+    text-align: center;
+    border: 2px solid transparent;
+    transition: all 0.3s ease;
+    cursor: pointer;
+    white-space: nowrap;
+    font-family: Arial, sans-serif;
+    opacity: 0;
+    transform: translateX(-50px) rotate(-8deg);
+}
+
+/* Dragon tail wave animation - more dramatic */
+.tools-dropdown.show .tool-link {
+    animation: whipWave 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+    animation-delay: calc(var(--item-index) * 0.1s);
+}
+
+@keyframes whipWave {
+    0% {
+        opacity: 0;
+        transform: translateX(-50px) rotate(-8deg) scale(0.8);
+    }
+    60% {
+        transform: translateX(8px) rotate(3deg) scale(1.05);
+    }
+    100% {
+        opacity: 1;
+        transform: translateX(0) rotate(0deg) scale(1);
+    }
+}
+
+.tool-link:hover {
+    border-bottom: 2px solid white;
+    transform: translateX(5px) scale(1.05);
 }
 
 .name-overlay {
@@ -124,11 +187,32 @@ body {
         font-size: 2.5rem;
         letter-spacing: 1px;
     }
+
+    .tools-dropdown {
+        top: 50px;
+        padding: 8px 0;
+    }
+
+    .tool-link {
+        padding: 8px 15px;
+        font-size: 16px;
+    }
 }
 
 @media (max-width: 480px) {
     .name-overlay {
         font-size: 2rem;
+    }
+
+    .nav-menu a {
+        padding: 6px 8px;
+        margin: 0 3px;
+        font-size: 14px;
+    }
+
+    .tool-link {
+        padding: 6px 12px;
+        font-size: 14px;
     }
 }
 </style>
@@ -140,7 +224,18 @@ body {
     <a href="#" onclick="linkToCV(); return false;">CV</a>
     <a href="projects.html">PROJECTS</a>
     <a href="contact.html">CONTACT</a>
+    <a href="#" id="toolsBtn" onclick="toggleToolsMenu(); return false;">TOOLS</a>
 </nav>
+
+<div class="tools-dropdown" id="toolsDropdown">
+    <a href="toolbelt/ButMakeItCunt.html" class="tool-link" style="--item-index: 0;">Make It Cunt</a>
+    <a href="toolbelt/KeepMeRollingJuice.html" class="tool-link" style="--item-index: 1;">Keep Me Rolling</a>
+    <a href="toolbelt/plycutter.html" class="tool-link" style="--item-index: 2;">Plycutter</a>
+    <a href="toolbelt/STLSplitter.html" class="tool-link" style="--item-index: 3;">STL Buster</a>
+    <a href="toolbelt/index.html" class="tool-link" style="--item-index: 4;">The Feels</a>
+    <a href="toolbelt/damages.html" class="tool-link" style="--item-index: 5;">For Damages</a>
+    <a href="toolbelt/dance-clips.html" class="tool-link" style="--item-index: 6;">I'm In Charge of the Girls</a>
+</div>
 
 <div class="custom-cursor">
     <svg viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
@@ -199,6 +294,31 @@ function linkToCV() {
         window.location.href = 'cv.html';
     }
 }
+
+// Toggle tools dropdown menu
+function toggleToolsMenu() {
+    const dropdown = document.getElementById('toolsDropdown');
+    const toolsBtn = document.getElementById('toolsBtn');
+    
+    if (dropdown.classList.contains('show')) {
+        dropdown.classList.remove('show');
+        toolsBtn.classList.remove('active');
+    } else {
+        dropdown.classList.add('show');
+        toolsBtn.classList.add('active');
+    }
+}
+
+// Close dropdown when clicking outside
+document.addEventListener('click', function(event) {
+    const dropdown = document.getElementById('toolsDropdown');
+    const toolsBtn = document.getElementById('toolsBtn');
+    
+    if (!dropdown.contains(event.target) && event.target !== toolsBtn) {
+        dropdown.classList.remove('show');
+        toolsBtn.classList.remove('active');
+    }
+});
 
 // Auto-start camera when page loads
 window.addEventListener('load', async function() {
