@@ -181,10 +181,10 @@ body {
     pointer-events: none;
     width: 500px;
     height: 500px;
+    transition: transform 0.15s ease-out;
 }
 
 .name-circle {
-    position: relative;
     width: 100%;
     height: 100%;
     animation: spinCircle 20s linear infinite;
@@ -219,8 +219,7 @@ body {
 }
 
 .char {
-    transition: transform 0.15s ease-out;
-    transform-origin: center;
+    transition: all 0.15s ease-out;
 }
 
 @keyframes nameGlow {
@@ -334,17 +333,17 @@ body {
             </defs>
             <text class="name-text" id="name1">
                 <textPath href="#circle1" startOffset="2%" spacing="auto">
-                    <tspan class="char">D</tspan><tspan class="char">a</tspan><tspan class="char">n</tspan><tspan class="char">y</tspan><tspan class="char">e</tspan><tspan class="char">l</tspan><tspan class="char">a</tspan>
+                    Danyela
                 </textPath>
             </text>
             <text class="name-text" id="name2">
                 <textPath href="#circle2" startOffset="41%" spacing="auto">
-                    <tspan class="char">J</tspan><tspan class="char">u</tspan><tspan class="char">n</tspan><tspan class="char">e</tspan>
+                    June
                 </textPath>
             </text>
             <text class="name-text" id="name3">
                 <textPath href="#circle3" startOffset="68%" spacing="auto">
-                    <tspan class="char">B</tspan><tspan class="char">r</tspan><tspan class="char">o</tspan><tspan class="char">w</tspan><tspan class="char">n</tspan>
+                    Brown
                 </textPath>
             </text>
         </svg>
@@ -463,55 +462,44 @@ if (window.matchMedia("(pointer: fine)").matches) {
         const cursor = document.querySelector('.custom-cursor');
         cursor.style.left = e.clientX - 16 + 'px';
         cursor.style.top = e.clientY - 16 + 'px';
-    });
-    
-    // Mouse avoidance for name letters - DESKTOP ONLY
-    const nameCircle = document.getElementById('nameCircle');
-    const chars = document.querySelectorAll('.char');
-    
-    if (nameCircle && chars.length > 0) {
-        document.addEventListener('mousemove', function(e) {
-            const svgRect = nameCircle.getBoundingClientRect();
-            const svgCenterX = svgRect.left + svgRect.width / 2;
-            const svgCenterY = svgRect.top + svgRect.height / 2;
+        
+        // Make the whole name circle avoid the cursor
+        const nameOverlay = document.querySelector('.name-overlay');
+        if (nameOverlay) {
+            const rect = nameOverlay.getBoundingClientRect();
+            const centerX = rect.left + rect.width / 2;
+            const centerY = rect.top + rect.height / 2;
             
-            // Mouse position relative to SVG center
             const mouseX = e.clientX;
             const mouseY = e.clientY;
             
-            chars.forEach(char => {
-                const bbox = char.getBoundingClientRect();
-                const charX = bbox.left + bbox.width / 2;
-                const charY = bbox.top + bbox.height / 2;
+            // Distance from mouse to circle center
+            const dx = centerX - mouseX;
+            const dy = centerY - mouseY;
+            const distance = Math.sqrt(dx * dx + dy * dy);
+            
+            // Influence radius - circle reacts within 200px
+            const influenceRadius = 200;
+            
+            if (distance < influenceRadius) {
+                // Push away (90% displacement = 1.9x multiplier)
+                const pushStrength = (1 - distance / influenceRadius) * 1.9;
                 
-                // Distance from mouse to character
-                const dx = charX - mouseX;
-                const dy = charY - mouseY;
-                const distance = Math.sqrt(dx * dx + dy * dy);
+                // Normalize direction
+                const angle = Math.atan2(dy, dx);
                 
-                // Influence radius - letters react within 150px
-                const influenceRadius = 150;
+                // Push distance
+                const pushDistance = 80 * pushStrength;
+                const pushX = Math.cos(angle) * pushDistance;
+                const pushY = Math.sin(angle) * pushDistance;
                 
-                if (distance < influenceRadius) {
-                    // Calculate push strength (300% more dramatic = 4x multiplier)
-                    const pushStrength = (1 - distance / influenceRadius) * 4;
-                    
-                    // Normalize direction
-                    const angle = Math.atan2(dy, dx);
-                    
-                    // Push distance (dramatic!)
-                    const pushDistance = 60 * pushStrength;
-                    const pushX = Math.cos(angle) * pushDistance;
-                    const pushY = Math.sin(angle) * pushDistance;
-                    
-                    char.style.transform = `translate(${pushX}px, ${pushY}px)`;
-                } else {
-                    // Return to original position
-                    char.style.transform = 'translate(0, 0)';
-                }
-            });
-        });
-    }
+                nameOverlay.style.transform = `translate(calc(-50% + ${pushX}px), calc(-50% + ${pushY}px))`;
+            } else {
+                // Return to center
+                nameOverlay.style.transform = 'translate(-50%, -50%)';
+            }
+        }
+    });
 }
 
 // Generate letters on circle with cursor dodge effect
