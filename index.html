@@ -184,6 +184,7 @@ body {
 }
 
 .name-circle {
+    position: relative;
     width: 100%;
     height: 100%;
     animation: spinCircle 20s linear infinite;
@@ -198,12 +199,28 @@ body {
     }
 }
 
+.letter {
+    position: absolute;
+    color: white;
+    font-size: 74px;
+    font-weight: normal;
+    font-family: Arial, sans-serif;
+    transition: transform 0.2s ease-out;
+    transform-origin: center center;
+    will-change: transform;
+}
+
 .name-text {
     fill: white;
     font-size: 74px;
     font-weight: normal;
     font-family: Arial, sans-serif;
     letter-spacing: 1.5px;
+}
+
+.char {
+    transition: transform 0.15s ease-out;
+    transform-origin: center;
 }
 
 @keyframes nameGlow {
@@ -231,6 +248,10 @@ body {
         height: 380px;
     }
     
+    .letter {
+        font-size: 56px;
+    }
+    
     .name-text {
         font-size: 56px;
         letter-spacing: 1px;
@@ -254,6 +275,10 @@ body {
     .name-overlay {
         width: 280px;
         height: 280px;
+    }
+    
+    .letter {
+        font-size: 43px;
     }
     
     .name-text {
@@ -292,12 +317,6 @@ body {
     <a href="toolbelt/dance-clips.html" class="tool-link" style="--item-index: 6;">I'm In Charge of the Girls</a>
 </div>
 
-<!-- DEBUG PANEL -->
-<div style="position: fixed; bottom: 10px; left: 10px; background: rgba(0,0,0,0.9); color: lime; padding: 15px; font-family: monospace; font-size: 11px; z-index: 9999; max-width: 400px;" id="debugPanel">
-    <div style="font-weight: bold; margin-bottom: 5px;">🐛 DEBUG PANEL</div>
-    <div id="debugLog">Waiting for interaction...</div>
-</div>
-
 <div class="custom-cursor">
     <svg viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
         <path d="M16 4C14 4 12 5 11 7L8 12L6 14C5 15 5 17 6 18C7 19 9 19 10 18L12 16V24C12 26.2 13.8 28 16 28C18.2 28 20 26.2 20 24V16L22 18C23 19 25 19 26 18C27 17 27 15 26 14L24 12L21 7C20 5 18 4 16 4Z"/>
@@ -307,25 +326,25 @@ body {
 <div id="container">
     <video autoplay playsinline muted id="videoElement"></video>
     <div class="name-overlay">
-        <svg viewBox="0 0 500 500" class="name-circle">
+        <svg viewBox="0 0 500 500" class="name-circle" id="nameCircle">
             <defs>
                 <path id="circle1" d="M 250, 250 m -123, 0 a 123,123 0 1,1 246,0 a 123,123 0 1,1 -246,0"/>
                 <path id="circle2" d="M 250, 250 m -123, 0 a 123,123 0 1,1 246,0 a 123,123 0 1,1 -246,0"/>
                 <path id="circle3" d="M 250, 250 m -123, 0 a 123,123 0 1,1 246,0 a 123,123 0 1,1 -246,0"/>
             </defs>
-            <text class="name-text">
+            <text class="name-text" id="name1">
                 <textPath href="#circle1" startOffset="2%" spacing="auto">
-                    Danyela
+                    <tspan class="char">D</tspan><tspan class="char">a</tspan><tspan class="char">n</tspan><tspan class="char">y</tspan><tspan class="char">e</tspan><tspan class="char">l</tspan><tspan class="char">a</tspan>
                 </textPath>
             </text>
-            <text class="name-text">
-                <textPath href="#circle2" startOffset="40%" spacing="auto">
-                    June
+            <text class="name-text" id="name2">
+                <textPath href="#circle2" startOffset="41%" spacing="auto">
+                    <tspan class="char">J</tspan><tspan class="char">u</tspan><tspan class="char">n</tspan><tspan class="char">e</tspan>
                 </textPath>
             </text>
-            <text class="name-text">
+            <text class="name-text" id="name3">
                 <textPath href="#circle3" startOffset="68%" spacing="auto">
-                    Brown
+                    <tspan class="char">B</tspan><tspan class="char">r</tspan><tspan class="char">o</tspan><tspan class="char">w</tspan><tspan class="char">n</tspan>
                 </textPath>
             </text>
         </svg>
@@ -379,54 +398,22 @@ function linkToCV() {
     }
 }
 
-// Debug logger
-function debugLog(msg) {
-    const panel = document.getElementById('debugLog');
-    const timestamp = new Date().toLocaleTimeString();
-    panel.innerHTML += `<br>[${timestamp}] ${msg}`;
-    console.log(msg);
-}
-
 // Toggle tools dropdown menu
 function toggleToolsMenu() {
     const dropdown = document.getElementById('toolsDropdown');
     const toolsBtn = document.getElementById('toolsBtn');
     
-    debugLog('🔘 Toggle clicked!');
-    debugLog('Dropdown element: ' + (dropdown ? 'FOUND' : 'NOT FOUND'));
-    debugLog('Has show class: ' + dropdown.classList.contains('show'));
-    
     if (dropdown.classList.contains('show')) {
         dropdown.classList.remove('show');
         toolsBtn.classList.remove('active');
-        debugLog('❌ CLOSING dropdown');
     } else {
         // Position dropdown below TOOLS button
         const rect = toolsBtn.getBoundingClientRect();
-        debugLog('📍 TOOLS button at: left=' + Math.round(rect.left) + 'px, bottom=' + Math.round(rect.bottom) + 'px');
-        
         dropdown.style.left = rect.left + 'px';
         dropdown.style.top = (rect.bottom + 5) + 'px';
         
-        debugLog('📍 Dropdown positioned at: left=' + dropdown.style.left + ', top=' + dropdown.style.top);
-        
         dropdown.classList.add('show');
         toolsBtn.classList.add('active');
-        debugLog('✅ OPENING dropdown - .show class added');
-        debugLog('🌊 Smooth continuous wave should start immediately!');
-        
-        // Check animation state after 1 second
-        setTimeout(() => {
-            const firstLink = dropdown.querySelector('.tool-link');
-            const computedStyle = window.getComputedStyle(firstLink);
-            debugLog('📊 After 1s - opacity: ' + computedStyle.opacity);
-            debugLog('🌊 Swaying smoothly...');
-        }, 1000);
-        
-        // Check animation state immediately
-        const firstLink = dropdown.querySelector('.tool-link');
-        const computedStyle = window.getComputedStyle(firstLink);
-        debugLog('First link initial opacity: ' + computedStyle.opacity);
         
         // Force reflow to trigger animation
         dropdown.offsetHeight;
@@ -446,9 +433,6 @@ document.addEventListener('click', function(event) {
 
 // Auto-start camera when page loads
 window.addEventListener('load', async function() {
-    debugLog('🚀 Page loaded!');
-    debugLog('Animation test: whipWave keyframes should be defined');
-    
     const video = document.getElementById('videoElement');
     
     try {
@@ -458,12 +442,10 @@ window.addEventListener('load', async function() {
         });
         
         video.srcObject = stream;
-        debugLog('📹 Camera stream started');
         
         // Wait for video to be ready, then capture one frame
         video.addEventListener('loadeddata', function() {
             console.log('Video loaded, ready for capture');
-            debugLog('📹 Video loaded and ready');
             // Capture just one frame after a short delay to ensure video is playing
             setTimeout(() => {
                 captureCurrentFrame();
@@ -472,8 +454,6 @@ window.addEventListener('load', async function() {
         
     } catch (error) {
         console.error('Camera access denied or not available:', error);
-        debugLog('❌ Camera error: ' + error.message);
-        // You could add a fallback background image here if needed
     }
 });
 
@@ -484,7 +464,152 @@ if (window.matchMedia("(pointer: fine)").matches) {
         cursor.style.left = e.clientX - 16 + 'px';
         cursor.style.top = e.clientY - 16 + 'px';
     });
+    
+    // Mouse avoidance for name letters - DESKTOP ONLY
+    const nameCircle = document.getElementById('nameCircle');
+    const chars = document.querySelectorAll('.char');
+    
+    if (nameCircle && chars.length > 0) {
+        document.addEventListener('mousemove', function(e) {
+            const svgRect = nameCircle.getBoundingClientRect();
+            const svgCenterX = svgRect.left + svgRect.width / 2;
+            const svgCenterY = svgRect.top + svgRect.height / 2;
+            
+            // Mouse position relative to SVG center
+            const mouseX = e.clientX;
+            const mouseY = e.clientY;
+            
+            chars.forEach(char => {
+                const bbox = char.getBoundingClientRect();
+                const charX = bbox.left + bbox.width / 2;
+                const charY = bbox.top + bbox.height / 2;
+                
+                // Distance from mouse to character
+                const dx = charX - mouseX;
+                const dy = charY - mouseY;
+                const distance = Math.sqrt(dx * dx + dy * dy);
+                
+                // Influence radius - letters react within 150px
+                const influenceRadius = 150;
+                
+                if (distance < influenceRadius) {
+                    // Calculate push strength (300% more dramatic = 4x multiplier)
+                    const pushStrength = (1 - distance / influenceRadius) * 4;
+                    
+                    // Normalize direction
+                    const angle = Math.atan2(dy, dx);
+                    
+                    // Push distance (dramatic!)
+                    const pushDistance = 60 * pushStrength;
+                    const pushX = Math.cos(angle) * pushDistance;
+                    const pushY = Math.sin(angle) * pushDistance;
+                    
+                    char.style.transform = `translate(${pushX}px, ${pushY}px)`;
+                } else {
+                    // Return to original position
+                    char.style.transform = 'translate(0, 0)';
+                }
+            });
+        });
+    }
 }
+
+// Generate letters on circle with cursor dodge effect
+window.addEventListener('load', function() {
+    const nameCircle = document.getElementById('nameCircle');
+    const centerX = 250;
+    const centerY = 250;
+    const radius = 123;
+    
+    const words = [
+        { text: 'Danyela', startAngle: 10 },
+        { text: 'June', startAngle: 140 },
+        { text: 'Brown', startAngle: 240 }
+    ];
+    
+    const letters = [];
+    
+    // Create letters for each word
+    words.forEach(word => {
+        const letterSpacing = 18; // degrees between letters
+        word.text.split('').forEach((char, i) => {
+            const angle = word.startAngle + (i * letterSpacing);
+            const radian = (angle - 90) * (Math.PI / 180);
+            
+            const x = centerX + radius * Math.cos(radian);
+            const y = centerY + radius * Math.sin(radian);
+            
+            const letter = document.createElement('div');
+            letter.className = 'letter';
+            letter.textContent = char;
+            letter.style.left = x + 'px';
+            letter.style.top = y + 'px';
+            letter.style.transform = `translate(-50%, -50%) rotate(${angle}deg)`;
+            
+            nameCircle.appendChild(letter);
+            
+            letters.push({
+                element: letter,
+                originalX: x,
+                originalY: y,
+                originalRotation: angle,
+                currentOffsetX: 0,
+                currentOffsetY: 0
+            });
+        });
+    });
+    
+    // Cursor dodge effect - only on desktop
+    if (window.matchMedia("(pointer: fine)").matches) {
+        document.addEventListener('mousemove', function(e) {
+            const nameOverlay = document.querySelector('.name-overlay');
+            const overlayRect = nameOverlay.getBoundingClientRect();
+            const nameCircleEl = document.getElementById('nameCircle');
+            const circleRect = nameCircleEl.getBoundingClientRect();
+            
+            // Account for the spinning circle's rotation
+            const computedStyle = window.getComputedStyle(nameCircleEl);
+            const transform = computedStyle.transform;
+            
+            // Get cursor position relative to page center
+            const cursorX = e.clientX;
+            const cursorY = e.clientY;
+            
+            letters.forEach(letterData => {
+                const letterRect = letterData.element.getBoundingClientRect();
+                const letterCenterX = letterRect.left + letterRect.width / 2;
+                const letterCenterY = letterRect.top + letterRect.height / 2;
+                
+                // Calculate distance from cursor to letter
+                const dx = letterCenterX - cursorX;
+                const dy = letterCenterY - cursorY;
+                const distance = Math.sqrt(dx * dx + dy * dy);
+                
+                const repelRadius = 80; // pixels
+                
+                if (distance < repelRadius && distance > 0) {
+                    // Calculate repulsion force
+                    const force = (repelRadius - distance) / repelRadius;
+                    const pushX = (dx / distance) * force * 30;
+                    const pushY = (dy / distance) * force * 30;
+                    
+                    letterData.currentOffsetX = pushX;
+                    letterData.currentOffsetY = pushY;
+                    
+                    letterData.element.style.transform = 
+                        `translate(calc(-50% + ${pushX}px), calc(-50% + ${pushY}px)) rotate(${letterData.originalRotation}deg)`;
+                } else {
+                    // Return to original position
+                    letterData.currentOffsetX = 0;
+                    letterData.currentOffsetY = 0;
+                    
+                    letterData.element.style.transform = 
+                        `translate(-50%, -50%) rotate(${letterData.originalRotation}deg)`;
+                }
+            });
+        });
+    }
+});
 </script>
 </body>
 </html>
