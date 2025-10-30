@@ -127,19 +127,16 @@ body {
 
 .tools-dropdown:not(.show) .tool-link {
     opacity: 0;
-    transform: translateX(-50px) rotate(-8deg);
 }
 
 .tools-dropdown.show .tool-link {
     opacity: 1;
 }
 
-/* Dragon tail wave animation - wave in THEN keep waving */
+/* Smooth continuous wave - travels from head to tail */
 .tools-dropdown.show .tool-link {
-    animation: whipWave 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) forwards,
-               tailSway 3s ease-in-out infinite;
-    animation-delay: calc(var(--item-index) * 0.1s), 
-                     calc(var(--item-index) * 0.1s + 0.8s);
+    animation: tailSway 2s ease-in-out infinite;
+    animation-delay: calc(var(--item-index) * -0.3s);
 }
 
 @keyframes whipWave {
@@ -157,17 +154,14 @@ body {
 }
 
 @keyframes tailSway {
-    0%, 100% {
-        transform: translateX(0) rotate(0deg);
-    }
-    25% {
-        transform: translateX(-6px) rotate(-4deg);
+    0% {
+        transform: translateX(-8px) rotate(-6deg);
     }
     50% {
-        transform: translateX(0) rotate(0deg);
+        transform: translateX(8px) rotate(6deg);
     }
-    75% {
-        transform: translateX(6px) rotate(4deg);
+    100% {
+        transform: translateX(-8px) rotate(-6deg);
     }
 }
 
@@ -357,15 +351,15 @@ function toggleToolsMenu() {
         dropdown.classList.add('show');
         toolsBtn.classList.add('active');
         debugLog('✅ OPENING dropdown - .show class added');
-        debugLog('🎬 Entry animation (whipWave) + continuous (tailSway) should start!');
+        debugLog('🌊 Smooth continuous wave should start immediately!');
         
-        // Check animation state after 2 seconds
+        // Check animation state after 1 second
         setTimeout(() => {
             const firstLink = dropdown.querySelector('.tool-link');
             const computedStyle = window.getComputedStyle(firstLink);
-            debugLog('📊 After 2s - opacity: ' + computedStyle.opacity);
-            debugLog('🌊 Should be swaying continuously now...');
-        }, 2000);
+            debugLog('📊 After 1s - opacity: ' + computedStyle.opacity);
+            debugLog('🌊 Swaying smoothly...');
+        }, 1000);
         
         // Check animation state immediately
         const firstLink = dropdown.querySelector('.tool-link');
