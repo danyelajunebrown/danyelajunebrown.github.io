@@ -67,18 +67,20 @@ body {
 .nav-menu {
     position: fixed;
     top: 0;
-    left: 0;
-    width: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 85%;
     padding: 15px 0;
     z-index: 2000;
-    text-align: center;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
 }
 
 .nav-menu a {
     color: white;
     text-decoration: none;
     padding: 10px 20px;
-    margin: 0 10px;
     font-size: 18px;
     border: 2px solid transparent;
     transition: all 0.3s ease;
@@ -176,36 +178,65 @@ body {
     left: 50%;
     transform: translate(-50%, -50%);
     z-index: 1500;
-    color: white;
-    font-size: 4rem;
-    font-weight: bold;
-    text-align: center;
-    text-shadow: 2px 2px 8px rgba(0, 0, 0, 0.8);
-    letter-spacing: 2px;
     pointer-events: none;
-    animation: nameGlow 3s ease-in-out infinite alternate;
+    width: 500px;
+    height: 500px;
+}
+
+.name-circle {
+    width: 100%;
+    height: 100%;
+    animation: spinCircle 20s linear infinite;
+}
+
+@keyframes spinCircle {
+    from {
+        transform: rotate(0deg);
+    }
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+.name-text {
+    fill: white;
+    font-size: 74px;
+    font-weight: normal;
+    font-family: Arial, sans-serif;
+    letter-spacing: 1.5px;
 }
 
 @keyframes nameGlow {
-    0% { text-shadow: 2px 2px 8px rgba(0, 0, 0, 0.8), 0 0 20px rgba(255, 255, 255, 0.3); }
-    100% { text-shadow: 2px 2px 8px rgba(0, 0, 0, 0.8), 0 0 30px rgba(255, 255, 255, 0.5); }
+    0% { 
+        filter: drop-shadow(2px 2px 8px rgba(0, 0, 0, 0.8)) drop-shadow(0 0 20px rgba(255, 255, 255, 0.3));
+    }
+    100% { 
+        filter: drop-shadow(2px 2px 8px rgba(0, 0, 0, 0.8)) drop-shadow(0 0 30px rgba(255, 255, 255, 0.5));
+    }
 }
 
 /* Responsive adjustments */
 @media (max-width: 768px) {            
+    .nav-menu {
+        width: 95%;
+    }
+    
     .nav-menu a {
         padding: 8px 10px;
-        margin: 0 5px;
         font-size: 16px;
     }
     
     .name-overlay {
-        font-size: 2.5rem;
+        width: 380px;
+        height: 380px;
+    }
+    
+    .name-text {
+        font-size: 56px;
         letter-spacing: 1px;
     }
 
     .tools-dropdown {
-        top: 50px;
         padding: 8px 0;
     }
 
@@ -216,13 +247,22 @@ body {
 }
 
 @media (max-width: 480px) {
+    .nav-menu {
+        width: 98%;
+    }
+    
     .name-overlay {
-        font-size: 2rem;
+        width: 280px;
+        height: 280px;
+    }
+    
+    .name-text {
+        font-size: 43px;
+        letter-spacing: 0.8px;
     }
 
     .nav-menu a {
-        padding: 6px 8px;
-        margin: 0 3px;
+        padding: 6px 5px;
         font-size: 14px;
     }
 
@@ -238,8 +278,7 @@ body {
 <nav class="nav-menu">
     <a href="bio.html">BIO</a>
     <a href="#" onclick="linkToCV(); return false;">CV</a>
-    <a href="projects.html">PROJECTS</a>
-    <a href="contact.html">CONTACT</a>
+    <a href="projects.html">SETS</a>
     <a href="#" id="toolsBtn" onclick="toggleToolsMenu(); return false;">TOOLS</a>
 </nav>
 
@@ -267,7 +306,30 @@ body {
 
 <div id="container">
     <video autoplay playsinline muted id="videoElement"></video>
-    <div class="name-overlay">Danyela June Brown</div>
+    <div class="name-overlay">
+        <svg viewBox="0 0 500 500" class="name-circle">
+            <defs>
+                <path id="circle1" d="M 250, 250 m -123, 0 a 123,123 0 1,1 246,0 a 123,123 0 1,1 -246,0"/>
+                <path id="circle2" d="M 250, 250 m -123, 0 a 123,123 0 1,1 246,0 a 123,123 0 1,1 -246,0"/>
+                <path id="circle3" d="M 250, 250 m -123, 0 a 123,123 0 1,1 246,0 a 123,123 0 1,1 -246,0"/>
+            </defs>
+            <text class="name-text">
+                <textPath href="#circle1" startOffset="2%" spacing="auto">
+                    Danyela
+                </textPath>
+            </text>
+            <text class="name-text">
+                <textPath href="#circle2" startOffset="40%" spacing="auto">
+                    June
+                </textPath>
+            </text>
+            <text class="name-text">
+                <textPath href="#circle3" startOffset="68%" spacing="auto">
+                    Brown
+                </textPath>
+            </text>
+        </svg>
+    </div>
 </div>
 
 <!-- Hidden canvas for capturing screenshots -->
