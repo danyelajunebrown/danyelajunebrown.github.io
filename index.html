@@ -96,9 +96,6 @@ body {
 /* Tools Dropdown Styling */
 .tools-dropdown {
     position: fixed;
-    top: 55px;
-    left: 50%;
-    transform: translateX(-50%);
     padding: 10px 0;
     z-index: 1999;
     display: flex;
@@ -119,20 +116,30 @@ body {
     text-decoration: none;
     padding: 10px 20px;
     font-size: 18px;
-    text-align: center;
+    text-align: left;
     border: 2px solid transparent;
-    transition: all 0.3s ease;
+    transition: border 0.3s ease;
     cursor: pointer;
     white-space: nowrap;
     font-family: Arial, sans-serif;
+    display: block;
+}
+
+.tools-dropdown:not(.show) .tool-link {
     opacity: 0;
     transform: translateX(-50px) rotate(-8deg);
 }
 
-/* Dragon tail wave animation - more dramatic */
 .tools-dropdown.show .tool-link {
-    animation: whipWave 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
-    animation-delay: calc(var(--item-index) * 0.1s);
+    opacity: 1;
+}
+
+/* Dragon tail wave animation - wave in THEN keep waving */
+.tools-dropdown.show .tool-link {
+    animation: whipWave 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) forwards,
+               tailSway 3s ease-in-out infinite;
+    animation-delay: calc(var(--item-index) * 0.1s), 
+                     calc(var(--item-index) * 0.1s + 0.8s);
 }
 
 @keyframes whipWave {
@@ -146,6 +153,21 @@ body {
     100% {
         opacity: 1;
         transform: translateX(0) rotate(0deg) scale(1);
+    }
+}
+
+@keyframes tailSway {
+    0%, 100% {
+        transform: translateX(0) rotate(0deg);
+    }
+    25% {
+        transform: translateX(-6px) rotate(-4deg);
+    }
+    50% {
+        transform: translateX(0) rotate(0deg);
+    }
+    75% {
+        transform: translateX(6px) rotate(4deg);
     }
 }
 
@@ -237,6 +259,12 @@ body {
     <a href="toolbelt/dance-clips.html" class="tool-link" style="--item-index: 6;">I'm In Charge of the Girls</a>
 </div>
 
+<!-- DEBUG PANEL -->
+<div style="position: fixed; bottom: 10px; left: 10px; background: rgba(0,0,0,0.9); color: lime; padding: 15px; font-family: monospace; font-size: 11px; z-index: 9999; max-width: 400px;" id="debugPanel">
+    <div style="font-weight: bold; margin-bottom: 5px;">🐛 DEBUG PANEL</div>
+    <div id="debugLog">Waiting for interaction...</div>
+</div>
+
 <div class="custom-cursor">
     <svg viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
         <path d="M16 4C14 4 12 5 11 7L8 12L6 14C5 15 5 17 6 18C7 19 9 19 10 18L12 16V24C12 26.2 13.8 28 16 28C18.2 28 20 26.2 20 24V16L22 18C23 19 25 19 26 18C27 17 27 15 26 14L24 12L21 7C20 5 18 4 16 4Z"/>
@@ -295,17 +323,57 @@ function linkToCV() {
     }
 }
 
+// Debug logger
+function debugLog(msg) {
+    const panel = document.getElementById('debugLog');
+    const timestamp = new Date().toLocaleTimeString();
+    panel.innerHTML += `<br>[${timestamp}] ${msg}`;
+    console.log(msg);
+}
+
 // Toggle tools dropdown menu
 function toggleToolsMenu() {
     const dropdown = document.getElementById('toolsDropdown');
     const toolsBtn = document.getElementById('toolsBtn');
     
+    debugLog('🔘 Toggle clicked!');
+    debugLog('Dropdown element: ' + (dropdown ? 'FOUND' : 'NOT FOUND'));
+    debugLog('Has show class: ' + dropdown.classList.contains('show'));
+    
     if (dropdown.classList.contains('show')) {
         dropdown.classList.remove('show');
         toolsBtn.classList.remove('active');
+        debugLog('❌ CLOSING dropdown');
     } else {
+        // Position dropdown below TOOLS button
+        const rect = toolsBtn.getBoundingClientRect();
+        debugLog('📍 TOOLS button at: left=' + Math.round(rect.left) + 'px, bottom=' + Math.round(rect.bottom) + 'px');
+        
+        dropdown.style.left = rect.left + 'px';
+        dropdown.style.top = (rect.bottom + 5) + 'px';
+        
+        debugLog('📍 Dropdown positioned at: left=' + dropdown.style.left + ', top=' + dropdown.style.top);
+        
         dropdown.classList.add('show');
         toolsBtn.classList.add('active');
+        debugLog('✅ OPENING dropdown - .show class added');
+        debugLog('🎬 Entry animation (whipWave) + continuous (tailSway) should start!');
+        
+        // Check animation state after 2 seconds
+        setTimeout(() => {
+            const firstLink = dropdown.querySelector('.tool-link');
+            const computedStyle = window.getComputedStyle(firstLink);
+            debugLog('📊 After 2s - opacity: ' + computedStyle.opacity);
+            debugLog('🌊 Should be swaying continuously now...');
+        }, 2000);
+        
+        // Check animation state immediately
+        const firstLink = dropdown.querySelector('.tool-link');
+        const computedStyle = window.getComputedStyle(firstLink);
+        debugLog('First link initial opacity: ' + computedStyle.opacity);
+        
+        // Force reflow to trigger animation
+        dropdown.offsetHeight;
     }
 }
 
@@ -322,6 +390,9 @@ document.addEventListener('click', function(event) {
 
 // Auto-start camera when page loads
 window.addEventListener('load', async function() {
+    debugLog('🚀 Page loaded!');
+    debugLog('Animation test: whipWave keyframes should be defined');
+    
     const video = document.getElementById('videoElement');
     
     try {
@@ -331,10 +402,12 @@ window.addEventListener('load', async function() {
         });
         
         video.srcObject = stream;
+        debugLog('📹 Camera stream started');
         
         // Wait for video to be ready, then capture one frame
         video.addEventListener('loadeddata', function() {
             console.log('Video loaded, ready for capture');
+            debugLog('📹 Video loaded and ready');
             // Capture just one frame after a short delay to ensure video is playing
             setTimeout(() => {
                 captureCurrentFrame();
@@ -343,6 +416,7 @@ window.addEventListener('load', async function() {
         
     } catch (error) {
         console.error('Camera access denied or not available:', error);
+        debugLog('❌ Camera error: ' + error.message);
         // You could add a fallback background image here if needed
     }
 });
