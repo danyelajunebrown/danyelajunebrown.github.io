@@ -532,7 +532,7 @@
       "mediaUrl": "https://raw.githubusercontent.com/danyelajunebrown/danyelajunebrown.github.io/main/assets/1762321841628-IMG_2915.MOV",
       "description": "",
       "scores": {
-        "dearness": null,
+        "dearness": 100,
         "completeness": null,
         "cost": null,
         "themes": [],
