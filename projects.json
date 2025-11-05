@@ -15,7 +15,13 @@
         "cost": null,
         "themes": [],
         "genres": []
-      }
+      },
+      "mediaUrls": [
+        "https://raw.githubusercontent.com/danyelajunebrown/danyelajunebrown.github.io/main/assets/1762321841628-IMG_2915.MOV"
+      ],
+      "mediaTypes": [
+        "video"
+      ]
     },
     {
       "id": "mhmhw0r238o1o1uqec7",
@@ -40,7 +46,13 @@
         "genres": [
           "performance-set"
         ]
-      }
+      },
+      "mediaUrls": [
+        "https://pub-f9bb84bd43c343799213e3bfbc9436c5.r2.dev/1762382501007-DBT Skills Group Blues (2025).mp4"
+      ],
+      "mediaTypes": [
+        "video"
+      ]
     },
     {
       "id": "mhmihqby7fy2kk47bul",
@@ -60,7 +72,15 @@
           "costume-set",
           "ballroom"
         ]
-      }
+      },
+      "mediaUrls": [
+        "https://pub-f9bb84bd43c343799213e3bfbc9436c5.r2.dev/1762380903785-10.11.25_battle.mp4",
+        "https://pub-f9bb84bd43c343799213e3bfbc9436c5.r2.dev/1762383981649-10.11.25_tens.mp4"
+      ],
+      "mediaTypes": [
+        "video",
+        "video"
+      ]
     }
   ]
 }
