@@ -17,10 +17,12 @@
         "genres": []
       },
       "mediaUrls": [
-        "https://raw.githubusercontent.com/danyelajunebrown/danyelajunebrown.github.io/main/assets/1762321841628-IMG_2915.MOV"
+        "https://raw.githubusercontent.com/danyelajunebrown/danyelajunebrown.github.io/main/assets/1762321841628-IMG_2915.MOV",
+        "https://raw.githubusercontent.com/danyelajunebrown/danyelajunebrown.github.io/main/assets/1762386625767-image%203.jpg"
       ],
       "mediaTypes": [
-        "video"
+        "video",
+        "image"
       ]
     },
     {
