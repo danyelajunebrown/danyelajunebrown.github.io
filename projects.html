@@ -552,7 +552,7 @@
         <div class="upload-panel">
             <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 8px;">
                 <span style="font-size: 12px; text-transform: uppercase; letter-spacing: 1px; opacity: 0.8;">Upload:</span>
-                <input type="file" id="fileInput" accept="image/*,video/*,.pdf" style="font-size: 11px; flex: 1;">
+                <input type="file" id="fileInput" accept="image/*,video/*,.pdf" multiple style="font-size: 11px; flex: 1;">
             </div>
             
             <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 8px;">
@@ -697,6 +697,19 @@
                 const response = await fetch('projects.json');
                 const data = await response.json();
                 projects = data.projects;
+                
+                // Migrate old single-file format to new multi-file format
+                projects.forEach(project => {
+                    if (project.mediaUrl && !project.mediaUrls) {
+                        project.mediaUrls = [project.mediaUrl];
+                        project.mediaTypes = [project.mediaType || 'image'];
+                    }
+                    if (!project.mediaUrls) {
+                        project.mediaUrls = [];
+                        project.mediaTypes = [];
+                    }
+                });
+                
                 console.log('Loaded projects:', projects.length, 'total');
                 initializeFloatingTitles();
                 populateProjectSelect();
@@ -826,23 +839,33 @@
             
             currentSelectedIndex = index;
             
-            let mediaHTML = '';
-            switch (project.mediaType) {
-                case 'image':
-                    mediaHTML = `<img src="${project.mediaUrl}" alt="${project.title}">`;
-                    break;
-                case 'youtube':
-                    mediaHTML = `<iframe src="https://www.youtube.com/embed/${project.mediaUrl}?autoplay=1&mute=1&loop=1&playlist=${project.mediaUrl}" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>`;
-                    break;
-                case 'video':
-                    mediaHTML = `<video autoplay loop><source src="${project.mediaUrl}" type="video/mp4"></video>`;
-                    break;
-                case 'pdf':
-                    mediaHTML = `<div style="background: linear-gradient(45deg, #333, #666); display: flex; align-items: center; justify-content: center; font-size: 48px; color: white;">PDF</div>`;
-                    break;
-            }
+            // Handle both old single-file and new multi-file projects
+            const mediaUrls = project.mediaUrls || (project.mediaUrl ? [project.mediaUrl] : []);
+            const mediaTypes = project.mediaTypes || (project.mediaType ? [project.mediaType] : []);
             
-            backgroundMedia.innerHTML = mediaHTML;
+            let mediaHTML = '';
+            
+            // Show all media files
+            mediaUrls.forEach((url, i) => {
+                const type = mediaTypes[i] || 'image';
+                
+                switch (type) {
+                    case 'image':
+                        mediaHTML += `<img src="${url}" alt="${project.title}" style="max-width: 100%; max-height: 100%; object-fit: contain;">`;
+                        break;
+                    case 'youtube':
+                        mediaHTML += `<iframe src="https://www.youtube.com/embed/${url}?autoplay=1&mute=1&loop=1&playlist=${url}" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>`;
+                        break;
+                    case 'video':
+                        mediaHTML += `<video autoplay loop style="max-width: 100%; max-height: 100%; object-fit: contain;"><source src="${url}" type="video/mp4"></video>`;
+                        break;
+                    case 'pdf':
+                        mediaHTML += `<div style="background: linear-gradient(45deg, #333, #666); display: flex; align-items: center; justify-content: center; font-size: 48px; color: white;">PDF</div>`;
+                        break;
+                }
+            });
+            
+            backgroundMedia.innerHTML = `<div style="display: flex; flex-wrap: wrap; gap: 20px; width: 100%; height: 100%; justify-content: center; align-items: center;">${mediaHTML}</div>`;
             backgroundMedia.classList.add('active');
             
             projectInfo.innerHTML = `
@@ -1004,50 +1027,67 @@
             const projectSelect = document.getElementById('projectSelect');
             const status = document.getElementById('uploadStatus');
             
-            status.textContent = 'Uploading...';
+            status.textContent = 'Starting upload...';
             
             try {
-                let fileToUpload = fileInput.files[0];
-                let mediaUrl = '';
-                let mediaType = '';
+                const filesToUpload = [];
+                const mediaUrls = [];
+                const mediaTypes = [];
                 
-                // Handle URL import
-                if (urlInput.value) {
+                // Get files from file input
+                if (fileInput.files.length > 0) {
+                    filesToUpload.push(...Array.from(fileInput.files));
+                }
+                
+                // Handle URL import (single file from URL)
+                if (urlInput.value && filesToUpload.length === 0) {
                     status.textContent = 'Downloading from URL...';
                     const response = await fetch(urlInput.value);
                     const blob = await response.blob();
-                    fileToUpload = new File([blob], 'imported-file', { type: blob.type });
+                    const file = new File([blob], 'imported-file', { type: blob.type });
+                    filesToUpload.push(file);
                 }
                 
-                if (!fileToUpload) {
-                    status.textContent = 'Please select a file or enter a URL';
+                if (filesToUpload.length === 0) {
+                    status.textContent = 'Please select file(s) or enter a URL';
                     return;
                 }
                 
-                // Determine media type
-                if (fileToUpload.type.startsWith('image/')) {
-                    mediaType = 'image';
-                } else if (fileToUpload.type.startsWith('video/')) {
-                    mediaType = 'video';
-                } else if (fileToUpload.type === 'application/pdf') {
-                    mediaType = 'pdf';
-                }
-                
-                // Compress video if needed
-                if (mediaType === 'video') {
-                    status.textContent = 'Compressing video to 480p...';
-                    fileToUpload = await compressVideo(fileToUpload);
-                }
-                
-                // Upload to GitHub or R2 based on size
-                const fileSizeMB = fileToUpload.size / (1024 * 1024);
-                
-                if (fileSizeMB < 5) {
-                    status.textContent = 'Uploading to GitHub...';
-                    mediaUrl = await uploadToGitHub(fileToUpload);
-                } else {
-                    status.textContent = 'Uploading to R2...';
-                    mediaUrl = await uploadToR2(fileToUpload);
+                // Upload each file
+                for (let i = 0; i < filesToUpload.length; i++) {
+                    let fileToUpload = filesToUpload[i];
+                    status.textContent = `Uploading file ${i + 1} of ${filesToUpload.length}...`;
+                    
+                    // Determine media type
+                    let mediaType = '';
+                    if (fileToUpload.type.startsWith('image/')) {
+                        mediaType = 'image';
+                    } else if (fileToUpload.type.startsWith('video/')) {
+                        mediaType = 'video';
+                    } else if (fileToUpload.type === 'application/pdf') {
+                        mediaType = 'pdf';
+                    }
+                    
+                    // Compress video if needed
+                    if (mediaType === 'video') {
+                        status.textContent = `Compressing video ${i + 1}...`;
+                        fileToUpload = await compressVideo(fileToUpload);
+                    }
+                    
+                    // Upload to GitHub or R2 based on size
+                    const fileSizeMB = fileToUpload.size / (1024 * 1024);
+                    let mediaUrl = '';
+                    
+                    if (fileSizeMB < 5) {
+                        status.textContent = `Uploading ${i + 1} to GitHub...`;
+                        mediaUrl = await uploadToGitHub(fileToUpload);
+                    } else {
+                        status.textContent = `Uploading ${i + 1} to R2...`;
+                        mediaUrl = await uploadToR2(fileToUpload);
+                    }
+                    
+                    mediaUrls.push(mediaUrl);
+                    mediaTypes.push(mediaType);
                 }
                 
                 // Create or update project
@@ -1055,15 +1095,15 @@
                 const selectedProject = projectSelect.value;
                 
                 if (newTitle && !selectedProject) {
-                    // Creating new project
+                    // Creating new project with multiple files
                     const newProject = {
                         id: generateId(),
                         title: newTitle,
                         date: document.getElementById('dateInput').value,
                         year: new Date().getFullYear(),
                         materials: materialTags,
-                        mediaType: mediaType,
-                        mediaUrl: mediaUrl,
+                        mediaTypes: mediaTypes,
+                        mediaUrls: mediaUrls,
                         description: document.getElementById('descriptionInput').value,
                         scores: {
                             dearness: null,
@@ -1076,11 +1116,17 @@
                     
                     projects.push(newProject);
                 } else if (selectedProject) {
-                    // Attaching to existing project
+                    // Attaching to existing project - append new files
                     const project = projects.find(p => p.id === selectedProject);
                     if (project) {
-                        project.mediaUrl = mediaUrl;
-                        project.mediaType = mediaType;
+                        // Convert old single media to arrays if needed
+                        if (!Array.isArray(project.mediaUrls)) {
+                            project.mediaUrls = project.mediaUrl ? [project.mediaUrl] : [];
+                            project.mediaTypes = project.mediaType ? [project.mediaType] : [];
+                        }
+                        // Append new files
+                        project.mediaUrls.push(...mediaUrls);
+                        project.mediaTypes.push(...mediaTypes);
                     }
                 } else {
                     status.textContent = 'Please enter a title or select an existing project';
@@ -1103,7 +1149,7 @@
                 materialTags = [];
                 renderMaterialTags();
                 
-                status.textContent = 'Upload successful!';
+                status.textContent = `Upload successful! ${filesToUpload.length} file(s) uploaded.`;
                 setTimeout(() => status.textContent = '', 3000);
                 
             } catch (error) {
