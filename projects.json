@@ -48,9 +48,12 @@
       "scores": {
         "dearness": null,
         "completeness": null,
-        "cost": null,
+        "cost": 0,
         "themes": [],
-        "genres": []
+        "genres": [
+          "costume-set",
+          "dance-set"
+        ]
       }
     }
   ]
