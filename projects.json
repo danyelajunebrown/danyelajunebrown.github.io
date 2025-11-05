@@ -18,14 +18,16 @@
       }
     },
     {
-      "id": "mhmhtivd1cy7asmdo3c",
-      "title": "Angel's Boot",
-      "date": "2018",
+      "id": "mhmhw0r238o1o1uqec7",
+      "title": "DBT Skills Group Blues",
+      "date": "2025",
       "year": 2025,
-      "materials": [],
-      "mediaType": "image",
-      "mediaUrl": "https://raw.githubusercontent.com/danyelajunebrown/danyelajunebrown.github.io/main/assets/1762377092402-Screenshot 2025-07-30 at 10.49.05 PM.png",
-      "description": "dressed MonyeaAngels for SE counter rally at Alt Right Protest late summer 2018 outside the Renwick. Photo by Tony Bush, produced by Josh Peoples.",
+      "materials": [
+        "camshow"
+      ],
+      "mediaType": "video",
+      "mediaUrl": "https://pub-f9bb84bd43c343799213e3bfbc9436c5.r2.dev/1762377213134-DBT Skills Group Blues (2025).mov",
+      "description": "fuck u marsha",
       "scores": {
         "dearness": null,
         "completeness": null,
