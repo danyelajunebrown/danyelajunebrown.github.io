@@ -104,6 +104,32 @@
         "themes": [],
         "genres": []
       }
+    },
+    {
+      "id": "mhmnevpefmpu0i04foq",
+      "title": "untitled (RIP Dream Johnson)",
+      "date": "2025",
+      "year": 2025,
+      "materials": [
+        "live performance",
+        "tshirt",
+        "inkjet transfer",
+        "modpodge"
+      ],
+      "mediaTypes": [
+        "image"
+      ],
+      "mediaUrls": [
+        "https://raw.githubusercontent.com/danyelajunebrown/danyelajunebrown.github.io/main/assets/1762386487537-IMG_3360.jpeg"
+      ],
+      "description": "",
+      "scores": {
+        "dearness": null,
+        "completeness": null,
+        "cost": null,
+        "themes": [],
+        "genres": []
+      }
     }
   ]
 }
