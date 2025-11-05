@@ -649,37 +649,29 @@
             password: 'Eatad1ck!',
             repo: 'danyelajunebrown/danyelajunebrown.github.io',
             branch: 'main',
-            r2BucketUrl: 'https://pub-f9bb84bd43c343799213e3bfbc9436c5.r2.dev'
+            r2BucketUrl: 'https://pub-f9bb84bd43c343799213e3bfbc9436c5.r2.dev',
+            r2WorkerUrl: 'https://r2-upload-handler.db7613.workers.dev/'
         };
 
-        // Get credentials from localStorage
+        // Get credentials from localStorage (only GitHub token needed now, R2 handled by worker)
         function getCredentials() {
             return {
-                githubToken: localStorage.getItem('github_token'),
-                r2AccountId: localStorage.getItem('r2_account_id'),
-                r2AccessKey: localStorage.getItem('r2_access_key'),
-                r2SecretKey: localStorage.getItem('r2_secret_key')
+                githubToken: localStorage.getItem('github_token')
             };
         }
 
         // Check if credentials are set
         function hasCredentials() {
             const creds = getCredentials();
-            return !!(creds.githubToken && creds.r2AccountId && creds.r2AccessKey && creds.r2SecretKey);
+            return !!creds.githubToken;
         }
 
-        // Prompt for credentials on first use
+        // Prompt for credentials on first use (only GitHub token now)
         function promptForCredentials() {
             const githubToken = prompt('Enter your GitHub Personal Access Token:');
-            const r2AccountId = prompt('Enter your R2 Account ID:');
-            const r2AccessKey = prompt('Enter your R2 Access Key ID:');
-            const r2SecretKey = prompt('Enter your R2 Secret Access Key:');
             
-            if (githubToken && r2AccountId && r2AccessKey && r2SecretKey) {
+            if (githubToken) {
                 localStorage.setItem('github_token', githubToken);
-                localStorage.setItem('r2_account_id', r2AccountId);
-                localStorage.setItem('r2_access_key', r2AccessKey);
-                localStorage.setItem('r2_secret_key', r2SecretKey);
                 return true;
             }
             return false;
@@ -1168,18 +1160,32 @@
         }
 
         async function uploadToR2(file) {
-            const creds = getCredentials();
             const fileName = `${Date.now()}-${file.name}`;
-            const url = `${CONFIG.r2BucketUrl}/${fileName}`;
+            const workerUrl = 'https://r2-upload-handler.db7613.workers.dev/';
             
-            // R2 upload using AWS S3-compatible API
-            // Note: This is simplified - production would use proper AWS SDK
-            const formData = new FormData();
-            formData.append('file', file);
-            
-            // For now, return a placeholder
-            // In production, implement proper R2 upload using creds.r2AccessKey and creds.r2SecretKey
-            return url;
+            try {
+                // Upload file to R2 via Cloudflare Worker
+                const formData = new FormData();
+                formData.append('file', file);
+                formData.append('filename', fileName);
+                
+                const response = await fetch(workerUrl, {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    throw new Error(`R2 upload failed: ${errorText}`);
+                }
+                
+                const data = await response.json();
+                console.log('R2 upload successful:', data.url);
+                return data.url;
+            } catch (error) {
+                console.error('R2 upload error:', error);
+                throw error;
+            }
         }
 
         async function saveProjectsToGitHub() {
