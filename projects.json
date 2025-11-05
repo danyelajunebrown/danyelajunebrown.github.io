@@ -31,9 +31,15 @@
       "scores": {
         "dearness": null,
         "completeness": null,
-        "cost": null,
-        "themes": [],
-        "genres": []
+        "cost": 48,
+        "themes": [
+          "autonomy",
+          "access",
+          "neurogender"
+        ],
+        "genres": [
+          "performance-set"
+        ]
       }
     },
     {
