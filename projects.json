@@ -1,0 +1,387 @@
+{
+  "projects": [
+    {
+      "id": "2564",
+      "title": "2564",
+      "hoverTitle": "the personal",
+      "date": "dummy",
+      "year": 9999,
+      "materials": ["conceptual anchor"],
+      "mediaType": "none",
+      "mediaUrl": "",
+      "description": "Dummy work representing maximum values on all axes",
+      "isDummy": true,
+      "scores": {
+        "dearness": 100,
+        "completeness": 100,
+        "cost": 100,
+        "themes": ["autonomy", "access", "affect", "black", "neurogender"],
+        "genres": ["set-set", "costume-set", "dance-set", "code-set", "performance-set", "social practice-set", "research-set", "writing-set", "installation-set", "sculpture-set"]
+      }
+    },
+    {
+      "id": "sanana",
+      "title": "Sanana",
+      "hoverTitle": "is political",
+      "date": "dummy",
+      "year": 0,
+      "materials": ["conceptual anchor"],
+      "mediaType": "none",
+      "mediaUrl": "",
+      "description": "Dummy work representing minimum values on all axes",
+      "isDummy": true,
+      "scores": {
+        "dearness": 0,
+        "completeness": 0,
+        "cost": 0,
+        "themes": [],
+        "genres": []
+      }
+    },
+    {
+      "id": "the-teas-2025",
+      "title": "the Teas",
+      "date": "ongoing",
+      "year": 2025,
+      "materials": ["pvc tubes", "hoses", "tub", "water", "pump", "seedlings", "dried herbs", "acrylic", "tea kettle", "cups", "mic", "pillows", "a few gworls"],
+      "mediaType": "image",
+      "mediaUrl": "the Teas-hydroponic progress.JPG",
+      "description": "The Teas is a social-sculpture composed of hydroponic motherplants, herbal storage, and a nutrient richstage for copresentation in the gallery, which hopes to encourage us all to HEAL and MONE freely. Guests will experience semi-automated Tea bagging and a self-service Tea party within a living system of species growing throughout the exhibition. Ongoing care and repair is provided by the artist, in addition to nourishing co-commissioned performances by members of her community.",
+      "scores": {
+        "dearness": 68,
+        "completeness": 45,
+        "cost": 65,
+        "themes": ["access", "affect", "black"],
+        "genres": ["installation-set", "social practice-set", "performance-set"]
+      }
+    },
+    {
+      "id": "eye-always-feel-like-2025",
+      "title": "Eye Always Feel Like: Black Transgender Speaking and Operationalizing the Clock",
+      "date": "ongoing",
+      "year": 2025,
+      "materials": ["Critical Writing"],
+      "mediaType": "image",
+      "mediaUrl": "Eye Always Feel Like -abstract.jpg",
+      "description": "Original research on black trans gaze perception, read through Hortense Spillers' 'interior intersubjectivity' and Alan Pegna's 2013 blindsight for gaze experimental protocol.",
+      "scores": {
+        "dearness": 82,
+        "completeness": 55,
+        "cost": 12,
+        "themes": ["black", "neurogender", "affect"],
+        "genres": ["research-set", "writing-set"]
+      }
+    },
+    {
+      "id": "ultrauncanceled-2025",
+      "title": "ULTRAUNCANCELED",
+      "date": "June 7, 2025",
+      "year": 2025,
+      "materials": ["Curatorial Project"],
+      "mediaType": "image",
+      "mediaUrl": "placeholder-curatorial.jpg",
+      "description": "Curatorial project for Queer Art Salon, Dupont Underground, Washington DC",
+      "scores": {
+        "dearness": 58,
+        "completeness": 85,
+        "cost": 35,
+        "themes": ["autonomy", "access", "black"],
+        "genres": ["social practice-set", "performance-set"]
+      }
+    },
+    {
+      "id": "do-we-see-2025",
+      "title": "Do We See With Eyes Or With The Psyche?",
+      "date": "May 10, 2025",
+      "year": 2025,
+      "materials": ["Performance"],
+      "mediaType": "image",
+      "mediaUrl": "placeholder-performance.jpg",
+      "description": "Performance at Dance Institute of Washington, DC",
+      "scores": {
+        "dearness": 52,
+        "completeness": 92,
+        "cost": 28,
+        "themes": ["affect", "neurogender"],
+        "genres": ["dance-set", "performance-set"]
+      }
+    },
+    {
+      "id": "right-over-left-2025",
+      "title": "Right Over Left: DMV Runway Review",
+      "date": "January 25–March 1, 2025",
+      "year": 2025,
+      "materials": ["Curatorial Project"],
+      "mediaType": "image",
+      "mediaUrl": "Right Over Left-rejected flyer.png",
+      "description": "Group exhibition featuring Boom Boom Von Dutch Balenciaga, Corey Von Dutch Lanvin, Kiko Old Navy Revlon, and Lolita Leopard Juicy Couture Miyake Mugler which celebrates Runway in DC, Maryland and Virginia over the last seven years. The exhibition, composed of video projections of the four artists' clips and ephemera from their personal archives, seeks to hirstoricize the artists' relationships to craft and performance within the call-and-response timescale of runway as a practice determined on the floor.",
+      "scores": {
+        "dearness": 72,
+        "completeness": 88,
+        "cost": 42,
+        "themes": ["black", "access", "autonomy"],
+        "genres": ["social practice-set", "performance-set", "costume-set"]
+      }
+    },
+    {
+      "id": "opentowork-2024",
+      "title": "#OpenToWork",
+      "date": "November 8, 2024",
+      "year": 2024,
+      "materials": ["Performance"],
+      "mediaType": "video",
+      "mediaUrl": "https://www.dropbox.com/scl/fi/sb2b58xj06zz7le3k21qz/OpenToWork-2024.mov?rlkey=0c47bxx9rj8z2vgzljd56y943&raw=1",
+      "runTime": "00:03:00",
+      "description": "Performance at SerformanceP, São Paulo, Brazil",
+      "scores": {
+        "dearness": 48,
+        "completeness": 95,
+        "cost": 22,
+        "themes": ["autonomy", "affect"],
+        "genres": ["performance-set"]
+      }
+    },
+    {
+      "id": "untitled-fresh-to-death-2024",
+      "title": "untitled (fresh to death)",
+      "date": "August 17, 2024",
+      "year": 2024,
+      "materials": ["Photography"],
+      "mediaType": "image",
+      "mediaUrl": "untitled (fresh to death).jpg",
+      "description": "Collaborative project at Hamiltonian Artists, Washington DC",
+      "scores": {
+        "dearness": 85,
+        "completeness": 98,
+        "cost": 18,
+        "themes": ["black", "affect"],
+        "genres": ["set-set"]
+      }
+    },
+    {
+      "id": "friendzone-2024",
+      "title": "~~FRiENDZ0NE~~",
+      "date": "July 18, 2024",
+      "year": 2024,
+      "materials": ["Curatorial Project"],
+      "mediaType": "image",
+      "mediaUrl": "placeholder-curatorial.jpg",
+      "description": "Curatorial project at Performance Space New York, New York, NY",
+      "scores": {
+        "dearness": 62,
+        "completeness": 90,
+        "cost": 38,
+        "themes": ["access", "autonomy"],
+        "genres": ["social practice-set", "performance-set"]
+      }
+    },
+    {
+      "id": "performance-qas-2024",
+      "title": "______: Performance@QAS",
+      "date": "June 28, 2024",
+      "year": 2024,
+      "materials": ["Curatorial Project"],
+      "mediaType": "image",
+      "mediaUrl": "*__* Performance @ QAS.jpg",
+      "description": "Curatorial project for Queer Art Salon X Art Roving, Washington DC",
+      "scores": {
+        "dearness": 55,
+        "completeness": 87,
+        "cost": 32,
+        "themes": ["access", "black"],
+        "genres": ["social practice-set", "performance-set"]
+      }
+    },
+    {
+      "id": "trying-it-2024",
+      "title": "Trying It",
+      "date": "2024",
+      "year": 2024,
+      "materials": ["earth", "grass", "electronics", "recorded-audio"],
+      "mediaType": "video",
+      "mediaUrl": "https://www.dropbox.com/scl/fi/q6vewpesu0xqy73iez9tr/Trying-It-2024.mov?rlkey=f4w9cbv774sez4lpioy09qkig&raw=1",
+      "runTime": "00:59:59",
+      "description": "Land art DMV Kiki Nights collab troubling the notion of an 'underground' ballroom culture featuring hillock-covered speaker looping recorded-audio of Rocheny Pricien's 6/1/24 kiki ball (DJ: VJtheDJ, MC: Tony Play, Judge: Danyela). Bodiless footprint of the work reflects the fungibility of time-based queer genres. Presented in Sound Scene 2024 at Hirshhorn sculpture garden.",
+      "scores": {
+        "dearness": 22,
+        "completeness": 78,
+        "cost": 48,
+        "themes": ["black", "access"],
+        "genres": ["installation-set", "sculpture-set", "performance-set"]
+      }
+    },
+    {
+      "id": "dearoldps122-2024",
+      "title": "DEARoldPS122",
+      "date": "2024",
+      "year": 2024,
+      "materials": ["Critical Writing"],
+      "mediaType": "pdf",
+      "mediaUrl": "DearOldPS122 (pg1).pdf",
+      "description": "Published in Meet Me There, Another Time, edited by Lexie Bean (Jessica Kingsley Publishers)",
+      "scores": {
+        "dearness": 70,
+        "completeness": 100,
+        "cost": 8,
+        "themes": ["autonomy", "affect", "black"],
+        "genres": ["writing-set"]
+      }
+    },
+    {
+      "id": "out-the-doll-house-ii-2024",
+      "title": "Out The Doll House II",
+      "date": "2024",
+      "year": 2024,
+      "materials": ["Video"],
+      "mediaType": "youtube",
+      "mediaUrl": "ETBAGdcVCH8",
+      "runTime": "00:15:00",
+      "description": "Part of figure group exhibition at Touchstone Gallery, Washington DC",
+      "scores": {
+        "dearness": 45,
+        "completeness": 85,
+        "cost": 25,
+        "themes": ["neurogender", "affect"],
+        "genres": ["dance-set", "performance-set"]
+      }
+    },
+    {
+      "id": "performance-qas-2023",
+      "title": "*__*: Performance @ QAS",
+      "date": "2023",
+      "year": 2023,
+      "materials": ["Performance"],
+      "mediaType": "image",
+      "mediaUrl": "*__* Performance @ QAS.jpg",
+      "description": "Curatorial project/performance",
+      "scores": {
+        "dearness": 50,
+        "completeness": 90,
+        "cost": 30,
+        "themes": ["access", "black"],
+        "genres": ["social practice-set", "performance-set"]
+      }
+    },
+    {
+      "id": "unpaid-internship-2023",
+      "title": "Unpaid Internship",
+      "date": "2023",
+      "year": 2023,
+      "materials": ["Digital Image"],
+      "mediaType": "image",
+      "mediaUrl": "unpaid internship.png",
+      "description": "Digital artwork exploring labor and value",
+      "scores": {
+        "dearness": 65,
+        "completeness": 100,
+        "cost": 5,
+        "themes": ["autonomy", "affect"],
+        "genres": ["code-set"]
+      }
+    },
+    {
+      "id": "rasanblaj-2022",
+      "title": "Ràsánblaj",
+      "date": "April 1–May 1, 2022",
+      "year": 2022,
+      "materials": ["Curatorial Project"],
+      "mediaType": "image",
+      "mediaUrl": "placeholder-curatorial.jpg",
+      "description": "Curatorial project for Ra Bacchus at The NLA, New York NY",
+      "scores": {
+        "dearness": 60,
+        "completeness": 92,
+        "cost": 35,
+        "themes": ["black", "access"],
+        "genres": ["social practice-set"]
+      }
+    },
+    {
+      "id": "the-nosebleed-2022",
+      "title": "The Nosebleed",
+      "date": "2022",
+      "year": 2022,
+      "materials": ["Video"],
+      "mediaType": "video",
+      "mediaUrl": "https://www.dropbox.com/scl/fi/1tvjqoc78es8ukv6kcdm5/the-Nosebleed-2022.mp4?rlkey=njzkg2sidg8mimqatuku4dvpx&raw=1",
+      "runTime": "00:10:00",
+      "description": "Part of LES Young Artists of Color Group Show at FABnyc, New York NY",
+      "scores": {
+        "dearness": 42,
+        "completeness": 88,
+        "cost": 20,
+        "themes": ["affect", "black"],
+        "genres": ["performance-set"]
+      }
+    },
+    {
+      "id": "confessional-2020",
+      "title": "Confessional",
+      "date": "2020",
+      "year": 2020,
+      "materials": ["Performance"],
+      "mediaType": "image",
+      "mediaUrl": "Confessional logbook-10.16.jpg",
+      "description": "Performance at Performance Space New York, New York NY (Fridays 8/7–11/13)",
+      "scores": {
+        "dearness": 18,
+        "completeness": 75,
+        "cost": 45,
+        "themes": ["access", "affect"],
+        "genres": ["performance-set", "social practice-set"]
+      }
+    },
+    {
+      "id": "out-the-doll-haus-2020",
+      "title": "Out The Doll Haus",
+      "date": "2020",
+      "year": 2020,
+      "materials": ["Video"],
+      "mediaType": "video",
+      "mediaUrl": "https://www.dropbox.com/scl/fi/mquf7mu3z7cpg7jfbaf3i/Out-The-Doll-Haus-2020.mp4?rlkey=ci7b41jqnx3xbnapfd5zt8is5&raw=1",
+      "runTime": "00:20:00",
+      "description": "Video installation",
+      "scores": {
+        "dearness": 38,
+        "completeness": 82,
+        "cost": 28,
+        "themes": ["neurogender", "affect"],
+        "genres": ["dance-set", "installation-set"]
+      }
+    },
+    {
+      "id": "dear-marshas-2020",
+      "title": "Dear Marsha's",
+      "date": "2020",
+      "year": 2020,
+      "materials": ["Digital Image"],
+      "mediaType": "image",
+      "mediaUrl": "dear marsha's.png",
+      "description": "Collaborative project at Project Renewal Marsha's House, Bronx NY",
+      "scores": {
+        "dearness": 75,
+        "completeness": 95,
+        "cost": 10,
+        "themes": ["access", "black", "affect"],
+        "genres": ["social practice-set", "code-set"]
+      }
+    },
+    {
+      "id": "untitled-pr-fall-ball-2019",
+      "title": "untitled (Project Renewal Fall Ball)",
+      "date": "2019",
+      "year": 2019,
+      "materials": ["Performance"],
+      "mediaType": "image",
+      "mediaUrl": "placeholder-performance.jpg",
+      "description": "Performance work",
+      "scores": {
+        "dearness": 35,
+        "completeness": 98,
+        "cost": 15,
+        "themes": ["black", "access"],
+        "genres": ["performance-set"]
+      }
+    }
+  ]
+}
