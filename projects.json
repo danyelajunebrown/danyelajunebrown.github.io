@@ -81,6 +81,29 @@
         "video",
         "video"
       ]
+    },
+    {
+      "id": "mhmm0wvgt7fp4c9dhj",
+      "title": "Eye Always Feel Like",
+      "date": "2024",
+      "year": 2025,
+      "materials": [
+        "survey responses"
+      ],
+      "mediaTypes": [
+        "image"
+      ],
+      "mediaUrls": [
+        "https://raw.githubusercontent.com/danyelajunebrown/danyelajunebrown.github.io/main/assets/1762384158825-Eye%20Always%20Feel%20Like%20(Survey%20Responses).jpg"
+      ],
+      "description": "",
+      "scores": {
+        "dearness": null,
+        "completeness": null,
+        "cost": null,
+        "themes": [],
+        "genres": []
+      }
     }
   ]
 }
