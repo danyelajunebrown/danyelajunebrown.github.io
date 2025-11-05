@@ -36,7 +36,7 @@
       "description": "fuck u marsha",
       "scores": {
         "dearness": null,
-        "completeness": null,
+        "completeness": 50,
         "cost": 48,
         "themes": [
           "autonomy",
