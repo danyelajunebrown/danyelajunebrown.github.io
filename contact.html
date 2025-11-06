@@ -4,25 +4,21 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Contact</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/lucide/0.263.1/umd/lucide.min.js"></script>
     <style>
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-            max-width: 800px;
-            margin: 0 auto;
-            padding: 2rem;
+            margin: 0;
+            padding: 0;
             background: #f5f5f5;
             color: #333;
-            line-height: 1.6;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
         }
         .nav-menu {
-            position: fixed;
-            top: 0;
-            left: 0;
             width: 100%;
             background-color: rgba(0, 0, 0, 0.7);
             padding: 15px 0;
-            z-index: 2000;
             text-align: center;
         }
         .nav-menu a {
@@ -37,6 +33,130 @@
         .nav-menu a:hover {
             border-bottom: 2px solid white;
         }
-        .section {
-            background: white;
-            border-radius: 8px;
+        .distance-container {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            padding: 2rem;
+        }
+        .distance-text {
+            font-size: 4rem;
+            font-weight: 300;
+            text-align: center;
+            line-height: 1.2;
+        }
+        .distance-number {
+            font-weight: 600;
+            color: #007AFF;
+        }
+        .status {
+            font-size: 1rem;
+            color: #666;
+            margin-top: 1rem;
+        }
+        .error {
+            color: #ff3b30;
+        }
+
+        @media (max-width: 600px) {
+            .distance-text {
+                font-size: 2.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="nav-menu">
+        <a href="index.html">Home</a>
+        <a href="about.html">About</a>
+        <a href="portfolio.html">Portfolio</a>
+        <a href="contact.html">Contact</a>
+    </div>
+
+    <div class="distance-container">
+        <div class="distance-text" id="distanceDisplay">
+            Calculating...
+        </div>
+        <div class="status" id="statusText">Requesting location access...</div>
+    </div>
+
+    <script>
+        const WORKER_URL = 'https://carmen-sandiego.db7613.workers.dev/location';
+        
+        let userLatitude = null;
+        let userLongitude = null;
+        let danyelLatitude = null;
+        let danyelLongitude = null;
+
+        function calculateDistance(lat1, lon1, lat2, lon2) {
+            const R = 20902231;
+            const dLat = (lat2 - lat1) * Math.PI / 180;
+            const dLon = (lon2 - lon1) * Math.PI / 180;
+            const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+                      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+                      Math.sin(dLon/2) * Math.sin(dLon/2);
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+            const distance = R * c;
+            return Math.round(distance);
+        }
+
+        function formatNumber(num) {
+            return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+        }
+
+        function updateDistance() {
+            if (userLatitude && userLongitude && danyelLatitude && danyelLongitude) {
+                const distance = calculateDistance(userLatitude, userLongitude, danyelLatitude, danyelLongitude);
+                document.getElementById('distanceDisplay').innerHTML = 
+                    `danyelicafish is<br><span class="distance-number">${formatNumber(distance)} ft</span><br>away`;
+                document.getElementById('statusText').textContent = 'Distance updating live';
+            }
+        }
+
+        async function fetchDanyelLocation() {
+            try {
+                const response = await fetch(WORKER_URL);
+                const data = await response.json();
+                danyelLatitude = data.latitude;
+                danyelLongitude = data.longitude;
+                updateDistance();
+            } catch (error) {
+                console.error('Error fetching location:', error);
+                document.getElementById('statusText').textContent = 'Error loading danyelicafish location';
+                document.getElementById('statusText').classList.add('error');
+            }
+        }
+
+        function startLocationTracking() {
+            if ('geolocation' in navigator) {
+                navigator.geolocation.watchPosition(
+                    (position) => {
+                        userLatitude = position.coords.latitude;
+                        userLongitude = position.coords.longitude;
+                        updateDistance();
+                    },
+                    (error) => {
+                        document.getElementById('statusText').textContent = 'Location access denied';
+                        document.getElementById('statusText').classList.add('error');
+                        document.getElementById('distanceDisplay').textContent = 'Location permission needed';
+                    },
+                    {
+                        enableHighAccuracy: true,
+                        maximumAge: 0,
+                        timeout: 5000
+                    }
+                );
+            } else {
+                document.getElementById('statusText').textContent = 'Geolocation not supported';
+                document.getElementById('statusText').classList.add('error');
+            }
+        }
+
+        fetchDanyelLocation();
+        startLocationTracking();
+        setInterval(fetchDanyelLocation, 30000);
+    </script>
+</body>
+</html>
