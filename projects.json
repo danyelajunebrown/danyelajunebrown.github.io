@@ -221,6 +221,30 @@
         "themes": [],
         "genres": []
       }
+    },
+    {
+      "id": "mhmyx1zy8tzl4us8v9",
+      "title": "Rocket Science",
+      "date": "2025",
+      "year": 2025,
+      "materials": [
+        "uv ink",
+        "performance score"
+      ],
+      "mediaTypes": [
+        "image"
+      ],
+      "mediaUrls": [
+        "https://raw.githubusercontent.com/danyelajunebrown/danyelajunebrown.github.io/main/assets/1762405808933-IMG_1099.heic"
+      ],
+      "description": "",
+      "scores": {
+        "dearness": null,
+        "completeness": null,
+        "cost": null,
+        "themes": [],
+        "genres": []
+      }
     }
   ]
 }
