@@ -297,6 +297,27 @@
         "themes": [],
         "genres": []
       }
+    },
+    {
+      "id": "mhmz5mhkh4rolpk9tcu",
+      "title": "Trying It",
+      "date": "2024",
+      "year": 2025,
+      "materials": [],
+      "mediaTypes": [
+        "youtube"
+      ],
+      "mediaUrls": [
+        "Y6KGaAbHYRc"
+      ],
+      "description": "",
+      "scores": {
+        "dearness": null,
+        "completeness": null,
+        "cost": null,
+        "themes": [],
+        "genres": []
+      }
     }
   ]
 }
