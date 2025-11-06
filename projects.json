@@ -39,7 +39,7 @@
       "scores": {
         "dearness": null,
         "completeness": 50,
-        "cost": 48,
+        "cost": 0,
         "themes": [
           "autonomy",
           "access",
