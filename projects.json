@@ -12,7 +12,7 @@
       "scores": {
         "dearness": 100,
         "completeness": null,
-        "cost": null,
+        "cost": 80,
         "themes": [],
         "genres": []
       },
