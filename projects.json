@@ -197,6 +197,30 @@
         "themes": [],
         "genres": []
       }
+    },
+    {
+      "id": "mhmyqz01vyunq4e277",
+      "title": "Homeody",
+      "date": "2025",
+      "year": 2025,
+      "materials": [
+        "uv ink",
+        "performance score"
+      ],
+      "mediaTypes": [
+        "image"
+      ],
+      "mediaUrls": [
+        "https://raw.githubusercontent.com/danyelajunebrown/danyelajunebrown.github.io/main/assets/1762405527571-IMG_1097.heic"
+      ],
+      "description": "",
+      "scores": {
+        "dearness": null,
+        "completeness": null,
+        "cost": null,
+        "themes": [],
+        "genres": []
+      }
     }
   ]
 }
