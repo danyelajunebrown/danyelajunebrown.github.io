@@ -186,10 +186,12 @@
       "year": 2025,
       "materials": [],
       "mediaTypes": [
-        "image"
+        "image",
+        "youtube"
       ],
       "mediaUrls": [
-        "https://raw.githubusercontent.com/danyelajunebrown/danyelajunebrown.github.io/main/assets/1762405305773-dysaesthesia%20aethiopica.jpeg"
+        "https://raw.githubusercontent.com/danyelajunebrown/danyelajunebrown.github.io/main/assets/1762405305773-dysaesthesia%20aethiopica.jpeg",
+        "7huAtaUxn_c"
       ],
       "description": "",
       "scores": {
