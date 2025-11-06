@@ -102,7 +102,7 @@
       "scores": {
         "dearness": null,
         "completeness": null,
-        "cost": null,
+        "cost": 62,
         "themes": [],
         "genres": []
       }
