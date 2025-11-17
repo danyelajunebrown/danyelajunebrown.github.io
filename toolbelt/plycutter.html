@@ -3,851 +3,581 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Plycutter - STL to finger-jointed DXF slicer</title>
+    <title>Plycutter - STL to DXF Slicer</title>
     <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            line-height: 1.6;
-            color: #333;
+            background: #000;
+            color: white;
+            font-family: Arial, sans-serif;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        /* Credit Banner */
+        .credit-banner {
+            background: linear-gradient(135deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.05) 100%);
+            border: 2px solid rgba(255,255,255,0.3);
+            padding: 30px;
+            margin-bottom: 40px;
+            text-align: center;
+            backdrop-filter: blur(10px);
+        }
+
+        .credit-banner h1 {
+            font-size: 42px;
+            margin-bottom: 20px;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+        }
+
+        .credit-info {
+            font-size: 18px;
+            margin: 15px 0;
+            opacity: 0.9;
+        }
+
+        .credit-links {
+            margin-top: 20px;
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .credit-links a {
+            color: white;
+            text-decoration: none;
+            padding: 10px 20px;
+            border: 2px solid white;
+            transition: all 0.3s ease;
+        }
+
+        .credit-links a:hover {
+            background: white;
+            color: black;
+        }
+
+        /* Main Interface */
+        .container {
             max-width: 1200px;
             margin: 0 auto;
-            padding: 20px;
         }
-        header {
-            text-align: center;
+
+        .upload-section {
+            background: rgba(255,255,255,0.05);
+            border: 2px solid white;
+            padding: 30px;
             margin-bottom: 30px;
         }
-        h1 {
-            color: #2c3e50;
+
+        .upload-section h2 {
+            margin-bottom: 20px;
+            font-size: 24px;
         }
-        .container {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 20px;
-        }
-        .upload-section {
-            flex: 1;
-            min-width: 300px;
-            background-color: #f5f5f5;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        }
-        .preview-section {
-            flex: 2;
-            min-width: 400px;
-            background-color: #f5f5f5;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            display: flex;
-            flex-direction: column;
-        }
-        .preview-container {
-            flex: 1;
-            background-color: #fff;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            min-height: 400px;
+
+        .file-input-wrapper {
             position: relative;
-            overflow: hidden;
+            display: inline-block;
+            margin-bottom: 20px;
         }
-        #preview-svg {
+
+        .file-input-wrapper input[type="file"] {
+            position: absolute;
+            opacity: 0;
             width: 100%;
             height: 100%;
+            cursor: pointer;
         }
-        .preview-message {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            color: #aaa;
-            text-align: center;
-            width: 80%;
+
+        .file-input-label {
+            display: inline-block;
+            padding: 15px 30px;
+            background: white;
+            color: black;
+            cursor: pointer;
+            border: 2px solid white;
+            transition: all 0.3s ease;
         }
-        form {
+
+        .file-input-label:hover {
+            background: black;
+            color: white;
+        }
+
+        .file-info {
+            margin: 15px 0;
+            font-size: 14px;
+            opacity: 0.8;
+        }
+
+        .settings-section {
+            margin: 20px 0;
+        }
+
+        .setting-item {
+            margin: 15px 0;
             display: flex;
-            flex-direction: column;
+            align-items: center;
             gap: 15px;
         }
-        .form-group {
-            display: flex;
-            flex-direction: column;
-            gap: 5px;
+
+        .setting-item label {
+            min-width: 150px;
         }
-        label {
-            font-weight: bold;
-        }
-        input[type="file"],
-        input[type="number"],
-        button {
-            padding: 10px;
-            border-radius: 4px;
-            border: 1px solid #ddd;
-        }
-        button {
-            background-color: #3498db;
+
+        .setting-item input {
+            padding: 8px;
+            background: rgba(255,255,255,0.1);
+            border: 1px solid white;
             color: white;
-            border: none;
+            width: 100px;
+        }
+
+        button {
+            padding: 15px 40px;
+            background: white;
+            color: black;
+            border: 2px solid white;
             cursor: pointer;
-            font-weight: bold;
-            transition: background-color 0.3s;
+            font-size: 16px;
+            transition: all 0.3s ease;
+            margin: 10px 10px 10px 0;
         }
+
         button:hover {
-            background-color: #2980b9;
+            background: black;
+            color: white;
         }
+
         button:disabled {
-            background-color: #95a5a6;
+            opacity: 0.5;
             cursor: not-allowed;
         }
-        #log {
-            margin-top: 20px;
+
+        .preview-section {
+            background: rgba(255,255,255,0.05);
+            border: 2px solid white;
+            padding: 30px;
+            margin-bottom: 30px;
+        }
+
+        .preview-section h2 {
+            margin-bottom: 20px;
+        }
+
+        #previewCanvas {
+            border: 1px solid white;
+            max-width: 100%;
+            background: rgba(255,255,255,0.02);
+        }
+
+        .status {
+            margin: 15px 0;
             padding: 10px;
-            background-color: #f9f9f9;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            font-family: monospace;
-            height: 150px;
-            overflow-y: auto;
+            background: rgba(255,255,255,0.1);
+            border-left: 3px solid white;
         }
-        .note {
-            background-color: #fef9e7;
-            border-left: 4px solid #f1c40f;
-            padding: 10px 15px;
+
+        .status.error {
+            border-left-color: #ff4444;
+            color: #ff4444;
+        }
+
+        .status.success {
+            border-left-color: #44ff44;
+            color: #44ff44;
+        }
+
+        .instructions {
             margin: 20px 0;
-            border-radius: 0 4px 4px 0;
+            padding: 20px;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.3);
         }
-        footer {
-            margin-top: 50px;
-            text-align: center;
-            color: #7f8c8d;
-            font-size: 0.9em;
+
+        .instructions h3 {
+            margin-bottom: 10px;
+        }
+
+        .instructions ul {
+            margin-left: 20px;
+        }
+
+        .instructions li {
+            margin: 8px 0;
         }
     </style>
 </head>
 <body>
-    <header>
-        <h1>Plycutter</h1>
-        <p>STL to finger-jointed DXF slicer for laser cutting</p>
-    </header>
-
-    <div class="note">
-        <strong>Note:</strong> This is a pure JavaScript implementation of the Plycutter concept.
+    <!-- Credit Banner -->
+    <div class="credit-banner">
+        <h1>PLYCUTTER</h1>
+        <div class="credit-info">
+            <strong>Original Tool by Tuomas Lukka</strong><br>
+            tuomas@hipcode.fi
+        </div>
+        <div class="credit-links">
+            <a href="https://github.com/tjhei/plycutter" target="_blank">GitHub Repository</a>
+            <a href="http://hipcode.fi/plycutter/" target="_blank">Official Homepage</a>
+            <a href="http://www.varasto.org/log/2015-08-31/" target="_blank">Blog Post</a>
+        </div>
     </div>
 
     <div class="container">
-        <section class="upload-section">
-            <h2>Upload & Settings</h2>
-            <form id="plycutterForm">
-                <div class="form-group">
-                    <label for="stlFile">Upload STL File:</label>
-                    <input type="file" id="stlFile" accept=".stl" required>
-                </div>
-                
-                <div class="form-group">
-                    <label for="thickness">Material Thickness (mm):</label>
-                    <input type="number" id="thickness" value="6" min="0.1" step="0.1" required>
-                </div>
-                
-                <div class="form-group">
-                    <label for="minFingerWidth">Minimum Finger Width (mm):</label>
-                    <input type="number" id="minFingerWidth" value="3" min="0.1" step="0.1" required>
-                </div>
-                
-                <div class="form-group">
-                    <label for="maxFingerWidth">Maximum Finger Width (mm):</label>
-                    <input type="number" id="maxFingerWidth" value="5" min="0.1" step="0.1" required>
-                </div>
-                
-                <div class="form-group">
-                    <label for="supportRadius">Support Radius (mm):</label>
-                    <input type="number" id="supportRadius" value="12" min="0" step="0.1" required>
-                </div>
-                
-                <div class="form-group">
-                    <label for="finalDilation">Final Dilation (Kerf Compensation):</label>
-                    <input type="number" id="finalDilation" value="0.05" min="0" step="0.01" required>
-                </div>
-                
-                <div class="form-group">
-                    <label for="randomSeed">Random Seed:</label>
-                    <input type="number" id="randomSeed" value="42" min="0" step="1" required>
-                </div>
-                
-                <button type="submit" id="processButton">Process STL</button>
-            </form>
+        <!-- Upload Section -->
+        <div class="upload-section">
+            <h2>Upload STL File</h2>
+            
+            <div class="file-input-wrapper">
+                <input type="file" id="stlFile" accept=".stl" onchange="handleFileSelect(event)">
+                <label for="stlFile" class="file-input-label">Choose STL File</label>
+            </div>
 
-            <div id="log"><strong>Log:</strong><br></div>
-        </section>
-        
-        <section class="preview-section">
+            <div id="fileInfo" class="file-info"></div>
+
+            <div class="settings-section">
+                <h3>Settings</h3>
+                <div class="setting-item">
+                    <label>Sheet Thickness (mm):</label>
+                    <input type="number" id="thickness" value="3.0" step="0.1" min="0.1">
+                </div>
+                <div class="setting-item">
+                    <label>Tolerance (mm):</label>
+                    <input type="number" id="tolerance" value="0.1" step="0.01" min="0.01">
+                </div>
+            </div>
+
+            <button id="processBtn" onclick="processSTL()" disabled>Process STL</button>
+            <button id="downloadBtn" onclick="downloadDXF()" disabled>Download DXF</button>
+
+            <div id="status"></div>
+        </div>
+
+        <!-- Preview Section -->
+        <div class="preview-section">
             <h2>Preview</h2>
-            <div class="preview-container">
-                <div id="preview-message" class="preview-message">
-                    <p>Upload an STL file to see a preview of the generated DXF output</p>
-                </div>
-                <svg id="preview-svg"></svg>
-            </div>
-            <div style="margin-top: 15px; text-align: right;">
-                <button id="downloadButton" disabled>Download DXF</button>
-            </div>
-        </section>
+            <canvas id="previewCanvas" width="800" height="600"></canvas>
+            <div id="previewInfo"></div>
+        </div>
+
+        <!-- Instructions -->
+        <div class="instructions">
+            <h3>How to Use Plycutter</h3>
+            <ul>
+                <li>Upload an STL file designed with clearly visible sheets (use your CAD program's 'shell' or 'offset' command)</li>
+                <li>Adjust the sheet thickness to match your material (default: 3mm)</li>
+                <li>Set tolerance based on your fabrication precision (default: 0.1mm)</li>
+                <li>Click "Process STL" to analyze the file and extract 2D profiles</li>
+                <li>Preview the extracted sheets in the canvas above</li>
+                <li>Click "Download DXF" to get your laser-cutting file</li>
+            </ul>
+            <p style="margin-top: 15px;"><strong>Note:</strong> This is a browser-based JavaScript implementation of the original Python tool. The 3D model must be designed specifically for this purpose, with each sheet clearly defined as a separate planar surface.</p>
+        </div>
     </div>
-
-    <section>
-        <h2>How to use Plycutter</h2>
-        <ol>
-            <li>Upload an STL file with clearly visible sheets (use the 'shell' command in your CAD program)</li>
-            <li>Adjust the settings if needed</li>
-            <li>Click "Process STL" to generate the DXF file</li>
-            <li>Preview the result</li>
-            <li>Download the DXF file for laser cutting</li>
-        </ol>
-        <p>The 3D model needs to be designed in a way where the sheets are clearly visible (e.g., using the CAD program's 'shell' command).</p>
-    </section>
-
-    <footer>
-        <p>Plycutter by Tuomas Lukka - <a href="https://github.com/tjltjl/plycutter" target="_blank">GitHub Repository</a></p>
-        <p>Web version implemented in JavaScript</p>
-    </footer>
 
     <script>
         // Global variables
-        let dxfOutput = null;
-        let parsedTriangles = [];
-        let detectedSheets = [];
-        
-        // Helper function to log messages
-        function logMessage(message) {
-            const logElement = document.getElementById("log");
-            logElement.innerHTML += message + "<br>";
-            logElement.scrollTop = logElement.scrollHeight;
-            console.log(message);
+        let stlData = null;
+        let parsedSTL = null;
+        let extractedSheets = [];
+        let dxfContent = null;
+
+        // File selection handler
+        function handleFileSelect(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            document.getElementById('fileInfo').innerHTML = `
+                Selected: <strong>${file.name}</strong> (${(file.size / 1024).toFixed(2)} KB)
+            `;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                stlData = e.target.result;
+                showStatus('File loaded successfully', 'success');
+                document.getElementById('processBtn').disabled = false;
+            };
+            reader.onerror = function() {
+                showStatus('Error reading file', 'error');
+            };
+            reader.readAsArrayBuffer(file);
         }
 
-        // Simple STL parser for binary STL files
-        class STLParser {
-            constructor() {
-                this.triangles = [];
-            }
+        // Status display
+        function showStatus(message, type = '') {
+            const statusDiv = document.getElementById('status');
+            statusDiv.textContent = message;
+            statusDiv.className = 'status ' + type;
+        }
+
+        // STL Parser (Binary format)
+        function parseSTL(arrayBuffer) {
+            showStatus('Parsing STL file...', '');
             
-            parse(data) {
-                try {
-                    // Convert ArrayBuffer to DataView for binary access
-                    const view = new DataView(data);
-                    
-                    // Skip header (80 bytes) and read number of triangles (4 bytes)
-                    const numTriangles = view.getUint32(80, true);
-                    logMessage(`STL contains ${numTriangles} triangles`);
-                    
-                    // Each triangle is 50 bytes (12 bytes for normal, 36 bytes for vertices, 2 bytes for attribute)
-                    let offset = 84;
-                    for (let i = 0; i < numTriangles; i++) {
-                        if (offset + 50 > data.byteLength) {
-                            logMessage(`Warning: STL file truncated at triangle ${i}`);
-                            break;
-                        }
-                        
-                        // Extract normal
-                        const normal = [
-                            view.getFloat32(offset, true),
-                            view.getFloat32(offset + 4, true),
-                            view.getFloat32(offset + 8, true)
-                        ];
-                        
-                        // Extract vertices
-                        const v1 = [
-                            view.getFloat32(offset + 12, true),
-                            view.getFloat32(offset + 16, true),
-                            view.getFloat32(offset + 20, true)
-                        ];
-                        
-                        const v2 = [
-                            view.getFloat32(offset + 24, true),
-                            view.getFloat32(offset + 28, true),
-                            view.getFloat32(offset + 32, true)
-                        ];
-                        
-                        const v3 = [
-                            view.getFloat32(offset + 36, true),
-                            view.getFloat32(offset + 40, true),
-                            view.getFloat32(offset + 44, true)
-                        ];
-                        
-                        this.triangles.push({
-                            normal: normal,
-                            vertices: [v1, v2, v3]
-                        });
-                        
-                        offset += 50;
-                    }
-                    
-                    logMessage(`Successfully parsed ${this.triangles.length} triangles`);
-                    return true;
-                } catch (error) {
-                    logMessage(`Error parsing STL: ${error.message}`);
-                    // Fall back to a mock data if parsing fails
-                    this._generateMockData();
-                    return false;
+            const dataView = new DataView(arrayBuffer);
+            
+            // Skip 80-byte header
+            const numTriangles = dataView.getUint32(80, true);
+            
+            showStatus(`Found ${numTriangles} triangles`, 'success');
+            
+            const triangles = [];
+            let offset = 84; // After header and triangle count
+            
+            for (let i = 0; i < numTriangles; i++) {
+                // Read normal (3 floats)
+                const normal = {
+                    x: dataView.getFloat32(offset, true),
+                    y: dataView.getFloat32(offset + 4, true),
+                    z: dataView.getFloat32(offset + 8, true)
+                };
+                offset += 12;
+                
+                // Read 3 vertices (each is 3 floats)
+                const vertices = [];
+                for (let j = 0; j < 3; j++) {
+                    vertices.push({
+                        x: dataView.getFloat32(offset, true),
+                        y: dataView.getFloat32(offset + 4, true),
+                        z: dataView.getFloat32(offset + 8, true)
+                    });
+                    offset += 12;
                 }
+                
+                // Skip attribute byte count
+                offset += 2;
+                
+                triangles.push({ normal, vertices });
             }
             
-            _generateMockData() {
-                logMessage("Generating mock triangles for demonstration");
-                // Create a simple box
-                const size = 100;
-                const thickness = 6;
-                
-                // Create a box with 6 faces, each with 2 triangles
-                // Front face
-                this.triangles.push({
-                    normal: [0, 0, 1],
-                    vertices: [[0, 0, thickness], [size, 0, thickness], [size, size, thickness]]
-                });
-                this.triangles.push({
-                    normal: [0, 0, 1],
-                    vertices: [[0, 0, thickness], [size, size, thickness], [0, size, thickness]]
-                });
-                
-                // Back face
-                this.triangles.push({
-                    normal: [0, 0, -1],
-                    vertices: [[0, 0, 0], [size, size, 0], [size, 0, 0]]
-                });
-                this.triangles.push({
-                    normal: [0, 0, -1],
-                    vertices: [[0, 0, 0], [0, size, 0], [size, size, 0]]
-                });
-                
-                // Top face
-                this.triangles.push({
-                    normal: [0, 1, 0],
-                    vertices: [[0, size, 0], [size, size, 0], [size, size, thickness]]
-                });
-                this.triangles.push({
-                    normal: [0, 1, 0],
-                    vertices: [[0, size, 0], [size, size, thickness], [0, size, thickness]]
-                });
-                
-                // Bottom face
-                this.triangles.push({
-                    normal: [0, -1, 0],
-                    vertices: [[0, 0, 0], [size, 0, thickness], [size, 0, 0]]
-                });
-                this.triangles.push({
-                    normal: [0, -1, 0],
-                    vertices: [[0, 0, 0], [0, 0, thickness], [size, 0, thickness]]
-                });
-                
-                // Left face
-                this.triangles.push({
-                    normal: [-1, 0, 0],
-                    vertices: [[0, 0, 0], [0, size, 0], [0, size, thickness]]
-                });
-                this.triangles.push({
-                    normal: [-1, 0, 0],
-                    vertices: [[0, 0, 0], [0, size, thickness], [0, 0, thickness]]
-                });
-                
-                // Right face
-                this.triangles.push({
-                    normal: [1, 0, 0],
-                    vertices: [[size, 0, 0], [size, size, thickness], [size, size, 0]]
-                });
-                this.triangles.push({
-                    normal: [1, 0, 0],
-                    vertices: [[size, 0, 0], [size, 0, thickness], [size, size, thickness]]
-                });
-            }
+            return triangles;
         }
 
-        // Simple Plycutter implementation in JavaScript
-        class SimplePlycutter {
-            constructor(thickness=6.0, minFingerWidth=3.0, maxFingerWidth=5.0, 
-                        supportRadius=12.0, finalDilation=0.05, randomSeed=42) {
-                this.thickness = thickness;
-                this.minFingerWidth = minFingerWidth;
-                this.maxFingerWidth = maxFingerWidth;
-                this.supportRadius = supportRadius;
-                this.finalDilation = finalDilation;
-                this.randomSeed = randomSeed;
-                this.sheets = [];
+        // Find planar sheets in the STL
+        function extractSheets(triangles, thickness, tolerance) {
+            showStatus('Extracting sheets from model...', '');
+            
+            const sheets = [];
+            const processed = new Set();
+            
+            // Group triangles by their plane (based on normal and distance from origin)
+            for (let i = 0; i < triangles.length; i++) {
+                if (processed.has(i)) continue;
                 
-                // Simple random number generator
-                this.random = function() {
-                    this.randomSeed = (this.randomSeed * 9301 + 49297) % 233280;
-                    return this.randomSeed / 233280;
+                const tri1 = triangles[i];
+                const sheet = {
+                    normal: { ...tri1.normal },
+                    triangles: [i],
+                    vertices: [...tri1.vertices]
                 };
                 
-                logMessage(`Initialized SimplePlycutter with thickness=${thickness}`);
-            }
-            
-            processSTL(triangles) {
-                logMessage(`Processing ${triangles.length} triangles`);
+                // Calculate distance from origin for this plane
+                const d1 = dotProduct(tri1.normal, tri1.vertices[0]);
                 
-                // Detect sheets from triangles
-                this.sheets = this._detectSheets(triangles);
-                logMessage(`Detected ${this.sheets.length} sheets`);
-                
-                // Generate a DXF from the sheets
-                return this._generateDXF();
-            }
-            
-            _detectSheets(triangles) {
-                // This is a simplified algorithm to detect sheets from triangles
-                
-                // Group triangles by normal vectors (very simplified)
-                const sheetGroups = {};
-                for (const triangle of triangles) {
-                    const normal = triangle.normal;
-                    // Quantize normal to handle floating point imprecision
-                    const normalKey = `${Math.round(normal[0])},${Math.round(normal[1])},${Math.round(normal[2])}`;
+                // Find all triangles in the same plane
+                for (let j = i + 1; j < triangles.length; j++) {
+                    if (processed.has(j)) continue;
                     
-                    if (!sheetGroups[normalKey]) {
-                        sheetGroups[normalKey] = [];
-                    }
-                    sheetGroups[normalKey].push(triangle);
+                    const tri2 = triangles[j];
+                    
+                    // Check if normals are parallel (or anti-parallel)
+                    const normalDot = Math.abs(dotProduct(tri1.normal, tri2.normal));
+                    if (normalDot < 0.99) continue; // Not parallel enough
+                    
+                    // Check if in same plane
+                    const d2 = dotProduct(tri1.normal, tri2.vertices[0]);
+                    if (Math.abs(d1 - d2) > tolerance) continue;
+                    
+                    // This triangle belongs to the same sheet
+                    sheet.triangles.push(j);
+                    sheet.vertices.push(...tri2.vertices);
+                    processed.add(j);
                 }
                 
-                // Each group of triangles with similar normals is a "sheet"
-                const sheets = [];
+                processed.add(i);
                 
-                for (const normalKey in sheetGroups) {
-                    const triangles = sheetGroups[normalKey];
-                    const normal = normalKey.split(',').map(Number);
-                    
-                    // Extract vertices for each sheet
-                    const vertices = [];
-                    for (const triangle of triangles) {
-                        vertices.push(...triangle.vertices);
-                    }
-                    
-                    // Find approx bounding box for the sheet
-                    const minX = Math.min(...vertices.map(v => v[0]));
-                    const maxX = Math.max(...vertices.map(v => v[0]));
-                    const minY = Math.min(...vertices.map(v => v[1]));
-                    const maxY = Math.max(...vertices.map(v => v[1]));
-                    const minZ = Math.min(...vertices.map(v => v[2]));
-                    const maxZ = Math.max(...vertices.map(v => v[2]));
-                    
-                    // Create a simplified representation of the sheet
-                    const sheet = {
-                        normal: normal,
-                        bounds: [minX, minY, minZ, maxX, maxY, maxZ],
-                        width: maxX - minX,
-                        height: maxY - minY,
-                        depth: maxZ - minZ
-                    };
+                // Only keep sheets with multiple triangles
+                if (sheet.triangles.length > 1) {
                     sheets.push(sheet);
                 }
-                
-                return sheets;
             }
             
-            _generateDXF() {
-                logMessage("Generating DXF output...");
-                
-                // DXF header
-                const dxfHeader = `0
-SECTION
-2
-HEADER
-9
-$ACADVER
-1
-AC1021
-0
-ENDSEC
-2
-TABLES
-0
-TABLE
-2
-LAYER
-0
-LAYER
-2
-0
-70
-0
-62
-7
-6
-CONTINUOUS
-0
-ENDTAB
-0
-ENDSEC
-2
-ENTITIES
-`;
+            showStatus(`Extracted ${sheets.length} sheets`, 'success');
+            return sheets;
+        }
 
-                // DXF footer
-                const dxfFooter = `0
-ENDSEC
-0
-EOF
-`;
+        // Dot product helper
+        function dotProduct(v1, v2) {
+            return v1.x * v2.x + v1.y * v2.y + v1.z * v2.z;
+        }
 
-                let entities = [];
-                
-                // If we have sheets from STL analysis, use those
-                if (this.sheets.length > 0) {
-                    let yOffset = 0;
-                    for (let i = 0; i < this.sheets.length; i++) {
-                        const sheet = this.sheets[i];
-                        // Create rectangles with finger joints for each sheet
-                        const width = Math.max(50, Math.min(sheet.width, 300));  // Limit size for display
-                        const height = Math.max(50, Math.min(sheet.height, 300));
-                        
-                        // Generate finger joints based on which sheets intersect
-                        entities = entities.concat(this._generateSheetWithJoints(width, height, yOffset));
-                        
-                        yOffset += height + 20;  // Add space between sheets
-                    }
-                } else {
-                    // Fall back to sample if no sheets detected
-                    entities = entities.concat(this._generateSampleBox());
-                }
-                
-                // Assemble the full DXF
-                const fullDXF = dxfHeader + entities.join('') + dxfFooter;
-                return fullDXF;
+        // Main processing function
+        function processSTL() {
+            if (!stlData) {
+                showStatus('No file loaded', 'error');
+                return;
             }
-            
-            _generateSheetWithJoints(width, height, yOffset=0) {
-                const entities = [];
-                const xOffset = 10;
+
+            try {
+                const thickness = parseFloat(document.getElementById('thickness').value);
+                const tolerance = parseFloat(document.getElementById('tolerance').value);
+
+                // Parse STL
+                parsedSTL = parseSTL(stlData);
                 
-                // Calculate number of fingers per edge
-                const fingersPerEdge = Math.max(2, Math.floor((width / this.maxFingerWidth) / 2) * 2);
-                const fingerWidth = width / fingersPerEdge;
+                // Extract sheets
+                extractedSheets = extractSheets(parsedSTL, thickness, tolerance);
                 
-                // Top edge with finger joints
-                for (let i = 0; i < fingersPerEdge; i++) {
-                    const xStart = xOffset + i * fingerWidth;
-                    const xEnd = xOffset + (i + 1) * fingerWidth;
-                    
-                    if (i % 2 === 0) {  // Cut out
-                        entities.push(`0
-LINE
-8
-0
-10
-${xStart}
-20
-${yOffset}
-30
-0
-11
-${xStart}
-21
-${yOffset + this.thickness}
-31
-0
-`);
-                        if (i > 0) {
-                            entities.push(`0
-LINE
-8
-0
-10
-${xStart}
-20
-${yOffset + this.thickness}
-30
-0
-11
-${xStart - fingerWidth}
-21
-${yOffset + this.thickness}
-31
-0
-`);
-                        }
-                    } else {  // Finger
-                        if (i > 0) {
-                            entities.push(`0
-LINE
-8
-0
-10
-${xStart}
-20
-${yOffset}
-30
-0
-11
-${xStart - fingerWidth}
-21
-${yOffset}
-31
-0
-`);
-                        }
-                    }
-                }
+                // Draw preview
+                drawPreview(extractedSheets, parsedSTL);
                 
-                // Right side
-                entities.push(`0
-LINE
-8
-0
-10
-${xOffset + width}
-20
-${yOffset}
-30
-0
-11
-${xOffset + width}
-21
-${yOffset + height}
-31
-0
-`);
+                // Generate DXF
+                dxfContent = generateDXF(extractedSheets, parsedSTL);
                 
-                // Bottom edge
-                entities.push(`0
-LINE
-8
-0
-10
-${xOffset + width}
-20
-${yOffset + height}
-30
-0
-11
-${xOffset}
-21
-${yOffset + height}
-31
-0
-`);
+                document.getElementById('downloadBtn').disabled = false;
+                showStatus('Processing complete!', 'success');
                 
-                // Left side
-                entities.push(`0
-LINE
-8
-0
-10
-${xOffset}
-20
-${yOffset + height}
-30
-0
-11
-${xOffset}
-21
-${yOffset}
-31
-0
-`);
-                
-                return entities;
-            }
-            
-            _generateSampleBox() {
-                const entities = [];
-                
-                // Create a simple box with finger joints
-                const width = 80;
-                const height = 60;
-                
-                // Bottom piece
-                entities.push(...this._generateSheetWithJoints(width, height, 0));
-                
-                // Side piece
-                entities.push(...this._generateSheetWithJoints(width, height, height + 20));
-                
-                // Another piece with different orientation
-                entities.push(...this._generateSheetWithJoints(height, width, 2 * height + 40));
-                
-                return entities;
-            }
-            
-            getSVGPreview() {
-                // Generate an SVG preview of our box with finger joints
-                const width = 80;
-                const height = 60;
-                const thickness = this.thickness;
-                const padding = 10;
-                
-                // Calculate the viewbox size based on detected sheets or use defaults
-                let viewboxWidth, viewboxHeight;
-                
-                if (this.sheets.length > 0) {
-                    const maxWidth = Math.max(...this.sheets.map(sheet => sheet.width));
-                    const totalHeight = this.sheets.reduce((sum, sheet) => sum + sheet.height, 0) + 
-                                        (this.sheets.length - 1) * 20;
-                    viewboxWidth = maxWidth + 2 * padding;
-                    viewboxHeight = totalHeight + 2 * padding;
-                } else {
-                    viewboxWidth = width + 2 * padding;
-                    viewboxHeight = (height * 3) + 4 * padding + 40;
-                }
-                
-                const svgHeader = `<svg viewBox="0 0 ${viewboxWidth} ${viewboxHeight}" xmlns="http://www.w3.org/2000/svg">`;
-                
-                const svgContent = [];
-                
-                // If we have sheets from STL analysis, draw those
-                if (this.sheets.length > 0) {
-                    let yOffset = padding;
-                    for (let i = 0; i < this.sheets.length; i++) {
-                        const sheet = this.sheets[i];
-                        // Create rectangles with finger joints for each sheet
-                        const sheetWidth = Math.max(50, Math.min(sheet.width, 300));  // Limit size for display
-                        const sheetHeight = Math.max(50, Math.min(sheet.height, 300));
-                        
-                        // Generate SVG path for this sheet
-                        svgContent.push(this._generateSheetSVGPath(sheetWidth, sheetHeight, padding, yOffset));
-                        svgContent.push(`<text x="${padding + sheetWidth/2}" y="${yOffset + sheetHeight + 15}" text-anchor="middle" font-size="6">Sheet ${i+1}</text>`);
-                        
-                        yOffset += sheetHeight + 20;  // Add space between sheets
-                    }
-                } else {
-                    // Draw sample box parts if no sheets detected
-                    // Bottom piece
-                    svgContent.push(this._generateSheetSVGPath(width, height, padding, padding));
-                    svgContent.push(`<text x="${padding + width/2}" y="${padding + height + 15}" text-anchor="middle" font-size="6">Bottom Piece</text>`);
-                    
-                    // Side piece
-                    const sideY = padding * 2 + height;
-                    svgContent.push(this._generateSheetSVGPath(width, height, padding, sideY));
-                    svgContent.push(`<text x="${padding + width/2}" y="${sideY + height + 15}" text-anchor="middle" font-size="6">Side Piece</text>`);
-                    
-                    // Another piece
-                    const topY = sideY + height + padding;
-                    svgContent.push(this._generateSheetSVGPath(height, width, padding, topY));
-                    svgContent.push(`<text x="${padding + height/2}" y="${topY + width + 15}" text-anchor="middle" font-size="6">Top Piece</text>`);
-                }
-                
-                // Add footer
-                svgContent.push(`<text x="${viewboxWidth/2}" y="${viewboxHeight - 5}" text-anchor="middle" font-size="4">SimplePlycutter Preview - Parameters: t=${this.thickness}, min=${this.minFingerWidth}, max=${this.maxFingerWidth}</text>`);
-                
-                // Assemble the full SVG
-                const fullSVG = svgHeader + svgContent.join('') + '</svg>';
-                return fullSVG;
-            }
-            
-            _generateSheetSVGPath(width, height, xOffset, yOffset) {
-                // Calculate number of fingers per edge
-                const fingersPerEdge = Math.max(2, Math.floor((width / this.maxFingerWidth) / 2) * 2);
-                const fingerWidth = width / fingersPerEdge;
-                
-                // Start the path at the top-left corner
-                let path = `<path d="M ${xOffset},${yOffset} `;
-                
-                // Top edge with finger joints
-                for (let i = 0; i < fingersPerEdge; i++) {
-                    const xStart = xOffset + i * fingerWidth;
-                    const xEnd = xOffset + (i + 1) * fingerWidth;
-                    
-                    if (i % 2 === 0) {  // Cut out
-                        path += `L ${xStart},${yOffset} L ${xStart},${yOffset + this.thickness} `;
-                        if (i > 0) {
-                            path += `L ${xStart - fingerWidth},${yOffset + this.thickness} `;
-                        }
-                    } else {  // Finger
-                        if (i > 0) {
-                            path += `L ${xStart},${yOffset} `;
-                        }
-                    }
-                }
-                
-                // Right side
-                path += `L ${xOffset + width},${yOffset} L ${xOffset + width},${yOffset + height} `;
-                
-                // Bottom edge (simple)
-                path += `L ${xOffset},${yOffset + height} `;
-                
-                // Left side and close the path
-                path += `L ${xOffset},${yOffset} Z" fill="none" stroke="black" stroke-width="1"/>`;
-                
-                return path;
+            } catch (error) {
+                showStatus('Error processing STL: ' + error.message, 'error');
+                console.error(error);
             }
         }
 
-        // Event handlers
-        document.addEventListener('DOMContentLoaded', function() {
-            const stlFileInput = document.getElementById('stlFile');
-            const processButton = document.getElementById('processButton');
-            const downloadButton = document.getElementById('downloadButton');
-            const plycutterForm = document.getElementById('plycutterForm');
+        // Draw preview on canvas
+        function drawPreview(sheets, triangles) {
+            const canvas = document.getElementById('previewCanvas');
+            const ctx = canvas.getContext('2d');
             
-            stlFileInput.addEventListener('change', function() {
-                const fileName = this.files[0]?.name || '';
-                logMessage(`Selected file: ${fileName}`);
+            // Clear canvas
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = 'rgba(0,0,0,0.8)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            if (sheets.length === 0) {
+                ctx.fillStyle = 'white';
+                ctx.font = '16px Arial';
+                ctx.fillText('No sheets found in model', 20, 30);
+                return;
+            }
+            
+            // Find bounding box
+            let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+            
+            sheets.forEach(sheet => {
+                sheet.vertices.forEach(v => {
+                    minX = Math.min(minX, v.x);
+                    minY = Math.min(minY, v.y);
+                    maxX = Math.max(maxX, v.x);
+                    maxY = Math.max(maxY, v.y);
+                });
             });
             
-            plycutterForm.addEventListener('submit', async function(e) {
-                e.preventDefault();
-                
-                const stlFile = stlFileInput.files[0];
-                if (!stlFile) {
-                    logMessage("Error: No STL file selected");
-                    return;
-                }
-                
-                try {
-                    // Get form values
-                    const thickness = parseFloat(document.getElementById('thickness').value);
-                    const minFingerWidth = parseFloat(document.getElementById('minFingerWidth').value);
-                    const maxFingerWidth = parseFloat(document.getElementById('maxFingerWidth').value);
-                    const supportRadius = parseFloat(document.getElementById('supportRadius').value);
-                    const finalDilation = parseFloat(document.getElementById('finalDilation').value);
-                    const randomSeed = parseInt(document.getElementById('randomSeed').value);
-                    
-                    // Initialize Plycutter with the settings
-                    const plycutter = new SimplePlycutter(
-                        thickness,
-                        minFingerWidth,
-                        maxFingerWidth,
-                        supportRadius,
-                        finalDilation,
-                        randomSeed
-                    );
-                    
-                    // Read the STL file
-                    const stlData = await stlFile.arrayBuffer();
-                    
-                    // Parse the STL file
-                    const parser = new STLParser();
-                    parser.parse(stlData);
-                    parsedTriangles = parser.triangles;
-                    
-                    // Process the STL file
-                    logMessage("Processing STL file (this may take a moment)...");
-                    dxfOutput = plycutter.processSTL(parsedTriangles);
-                    
-                    // Update the preview
-                    const svgPreview = plycutter.getSVGPreview();
-                    document.getElementById('preview-message').style.display = 'none';
-                    document.getElementById('preview-svg').innerHTML = svgPreview;
-                    
-                    // Enable the download button
-                    downloadButton.disabled = false;
-                    
-                    logMessage("Processing complete. You can now preview and download the DXF file.");
-                } catch (error) {
-                    logMessage(`Error: ${error.message}`);
-                    console.error("Processing failed:", error);
-                }
+            // Calculate scale
+            const padding = 50;
+            const scaleX = (canvas.width - 2 * padding) / (maxX - minX);
+            const scaleY = (canvas.height - 2 * padding) / (maxY - minY);
+            const scale = Math.min(scaleX, scaleY);
+            
+            // Transform function
+            const transform = (v) => ({
+                x: padding + (v.x - minX) * scale,
+                y: padding + (v.y - minY) * scale
             });
             
-            // Handle download button click
-            downloadButton.addEventListener('click', function() {
-                if (dxfOutput) {
-                    const blob = new Blob([dxfOutput], { type: 'application/dxf' });
-                    const url = URL.createObjectURL(blob);
-                    const a = document.createElement('a');
-                    a.href = url;
-                    a.download = 'plycutter_output.dxf';
-                    document.body.appendChild(a);
-                    a.click();
-                    document.body.removeChild(a);
-                    URL.revokeObjectURL(url);
-                    logMessage("DXF file downloaded");
-                } else {
+            // Draw each sheet with different colors
+            const colors = ['#ff4444', '#44ff44', '#4444ff', '#ffff44', '#ff44ff', '#44ffff'];
+            
+            sheets.forEach((sheet, sheetIdx) => {
+                ctx.strokeStyle = colors[sheetIdx % colors.length];
+                ctx.lineWidth = 2;
+                
+                // Draw triangles for this sheet
+                sheet.triangles.forEach(triIdx => {
+                    const tri = triangles[triIdx];
+                    const v0 = transform(tri.vertices[0]);
+                    const v1 = transform(tri.vertices[1]);
+                    const v2 = transform(tri.vertices[2]);
+                    
+                    ctx.beginPath();
+                    ctx.moveTo(v0.x, v0.y);
+                    ctx.lineTo(v1.x, v1.y);
+                    ctx.lineTo(v2.x, v2.y);
+                    ctx.closePath();
+                    ctx.stroke();
+                });
+            });
+            
+            // Update preview info
+            document.getElementById('previewInfo').innerHTML = `
+                <strong>${sheets.length}</strong> sheets found<br>
+                Model bounds: ${(maxX - minX).toFixed(2)} x ${(maxY - minY).toFixed(2)} mm
+            `;
+        }
+
+        // Generate DXF file
+        function generateDXF(sheets, triangles) {
+            let dxf = '';
+            
+            // DXF Header
+            dxf += '0\nSECTION\n2\nHEADER\n';
+            dxf += '9\n$ACADVER\n1\nAC1015\n'; // AutoCAD 2000
+            dxf += '0\nENDSEC\n';
+            
+            // Entities section
+            dxf += '0\nSECTION\n2\nENTITIES\n';
+            
+            // Add each sheet's triangles as polylines
+            sheets.forEach((sheet, sheetIdx) => {
+                const layer = `SHEET_${sheetIdx + 1}`;
+                
+                sheet.triangles.forEach(triIdx => {
+                    const tri = triangles[triIdx];
+                    
+                    // Add as LWPOLYLINE (lightweight polyline)
+                    dxf += '0\nLWPOLYLINE\n';
+                    dxf += `8\n${layer}\n`; // Layer
+                    dxf += '90\n3\n'; // Number of vertices
+                    dxf += '70\n1\n'; // Closed polyline
+                    
+                    // Add vertices
+                    tri.vertices.forEach(v => {
+                        dxf += `10\n${v.x.toFixed(6)}\n`; // X coordinate
+                        dxf += `20\n${v.y.toFixed(6)}\n`; // Y coordinate
+                    });
+                });
+            });
+            
+            dxf += '0\nENDSEC\n';
+            dxf += '0\nEOF\n';
+            
+            return dxf;
+        }
+
+        // Download DXF file
+        function downloadDXF() {
+            if (!dxfContent) {
+                showStatus('No DXF generated yet', 'error');
+                return;
+            }
+
+            const blob = new Blob([dxfContent], { type: 'application/dxf' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'plycutter_output.dxf';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            
+            showStatus('DXF file downloaded', 'success');
+        }
+    </script>
+</body>
+</html>
