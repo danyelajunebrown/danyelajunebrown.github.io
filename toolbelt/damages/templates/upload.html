@@ -1,0 +1,132 @@
+{% extends "base.html" %}
+{% block title %}Upload - damages{% endblock %}
+
+{% block extra_css %}
+<style>
+    .upload-container { max-width: 800px; margin: 0 auto; }
+    .form-group { margin-bottom: 1.5rem; }
+    .form-label { display: block; margin-bottom: 0.5rem; font-weight: 600; }
+    .form-input, .form-select { width: 100%; padding: 0.75rem; border-radius: 8px; border: 1px solid rgba(255, 255, 255, 0.2); background: rgba(255, 255, 255, 0.05); color: white; font-size: 1rem; }
+    .form-input:focus, .form-select:focus { outline: none; border-color: #667eea; background: rgba(255, 255, 255, 0.08); }
+    .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1rem; }
+    .drop-zone { border: 2px dashed rgba(255, 255, 255, 0.3); border-radius: 12px; padding: 3rem; text-align: center; cursor: pointer; transition: all 0.3s; }
+    .drop-zone:hover { border-color: #667eea; background: rgba(102, 126, 234, 0.1); }
+    .drop-zone.dragover { border-color: #667eea; background: rgba(102, 126, 234, 0.2); }
+    .photo-preview { display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 0.5rem; margin-top: 1rem; }
+    .photo-preview img { width: 100%; height: 100px; object-fit: cover; border-radius: 8px; }
+    .slider-container { display: flex; align-items: center; gap: 1rem; }
+    .slider { flex: 1; height: 6px; border-radius: 3px; background: rgba(255, 255, 255, 0.2); outline: none; -webkit-appearance: none; }
+    .slider::-webkit-slider-thumb { -webkit-appearance: none; width: 20px; height: 20px; border-radius: 50%; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); cursor: pointer; }
+    .slider::-moz-range-thumb { width: 20px; height: 20px; border-radius: 50%; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); cursor: pointer; border: none; }
+    .checkbox-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 0.75rem; }
+    .checkbox-label { display: flex; align-items: center; gap: 0.5rem; cursor: pointer; }
+    .progress-bar { width: 100%; height: 8px; background: rgba(255, 255, 255, 0.1); border-radius: 4px; overflow: hidden; margin: 1rem 0; }
+    .progress-fill { height: 100%; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); transition: width 0.3s; }
+    .alert { padding: 1rem; border-radius: 8px; margin-bottom: 1rem; }
+    .alert-success { background: rgba(72, 187, 120, 0.2); border: 1px solid rgba(72, 187, 120, 0.4); color: #9ae6b4; }
+    .alert-error { background: rgba(245, 101, 101, 0.2); border: 1px solid rgba(245, 101, 101, 0.4); color: #fc8181; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="upload-container">
+    <h1 style="font-size: 2rem; font-weight: 700; margin-bottom: 2rem;">Upload New Scan</h1>
+    <div id="alert-container"></div>
+    <div class="card">
+        <form id="upload-form">
+            <div class="form-grid">
+                <div class="form-group"><label class="form-label">Category</label><select id="category" class="form-select" required><option value="sneakers">Sneakers</option><option value="clothing">Clothing</option><option value="tech">Technology</option><option value="body">Body</option><option value="misc">Miscellaneous</option></select></div>
+                <div class="form-group"><label class="form-label">Object Type</label><input type="text" id="object-type" class="form-input" placeholder="e.g., Running shoes" required></div>
+                <div class="form-group"><label class="form-label">Brand (optional)</label><input type="text" id="brand" class="form-input" placeholder="e.g., Nike"></div>
+                <div class="form-group"><label class="form-label">Age (months)</label><input type="number" id="age-months" class="form-input" min="0" value="0"></div>
+            </div>
+            <div class="form-group"><label class="form-label">Damage Severity: <span id="severity-value">5</span>/10</label><div class="slider-container"><span>1</span><input type="range" id="severity" class="slider" min="1" max="10" value="5"><span>10</span></div></div>
+            <div class="form-group"><label class="form-label">Damage Types</label><div class="checkbox-grid"><label class="checkbox-label"><input type="checkbox" name="damage-type" value="wear"> Wear</label><label class="checkbox-label"><input type="checkbox" name="damage-type" value="stains"> Stains</label><label class="checkbox-label"><input type="checkbox" name="damage-type" value="tears"> Tears</label><label class="checkbox-label"><input type="checkbox" name="damage-type" value="cracks"> Cracks</label></div></div>
+            <div class="form-group"><label class="form-label">Photos (20-50 recommended)</label><input type="file" id="photos" multiple accept="image/*" style="display: none;"><div id="drop-zone" class="drop-zone"><div style="font-size: 3rem; margin-bottom: 1rem;">📸</div><div>Click to select photos or drag and drop</div><div style="color: rgba(255,255,255,0.5); font-size: 0.9rem; margin-top: 0.5rem;">Take photos from all angles for best results</div></div><div id="photo-preview" class="photo-preview"></div></div>
+            <div class="form-group"><label class="form-label">Notes (optional)</label><textarea id="notes" class="form-input" rows="3" placeholder="Any additional context..."></textarea></div>
+            <div id="progress-container" style="display: none;"><div class="progress-bar"><div id="progress-fill" class="progress-fill" style="width: 0%"></div></div><div style="text-align: center; color: rgba(255,255,255,0.7);" id="progress-text">Uploading...</div></div>
+            <button type="submit" class="btn btn-primary" style="width: 100%; padding: 1rem; font-size: 1.1rem;" id="submit-btn">Upload & Process</button>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const dropZone = document.getElementById('drop-zone');
+const photosInput = document.getElementById('photos');
+const photoPreview = document.getElementById('photo-preview');
+const severitySlider = document.getElementById('severity');
+const severityValue = document.getElementById('severity-value');
+const uploadForm = document.getElementById('upload-form');
+const submitBtn = document.getElementById('submit-btn');
+const progressContainer = document.getElementById('progress-container');
+const progressFill = document.getElementById('progress-fill');
+const progressText = document.getElementById('progress-text');
+const alertContainer = document.getElementById('alert-container');
+
+severitySlider.addEventListener('input', () => { severityValue.textContent = severitySlider.value; });
+dropZone.addEventListener('click', () => photosInput.click());
+['dragenter', 'dragover', 'dragleave', 'drop'].forEach(e => { dropZone.addEventListener(e, ev => { ev.preventDefault(); ev.stopPropagation(); }); });
+['dragenter', 'dragover'].forEach(e => { dropZone.addEventListener(e, () => dropZone.classList.add('dragover')); });
+['dragleave', 'drop'].forEach(e => { dropZone.addEventListener(e, () => dropZone.classList.remove('dragover')); });
+dropZone.addEventListener('drop', e => { photosInput.files = e.dataTransfer.files; displayPhotos(e.dataTransfer.files); });
+photosInput.addEventListener('change', e => displayPhotos(e.target.files));
+
+function displayPhotos(files) {
+    photoPreview.innerHTML = '';
+    Array.from(files).slice(0, 12).forEach(file => {
+        const reader = new FileReader();
+        reader.onload = e => { const img = document.createElement('img'); img.src = e.target.result; photoPreview.appendChild(img); };
+        reader.readAsDataURL(file);
+    });
+    if (files.length > 12) {
+        const more = document.createElement('div');
+        more.style.cssText = 'display: flex; align-items: center; justify-content: center; background: rgba(255,255,255,0.1); border-radius: 8px; font-size: 0.9rem;';
+        more.textContent = `+${files.length - 12} more`;
+        photoPreview.appendChild(more);
+    }
+}
+
+function showAlert(message, type) {
+    alertContainer.innerHTML = `<div class="alert alert-${type}">${message}</div>`;
+    setTimeout(() => alertContainer.innerHTML = '', 5000);
+}
+
+uploadForm.addEventListener('submit', async e => {
+    e.preventDefault();
+    const files = photosInput.files;
+    if (files.length === 0) { showAlert('Please select photos to upload', 'error'); return; }
+    if (files.length < 10) { if (!confirm('You have fewer than 10 photos. Use 20-50 for best results. Continue anyway?')) return; }
+    const formData = new FormData();
+    Array.from(files).forEach(file => formData.append('photos', file));
+    const metadata = {
+        category: document.getElementById('category').value,
+        object_type: document.getElementById('object-type').value,
+        brand: document.getElementById('brand').value,
+        age_months: parseInt(document.getElementById('age-months').value) || 0,
+        damage_severity: parseInt(severitySlider.value),
+        damage_types: Array.from(document.querySelectorAll('input[name="damage-type"]:checked')).map(cb => cb.value),
+        notes: document.getElementById('notes').value
+    };
+    formData.append('metadata', JSON.stringify(metadata));
+    submitBtn.disabled = true;
+    progressContainer.style.display = 'block';
+    try {
+        const response = await fetch('/api/upload', { method: 'POST', body: formData });
+        const result = await response.json();
+        if (response.ok) {
+            progressFill.style.width = '100%';
+            progressText.textContent = 'Upload complete! Redirecting...';
+            showAlert(`Uploaded ${files.length} photos successfully!`, 'success');
+            setTimeout(() => window.location.href = `/viewer/${result.session_id}`, 2000);
+        } else { throw new Error(result.error || 'Upload failed'); }
+    } catch (error) {
+        console.error('Upload error:', error);
+        showAlert(`Upload failed: ${error.message}`, 'error');
+        submitBtn.disabled = false;
+        progressContainer.style.display = 'none';
+    }
+});
+</script>
+{% endblock %}

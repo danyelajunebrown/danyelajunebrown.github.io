@@ -1,0 +1,583 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Plycutter - STL to DXF Slicer</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #000;
+            color: white;
+            font-family: Arial, sans-serif;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        /* Credit Banner */
+        .credit-banner {
+            background: linear-gradient(135deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.05) 100%);
+            border: 2px solid rgba(255,255,255,0.3);
+            padding: 30px;
+            margin-bottom: 40px;
+            text-align: center;
+            backdrop-filter: blur(10px);
+        }
+
+        .credit-banner h1 {
+            font-size: 42px;
+            margin-bottom: 20px;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+        }
+
+        .credit-info {
+            font-size: 18px;
+            margin: 15px 0;
+            opacity: 0.9;
+        }
+
+        .credit-links {
+            margin-top: 20px;
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .credit-links a {
+            color: white;
+            text-decoration: none;
+            padding: 10px 20px;
+            border: 2px solid white;
+            transition: all 0.3s ease;
+        }
+
+        .credit-links a:hover {
+            background: white;
+            color: black;
+        }
+
+        /* Main Interface */
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .upload-section {
+            background: rgba(255,255,255,0.05);
+            border: 2px solid white;
+            padding: 30px;
+            margin-bottom: 30px;
+        }
+
+        .upload-section h2 {
+            margin-bottom: 20px;
+            font-size: 24px;
+        }
+
+        .file-input-wrapper {
+            position: relative;
+            display: inline-block;
+            margin-bottom: 20px;
+        }
+
+        .file-input-wrapper input[type="file"] {
+            position: absolute;
+            opacity: 0;
+            width: 100%;
+            height: 100%;
+            cursor: pointer;
+        }
+
+        .file-input-label {
+            display: inline-block;
+            padding: 15px 30px;
+            background: white;
+            color: black;
+            cursor: pointer;
+            border: 2px solid white;
+            transition: all 0.3s ease;
+        }
+
+        .file-input-label:hover {
+            background: black;
+            color: white;
+        }
+
+        .file-info {
+            margin: 15px 0;
+            font-size: 14px;
+            opacity: 0.8;
+        }
+
+        .settings-section {
+            margin: 20px 0;
+        }
+
+        .setting-item {
+            margin: 15px 0;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .setting-item label {
+            min-width: 150px;
+        }
+
+        .setting-item input {
+            padding: 8px;
+            background: rgba(255,255,255,0.1);
+            border: 1px solid white;
+            color: white;
+            width: 100px;
+        }
+
+        button {
+            padding: 15px 40px;
+            background: white;
+            color: black;
+            border: 2px solid white;
+            cursor: pointer;
+            font-size: 16px;
+            transition: all 0.3s ease;
+            margin: 10px 10px 10px 0;
+        }
+
+        button:hover {
+            background: black;
+            color: white;
+        }
+
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .preview-section {
+            background: rgba(255,255,255,0.05);
+            border: 2px solid white;
+            padding: 30px;
+            margin-bottom: 30px;
+        }
+
+        .preview-section h2 {
+            margin-bottom: 20px;
+        }
+
+        #previewCanvas {
+            border: 1px solid white;
+            max-width: 100%;
+            background: rgba(255,255,255,0.02);
+        }
+
+        .status {
+            margin: 15px 0;
+            padding: 10px;
+            background: rgba(255,255,255,0.1);
+            border-left: 3px solid white;
+        }
+
+        .status.error {
+            border-left-color: #ff4444;
+            color: #ff4444;
+        }
+
+        .status.success {
+            border-left-color: #44ff44;
+            color: #44ff44;
+        }
+
+        .instructions {
+            margin: 20px 0;
+            padding: 20px;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.3);
+        }
+
+        .instructions h3 {
+            margin-bottom: 10px;
+        }
+
+        .instructions ul {
+            margin-left: 20px;
+        }
+
+        .instructions li {
+            margin: 8px 0;
+        }
+    </style>
+</head>
+<body>
+    <!-- Credit Banner -->
+    <div class="credit-banner">
+        <h1>PLYCUTTER</h1>
+        <div class="credit-info">
+            <strong>Original Tool by Tuomas Lukka</strong><br>
+            tuomas@hipcode.fi
+        </div>
+        <div class="credit-links">
+            <a href="https://github.com/tjhei/plycutter" target="_blank">GitHub Repository</a>
+            <a href="http://hipcode.fi/plycutter/" target="_blank">Official Homepage</a>
+            <a href="http://www.varasto.org/log/2015-08-31/" target="_blank">Blog Post</a>
+        </div>
+    </div>
+
+    <div class="container">
+        <!-- Upload Section -->
+        <div class="upload-section">
+            <h2>Upload STL File</h2>
+            
+            <div class="file-input-wrapper">
+                <input type="file" id="stlFile" accept=".stl" onchange="handleFileSelect(event)">
+                <label for="stlFile" class="file-input-label">Choose STL File</label>
+            </div>
+
+            <div id="fileInfo" class="file-info"></div>
+
+            <div class="settings-section">
+                <h3>Settings</h3>
+                <div class="setting-item">
+                    <label>Sheet Thickness (mm):</label>
+                    <input type="number" id="thickness" value="3.0" step="0.1" min="0.1">
+                </div>
+                <div class="setting-item">
+                    <label>Tolerance (mm):</label>
+                    <input type="number" id="tolerance" value="0.1" step="0.01" min="0.01">
+                </div>
+            </div>
+
+            <button id="processBtn" onclick="processSTL()" disabled>Process STL</button>
+            <button id="downloadBtn" onclick="downloadDXF()" disabled>Download DXF</button>
+
+            <div id="status"></div>
+        </div>
+
+        <!-- Preview Section -->
+        <div class="preview-section">
+            <h2>Preview</h2>
+            <canvas id="previewCanvas" width="800" height="600"></canvas>
+            <div id="previewInfo"></div>
+        </div>
+
+        <!-- Instructions -->
+        <div class="instructions">
+            <h3>How to Use Plycutter</h3>
+            <ul>
+                <li>Upload an STL file designed with clearly visible sheets (use your CAD program's 'shell' or 'offset' command)</li>
+                <li>Adjust the sheet thickness to match your material (default: 3mm)</li>
+                <li>Set tolerance based on your fabrication precision (default: 0.1mm)</li>
+                <li>Click "Process STL" to analyze the file and extract 2D profiles</li>
+                <li>Preview the extracted sheets in the canvas above</li>
+                <li>Click "Download DXF" to get your laser-cutting file</li>
+            </ul>
+            <p style="margin-top: 15px;"><strong>Note:</strong> This is a browser-based JavaScript implementation of the original Python tool. The 3D model must be designed specifically for this purpose, with each sheet clearly defined as a separate planar surface.</p>
+        </div>
+    </div>
+
+    <script>
+        // Global variables
+        let stlData = null;
+        let parsedSTL = null;
+        let extractedSheets = [];
+        let dxfContent = null;
+
+        // File selection handler
+        function handleFileSelect(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            document.getElementById('fileInfo').innerHTML = `
+                Selected: <strong>${file.name}</strong> (${(file.size / 1024).toFixed(2)} KB)
+            `;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                stlData = e.target.result;
+                showStatus('File loaded successfully', 'success');
+                document.getElementById('processBtn').disabled = false;
+            };
+            reader.onerror = function() {
+                showStatus('Error reading file', 'error');
+            };
+            reader.readAsArrayBuffer(file);
+        }
+
+        // Status display
+        function showStatus(message, type = '') {
+            const statusDiv = document.getElementById('status');
+            statusDiv.textContent = message;
+            statusDiv.className = 'status ' + type;
+        }
+
+        // STL Parser (Binary format)
+        function parseSTL(arrayBuffer) {
+            showStatus('Parsing STL file...', '');
+            
+            const dataView = new DataView(arrayBuffer);
+            
+            // Skip 80-byte header
+            const numTriangles = dataView.getUint32(80, true);
+            
+            showStatus(`Found ${numTriangles} triangles`, 'success');
+            
+            const triangles = [];
+            let offset = 84; // After header and triangle count
+            
+            for (let i = 0; i < numTriangles; i++) {
+                // Read normal (3 floats)
+                const normal = {
+                    x: dataView.getFloat32(offset, true),
+                    y: dataView.getFloat32(offset + 4, true),
+                    z: dataView.getFloat32(offset + 8, true)
+                };
+                offset += 12;
+                
+                // Read 3 vertices (each is 3 floats)
+                const vertices = [];
+                for (let j = 0; j < 3; j++) {
+                    vertices.push({
+                        x: dataView.getFloat32(offset, true),
+                        y: dataView.getFloat32(offset + 4, true),
+                        z: dataView.getFloat32(offset + 8, true)
+                    });
+                    offset += 12;
+                }
+                
+                // Skip attribute byte count
+                offset += 2;
+                
+                triangles.push({ normal, vertices });
+            }
+            
+            return triangles;
+        }
+
+        // Find planar sheets in the STL
+        function extractSheets(triangles, thickness, tolerance) {
+            showStatus('Extracting sheets from model...', '');
+            
+            const sheets = [];
+            const processed = new Set();
+            
+            // Group triangles by their plane (based on normal and distance from origin)
+            for (let i = 0; i < triangles.length; i++) {
+                if (processed.has(i)) continue;
+                
+                const tri1 = triangles[i];
+                const sheet = {
+                    normal: { ...tri1.normal },
+                    triangles: [i],
+                    vertices: [...tri1.vertices]
+                };
+                
+                // Calculate distance from origin for this plane
+                const d1 = dotProduct(tri1.normal, tri1.vertices[0]);
+                
+                // Find all triangles in the same plane
+                for (let j = i + 1; j < triangles.length; j++) {
+                    if (processed.has(j)) continue;
+                    
+                    const tri2 = triangles[j];
+                    
+                    // Check if normals are parallel (or anti-parallel)
+                    const normalDot = Math.abs(dotProduct(tri1.normal, tri2.normal));
+                    if (normalDot < 0.99) continue; // Not parallel enough
+                    
+                    // Check if in same plane
+                    const d2 = dotProduct(tri1.normal, tri2.vertices[0]);
+                    if (Math.abs(d1 - d2) > tolerance) continue;
+                    
+                    // This triangle belongs to the same sheet
+                    sheet.triangles.push(j);
+                    sheet.vertices.push(...tri2.vertices);
+                    processed.add(j);
+                }
+                
+                processed.add(i);
+                
+                // Only keep sheets with multiple triangles
+                if (sheet.triangles.length > 1) {
+                    sheets.push(sheet);
+                }
+            }
+            
+            showStatus(`Extracted ${sheets.length} sheets`, 'success');
+            return sheets;
+        }
+
+        // Dot product helper
+        function dotProduct(v1, v2) {
+            return v1.x * v2.x + v1.y * v2.y + v1.z * v2.z;
+        }
+
+        // Main processing function
+        function processSTL() {
+            if (!stlData) {
+                showStatus('No file loaded', 'error');
+                return;
+            }
+
+            try {
+                const thickness = parseFloat(document.getElementById('thickness').value);
+                const tolerance = parseFloat(document.getElementById('tolerance').value);
+
+                // Parse STL
+                parsedSTL = parseSTL(stlData);
+                
+                // Extract sheets
+                extractedSheets = extractSheets(parsedSTL, thickness, tolerance);
+                
+                // Draw preview
+                drawPreview(extractedSheets, parsedSTL);
+                
+                // Generate DXF
+                dxfContent = generateDXF(extractedSheets, parsedSTL);
+                
+                document.getElementById('downloadBtn').disabled = false;
+                showStatus('Processing complete!', 'success');
+                
+            } catch (error) {
+                showStatus('Error processing STL: ' + error.message, 'error');
+                console.error(error);
+            }
+        }
+
+        // Draw preview on canvas
+        function drawPreview(sheets, triangles) {
+            const canvas = document.getElementById('previewCanvas');
+            const ctx = canvas.getContext('2d');
+            
+            // Clear canvas
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = 'rgba(0,0,0,0.8)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            if (sheets.length === 0) {
+                ctx.fillStyle = 'white';
+                ctx.font = '16px Arial';
+                ctx.fillText('No sheets found in model', 20, 30);
+                return;
+            }
+            
+            // Find bounding box
+            let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+            
+            sheets.forEach(sheet => {
+                sheet.vertices.forEach(v => {
+                    minX = Math.min(minX, v.x);
+                    minY = Math.min(minY, v.y);
+                    maxX = Math.max(maxX, v.x);
+                    maxY = Math.max(maxY, v.y);
+                });
+            });
+            
+            // Calculate scale
+            const padding = 50;
+            const scaleX = (canvas.width - 2 * padding) / (maxX - minX);
+            const scaleY = (canvas.height - 2 * padding) / (maxY - minY);
+            const scale = Math.min(scaleX, scaleY);
+            
+            // Transform function
+            const transform = (v) => ({
+                x: padding + (v.x - minX) * scale,
+                y: padding + (v.y - minY) * scale
+            });
+            
+            // Draw each sheet with different colors
+            const colors = ['#ff4444', '#44ff44', '#4444ff', '#ffff44', '#ff44ff', '#44ffff'];
+            
+            sheets.forEach((sheet, sheetIdx) => {
+                ctx.strokeStyle = colors[sheetIdx % colors.length];
+                ctx.lineWidth = 2;
+                
+                // Draw triangles for this sheet
+                sheet.triangles.forEach(triIdx => {
+                    const tri = triangles[triIdx];
+                    const v0 = transform(tri.vertices[0]);
+                    const v1 = transform(tri.vertices[1]);
+                    const v2 = transform(tri.vertices[2]);
+                    
+                    ctx.beginPath();
+                    ctx.moveTo(v0.x, v0.y);
+                    ctx.lineTo(v1.x, v1.y);
+                    ctx.lineTo(v2.x, v2.y);
+                    ctx.closePath();
+                    ctx.stroke();
+                });
+            });
+            
+            // Update preview info
+            document.getElementById('previewInfo').innerHTML = `
+                <strong>${sheets.length}</strong> sheets found<br>
+                Model bounds: ${(maxX - minX).toFixed(2)} x ${(maxY - minY).toFixed(2)} mm
+            `;
+        }
+
+        // Generate DXF file
+        function generateDXF(sheets, triangles) {
+            let dxf = '';
+            
+            // DXF Header
+            dxf += '0\nSECTION\n2\nHEADER\n';
+            dxf += '9\n$ACADVER\n1\nAC1015\n'; // AutoCAD 2000
+            dxf += '0\nENDSEC\n';
+            
+            // Entities section
+            dxf += '0\nSECTION\n2\nENTITIES\n';
+            
+            // Add each sheet's triangles as polylines
+            sheets.forEach((sheet, sheetIdx) => {
+                const layer = `SHEET_${sheetIdx + 1}`;
+                
+                sheet.triangles.forEach(triIdx => {
+                    const tri = triangles[triIdx];
+                    
+                    // Add as LWPOLYLINE (lightweight polyline)
+                    dxf += '0\nLWPOLYLINE\n';
+                    dxf += `8\n${layer}\n`; // Layer
+                    dxf += '90\n3\n'; // Number of vertices
+                    dxf += '70\n1\n'; // Closed polyline
+                    
+                    // Add vertices
+                    tri.vertices.forEach(v => {
+                        dxf += `10\n${v.x.toFixed(6)}\n`; // X coordinate
+                        dxf += `20\n${v.y.toFixed(6)}\n`; // Y coordinate
+                    });
+                });
+            });
+            
+            dxf += '0\nENDSEC\n';
+            dxf += '0\nEOF\n';
+            
+            return dxf;
+        }
+
+        // Download DXF file
+        function downloadDXF() {
+            if (!dxfContent) {
+                showStatus('No DXF generated yet', 'error');
+                return;
+            }
+
+            const blob = new Blob([dxfContent], { type: 'application/dxf' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'plycutter_output.dxf';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            
+            showStatus('DXF file downloaded', 'success');
+        }
+    </script>
+</body>
+</html>
