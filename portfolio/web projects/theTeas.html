@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>The Teas – Herb Map</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css">
+  <style>
+    body {
+      background-color: black;
+      color: white;
+    }
+    #map {
+      width: 100%;
+      height: 100vh;
+    }
+  </style>
+  <!-- Leaflet for mapping -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+</head>
+<body>
+  <div id="map"></div>
+
+  <div class="absolute top-4 left-4 bg-black bg-opacity-70 p-4 rounded-lg max-w-sm">
+    <h1 class="text-xl font-bold mb-2">The Teas – Herb Map</h1>
+    <p class="text-sm">
+      This map will soon display real-time data of wild plants accessible within a 10-mile radius of Washington, DC.  
+      <br><br>
+      <strong>Forthcoming data will cover:</strong><br>
+      Spearmint leaves, White peony root, Saw Palmetto berries, Calendula buds, Marshmallow root, Oatstraw, Raspberry leaf, Elderberries, St. John’s wort, Solomon’s Seal, Stinging nettle leaf, Dried blueberries, Pineapple stem powder, Licorice root, Dong quai, Chaste tree berries, Black cohosh root, Fenugreek seeds, Dried Pomegranate kernels, Kwao Krua, MACA.
+    </p>
+  </div>
+
+  <script>
+    // Initialize map centered on DC
+    const dcLat = 38.9072;
+    const dcLng = -77.0369;
+
+    const map = L.map('map', {
+      center: [dcLat, dcLng],
+      zoom: 12,
+      zoomControl: false
+    });
+
+    // Black background with white lines (Carto dark map)
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+      attribution: '&copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a>',
+      subdomains: 'abcd',
+      maxZoom: 19
+    }).addTo(map);
+
+    // Draw a 10-mile (~16 km) radius circle
+    L.circle([dcLat, dcLng], {
+      radius: 16000, // meters
+      color: "white",
+      fillOpacity: 0
+    }).addTo(map).bindPopup("10 mile radius around DC");
+  </script>
+</body>
+</html>

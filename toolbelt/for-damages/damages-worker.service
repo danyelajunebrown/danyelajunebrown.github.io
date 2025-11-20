@@ -1,0 +1,23 @@
+[Unit]
+Description=Damages COLMAP Processing Worker
+After=network.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=damages
+Group=damages
+WorkingDirectory=/home/damages/damages-worker
+Environment="CLOUD_API_URL=https://your-app.onrender.com"
+Environment="WORKER_API_KEY=your-api-key-here"
+Environment="WORKER_ID=dell-laptop-01"
+Environment="WORK_DIR=/home/damages/worker_data"
+Environment="POLL_INTERVAL=30"
+ExecStart=/home/damages/damages-worker/venv/bin/python worker.py
+Restart=always
+RestartSec=10
+StandardOutput=append:/var/log/damages-worker/worker.log
+StandardError=append:/var/log/damages-worker/error.log
+
+[Install]
+WantedBy=multi-user.target

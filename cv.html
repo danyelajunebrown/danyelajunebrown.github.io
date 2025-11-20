@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta name="referrer" content="strict-origin-when-cross-origin">
+    <meta charset="utf-8">
+    <title>Danyela June Brown - CV</title>
+    
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: Arial, sans-serif;
+            background-color: #1a1a1a;
+            color: white;
+            cursor: none;
+            line-height: 1.6;
+        }
+
+        .background-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            z-index: 0;
+            opacity: 0.3;
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            filter: grayscale(30%) blur(1px);
+            transition: opacity 0.5s ease;
+            /* Default gradient background */
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+
+        .custom-cursor {
+            width: 32px;
+            height: 32px;
+            position: fixed;
+            pointer-events: none;
+            z-index: 9999;
+            mix-blend-mode: difference;
+        }
+
+        .custom-cursor svg {
+            width: 100%;
+            height: 100%;
+            animation: trotAlong 0.6s infinite alternate;
+            fill: white;
+        }
+
+        .nav-menu {
+            position: fixed;
+            top: 0;
+            width: 100%;
+            background-color: rgba(0, 0, 0, 0.8);
+            padding: 15px 0;
+            z-index: 2000;
+            text-align: center;
+            backdrop-filter: blur(10px);
+        }
+
+        .nav-menu a {
+            color: white;
+            text-decoration: none;
+            padding: 10px 20px;
+            margin: 0 10px;
+            font-size: 18px;
+            border: 2px solid transparent;
+            transition: all 0.3s ease;
+        }
+
+        .nav-menu a:hover {
+            border-bottom: 2px solid white;
+        }
+        
+        @media (max-width: 768px) {
+            .nav-menu a {
+                padding: 8px 12px;
+                margin: 0 5px;
+                font-size: 16px;
+            }
+        }
+
+        .cv-container {
+    max-width: 800px;
+    margin: 80px auto 40px;
+    padding: 40px;
+    position: relative;
+    z-index: 1;
+    background: none;   /* remove dark overlay */
+    border-radius: 0;   /* optional — no rounded box */
+    backdrop-filter: none; /* remove blur effect */
+}
+
+        .cv-section {
+            margin-bottom: 30px;
+        }
+
+        h1 {
+            font-size: 36px;
+            text-align: center;
+            margin-bottom: 30px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
+        }
+
+        h2 {
+            font-size: 24px;
+            border-bottom: 2px solid white;
+            padding-bottom: 5px;
+            margin-top: 25px;
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8);
+        }
+
+        .entry {
+            margin-bottom: 15px;
+        }
+
+        .year {
+            font-weight: bold;
+            margin-right: 10px;
+        }
+
+        .content {
+            margin-left: 20px;
+        }
+
+        .contact-info {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        @keyframes trotAlong {
+            0% {
+                transform: translateY(0) rotate(-5deg);
+            }
+            100% {
+                transform: translateY(-3px) rotate(5deg);
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Background overlay -->
+    <div class="background-overlay"></div>
+
+    <!-- Custom cursor -->
+    <div class="custom-cursor">
+        <svg viewBox="0 0 32 32">
+            <path d="M16 2l4 12h12l-10 8 4 12-10-8-10 8 4-12-10-8h12z"/>
+        </svg>
+    </div>
+
+    <!-- Navigation -->
+    <nav class="nav-menu">
+        <a href="bio.html">BIO</a>
+        <a href="#" onclick="window.history.back(); return false;">BACK</a>
+        <a href="projects.html">PROJECTS</a>
+        <a href="contact.html">CONTACT</a>
+    </nav>
+
+    <!-- CV Content Container -->
+    <div class="cv-container">
+        <h1>Danyela June Brown</h1>
+        
+        <div class="contact-info">
+            <p>holler@danyelica.fish | @se3ingth1ngs on IG</p>
+            <p>Born 1996 in San Diego, CA. Lives and works in DC.</p>
+        </div>
+
+        <div class="cv-section">
+            <h2>Education</h2>
+            <div class="entry">
+                <span class="year">2028</span>MFA Candidate, Sculpture, Milton Avery Graduate School of the Arts, Bard College, Red Hook NY
+            </div>
+            <div class="entry">
+                <span class="year">2024</span>Peer Case Management Certificate, DHS at Howard University School of Social Work, Washington DC
+            </div>
+            <div class="entry">
+                <span class="year">2019</span>BA, African and African American Studies, Stanford University, Palo Alto CA
+            </div>
+        </div>
+
+        <div class="cv-section">
+            <h2>Teaching Experience</h2>
+            <div class="entry">
+                <span class="year">2025-2026</span>Faculty, Dance Institute of Washington, Washington DC
+            </div>
+        </div>
+
+        <div class="cv-section">
+            <h2>Fellowships</h2>
+            <div class="entry">
+                <span class="year">2021</span>LES Young Artists of Color Fellowship, FABnyc, New York NY
+            </div>
+            <div class="entry">
+                <span class="year">2020</span>EMERGENYC, Hemispheric Institute of Performance and Politics, New York NY
+            </div>
+            <div class="entry">
+                <span class="year">2019</span>Education Fellowship, Dia Art Foundation, New York NY
+            </div>
+        </div>
+
+        <div class="cv-section">
+            <h2>Group Exhibitions</h2>
+            <div class="entry">
+                <span class="year">2025</span>ALT-DC: Video + Stills, Dupont Underground, Washington DC
+            </div>
+            <div class="entry">
+                <span class="year">2025</span>puenv: hellnaw accretion direct bend irregardless—thisnottelephone—incertain excess cunt near uranus fetishization submit gamble glom gloss wind blue spirit comma chemtrails—yalla happentobe Gay car „broke" and pithy, Bard College, Red Hook, NY
+            </div>
+            <div class="entry">
+                <span class="year">2024</span>Sound Scene: Solstice, The Hirshhorn Museum Sculpture Garden, Washington DC
+            </div>
+            <div class="entry">
+                <span class="year">2024</span>Queer Art Salon, Washington DC
+            </div>
+            <div class="entry">
+                <span class="year">2024</span>figure, Touchstone Gallery, Washington DC
+            </div>
+            <div class="entry">
+                <span class="year">2022</span>LES Young Artists of Color Group Show, FABnyc, New York NY
+            </div>
+            <div class="entry">
+                <span class="year">2020</span>TOUCHY SUBJECTS, EmergeNYC, Zoom
+            </div>
+        </div>
+
+        <div class="cv-section">
+            <h2>Commissions</h2>
+            <div class="entry">
+                <span class="year">2024</span>Sound Scene, <em>Trying It</em>, sound, wood, grass, The Hirshhorn Museum Sculpture Garden, DC Listening Lounge, Washington DC
+            </div>
+            <div class="entry">
+                <span class="year">2021</span>Performance Commission, <em>NeoLabial Acheiropoieta #31599</em>, copper, electronics, garbage, jazz remixes, live performance, The 122CC, Performance Space New York, New York NY (commission rescinded in July 2021, recommissioned July 2022, and is currently archived in the 122CC basement)
+            </div>
+        </div>
+
+        <div class="cv-section">
+            <h2>Performance</h2>
+            <div class="entry">
+                <span class="year">2025</span><em>a hOle??</em>, Stevfni.XYZ, Bard College, Annandale-on-Hudson, NY (6/23)
+            </div>
+            <div class="entry">
+                <span class="year">2025</span><em>Do We See With Eyes Or With The Psyche?</em>, Danyela June Brown, Dance Institute of Washington, DC (5/10)
+            </div>
+            <div class="entry">
+                <span class="year">2024</span><em>#OpenToWork</em>, Danyela June Brown, SerformanceP, São Paulo, Brazil (11/8)
+            </div>
+            <div class="entry">
+                <span class="year">2024</span><em>The Indigo Blue Diaries</em>, Olaiya Olayemi, Icebox Project Space Gallery (Cannonball), Philly PA (9/6)
+            </div>
+            <div class="entry">
+                <span class="year">2020</span><em>Confessional</em>, Danyela June Brown, Performance Space New York, New York NY (Fridays 8/7–11/13)
+            </div>
+            <div class="entry">
+                <span class="year">2019</span><em>Fadat Besham</em>, Hushidar Mortezaie, Foreign Policy Institute of Johns Hopkins, Washington DC (4/18)
+            </div>
+            <div class="entry">
+                <span class="year">2020</span><em>The Grass Is Always Greener</em>, Anabella Lenzu, Peridance Center (APEX), New York NY (1/23, 1/24)
+            </div>
+            <div class="entry">
+                <span class="year">2019</span><em>N**** Rig Time Travel</em>, Danyela June Brown, Dance Place (Fieldwork), Washington DC
+            </div>
+            <div class="entry">
+                <span class="year">2018</span><em>Dontuntrah: Afro-Queer Masquerade</em>, Rashad Pridgen, GLBT History Museum & African American Cultural Complex, San Francisco CA (6/21)
+            </div>
+            <div class="entry">
+                <span class="year">2018</span><em>Don't Be Scared</em>, Danyela June Brown, Andrea Hennessy Art & Fashion Fund (MINT), Palo Alto CA (6/2)
+            </div>
+            <div class="entry">
+                <span class="year">2017</span><em>Unearthing</em>, Kiyan Williams, Stanford Institute for Diversity in the Arts, Palo Alto CA (2/20)
+            </div>
+        </div>
+
+        <div class="cv-section">
+            <h2>Curatorial Projects</h2>
+            <div class="entry">
+                <span class="year">2025</span>ULTRAUNCANCELED, Queer Art Salon, Dupont Underground, Washington DC (6/7)
+            </div>
+            <div class="entry">
+                <span class="year">2025</span>Right Over Left: DMV Runway Review, Brentwood Arts Exchange, Brentwood MD (1/25–3/1)
+            </div>
+            <div class="entry">
+                <span class="year">2024</span>~~FRiENDZ0NE~~ (Deeds for AIRs), Performance Space New York, New York, NY (7/18)
+            </div>
+            <div class="entry">
+                <span class="year">2024</span>______: Performance@QAS, Queer Art Salon X Art Roving, Washington DC (6/28)
+            </div>
+            <div class="entry">
+                <span class="year">2022</span>Ràsánblaj, Ra Bacchus, The NLA, New York NY (4/1–5/1)
+            </div>
+        </div>
+
+        <div class="cv-section">
+            <h2>Professional Experience</h2>
+            <div class="entry">
+                <span class="year">2024–</span>PSH Intake Specialist, DC Department of Human Services, Washington DC (current)
+            </div>
+            <div class="entry">
+                <span class="year">2024</span>Lab Assistant (Public Health Americorps), UDC CAUSES, Washington DC (May–Apr 2025)
+            </div>
+            <div class="entry">
+                <span class="year">2023</span>Artistic Director, DMV Kiki Nights Inc, Washington DC
+            </div>
+            <div class="entry">
+                <span class="year">2019</span>Program Assistant, School at Peridance Center, New York NY (Jul–Mar 2020)
+            </div>
+            <div class="entry">
+                <span class="year">2019</span>Archive Intern, Hood By Air, Brooklyn NY (Feb–July)
+            </div>
+        </div>
+
+        <div class="cv-section">
+            <h2>Residencies</h2>
+            <div class="entry">
+                <span class="year">2025</span>2024-2025 Incubator, Dance Institute of Washington, Washington DC (1/3–5/13)
+            </div>
+            <div class="entry">
+                <span class="year">2024</span>Arts Letters & Numbers, Averill Park NY (5/1–5/7)
+            </div>
+            <div class="entry">
+                <span class="year">2024</span>202Creates, Office of Cable Television, Film, Music, and Entertainment, Washington DC, (1/11–3/21)
+            </div>
+        </div>
+
+        <div class="cv-section">
+            <h2>Professional Memberships</h2>
+            <div class="entry">
+                <span class="year">2025</span>Black Artists of DC, Washington DC
+            </div>
+            <div class="entry">
+                <span class="year">2025</span>Washington Sculptors Group, Washington DC
+            </div>
+            <div class="entry">
+                <span class="year">2024</span>Choreographers Guild, Los Angeles CA
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Check if user came from landing page and has captured image
+            const capturedImage = sessionStorage.getItem('capturedFrame');
+            const fromPage = sessionStorage.getItem('fromPage');
+            
+            // Validate that user came from landing page with valid screenshot
+            if (!capturedImage || !fromPage) {
+                // Redirect to landing page if no screenshot or source page
+                window.location.href = 'index.html';
+                return;
+            }
+            
+            // Validate that the captured image is a valid data URL
+            if (!capturedImage.startsWith('data:image/')) {
+                console.error('Invalid image data received');
+                sessionStorage.removeItem('capturedFrame');
+                sessionStorage.removeItem('fromPage');
+                window.location.href = 'index.html';
+                return;
+            }
+            
+            // Set the captured camera frame as background
+            const overlay = document.querySelector('.background-overlay');
+            if (overlay) {
+                try {
+                    overlay.style.backgroundImage = `url(${capturedImage})`;
+                    overlay.style.backgroundSize = 'cover';
+                    overlay.style.backgroundPosition = 'center';
+                    console.log('Background image set successfully');
+                    
+                    // Clean up sessionStorage after successful use
+                    sessionStorage.removeItem('capturedFrame');
+                    sessionStorage.removeItem('fromPage');
+                } catch (error) {
+                    console.error('Error setting background image:', error);
+                    sessionStorage.removeItem('capturedFrame');
+                    sessionStorage.removeItem('fromPage');
+                    window.location.href = 'index.html';
+                    return;
+                }
+            }
+
+            // Custom cursor movement
+            if (window.matchMedia("(pointer: fine)").matches) {
+                document.addEventListener('mousemove', function(e) {
+                    const cursor = document.querySelector('.custom-cursor');
+                    if (cursor) {
+                        cursor.style.left = e.clientX - 16 + 'px';
+                        cursor.style.top = e.clientY - 16 + 'px';
+                    }
+                });
+            } else {
+                // Hide cursor on touch devices
+                const cursor = document.querySelector('.custom-cursor');
+                if (cursor) {
+                    cursor.style.display = 'none';
+                }
+                document.body.style.cursor = 'auto';
+            }
+        });
+    </script>
+</body>
+</html>

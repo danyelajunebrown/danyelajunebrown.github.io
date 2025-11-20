@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Full Screen Video</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body, html {
+            height: 100%;
+            overflow: hidden;
+        }
+        
+        video {
+            width: 100vw;
+            height: 100vh;
+            object-fit: cover;
+            background-color: black;
+        }
+    </style>
+</head>
+<body>
+    <video controls autoplay>
+        <source src="DIW_recording.m4a.mov" type="video/mov">e
+        Your browser does not support the video tag.
+    </video>
+</body>
+</html>

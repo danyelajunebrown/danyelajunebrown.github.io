@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Danyela June Brown | Bio</title>
+ 
+<style>
+body {
+    margin: 0;
+    padding: 0;
+    font-family: Arial, sans-serif;
+    background-color: #000;
+    color: white;
+}
+
+.nav-menu {
+    position: fixed;
+    top: 0;
+    width: 100%;
+    background-color: rgba(0, 0, 0, 0.7);
+    padding: 15px 0;
+    z-index: 2000;
+    text-align: center;
+}
+
+.nav-menu a {
+    color: white;
+    text-decoration: none;
+    padding: 10px 20px;
+    margin: 0 10px;
+    font-size: 18px;
+    border: 2px solid transparent;
+    transition: all 0.3s ease;
+}
+
+.nav-menu a:hover {
+    border-bottom: 2px solid white;
+}
+
+.content-container {
+    max-width: 900px;
+    margin: 120px auto 50px;
+    padding: 0 20px;
+}
+
+.bio-text {
+    font-size: 1.2em;
+    line-height: 1.6;
+    margin-bottom: 40px;
+    font-weight: 300;
+}
+
+.name-heading {
+    font-size: 2.5em;
+    margin-bottom: 40px;
+    font-weight: bold;
+}
+
+.social-links {
+    margin-top: 40px;
+    text-align: center;
+}
+
+.social-links a {
+    color: white;
+    text-decoration: none;
+    margin: 0 15px;
+    font-size: 1.1em;
+}
+
+.social-links a:hover {
+    text-decoration: underline;
+}
+
+.credits {
+    font-size: 0.9em;
+    text-align: center;
+    margin-top: 60px;
+    color: #888;
+}
+
+.credits a {
+    color: #888;
+    text-decoration: none;
+}
+
+.credits a:hover {
+    text-decoration: underline;
+}
+</style>
+</head>
+ 
+<body>
+<nav class="nav-menu">
+    <a href="bio.html">BIO</a>
+    <a href="#" onclick="linkToCV(); return false;">CV</a>
+    <a href="projects.html">PROJECTS</a>
+    <a href="contact.html">CONTACT</a>
+</nav>
+
+<script>
+function linkToCV() {
+    const currentPage = encodeURIComponent(window.location.href);
+    window.location.href = `cv.html?from=${currentPage}`;
+}
+</script>
+
+<div class="content-container">
+    <h1 class="name-heading">DANYELA JUNE BROWN</h1>
+    
+   <div class="bio-text">
+        Danyela June Brown is a set-maker and witness from South Arlington, VA <strong>interested in hacking, having nice things, and automating the bullshit</strong>. She has presented sets at Bard College, Performance Space New York, Sound Scene, Touchstone Gallery, and the Dance Institute of Washington. She has danced for Aleta Hayes, Olaiya Olayemi, Rashad Pridgen, and the Houses of Mizrahi (2017-2019) and Khan (2025), and Kiki Houses of Old Navy (2018-2020) and Supreme (2023-2025). She has completed EMERGENYC (2020), the Learning and Public Engagement Fellowship at Dia Art Foundation (2019-2021), and the Peer Case Management Institute at Howard School of Social Work (2024). She holds a BA in African American Studies from Stanford University and is a sculpture at the Bard MFA (2028). Danyela works on a PSH Intake Specialist contract at DC DHS, and is on Faculty at the Dance Institute of Washington (2025-2026). She served as the inaugural Artistic Director of DMV Kiki Nights (2022-2025), and was the Curator of Performance for Queer Art Salon in 2024 and 2025.
+    </div>
+
+    <div class="social-links">
+        <a href="#" target="_blank">FACEBOOK</a>
+        <a href="#" target="_blank">INSTAGRAM</a>
+        <a href="#" target="_blank">TUMBLR</a>
+    </div>
+
+    <div class="credits">
+        <p>Website Design by <a href="https://github.com/yourusername" target="_blank">Danyela June Brown</a></p>
+    </div>
+</div>
+
+</body>
+ // Add this code to your main site pages (not the CV page)
+// This will store the current page URL before navigation
+window.addEventListener('beforeunload', function() {
+    localStorage.setItem('lastVisitedPage', window.location.href);
+});
+</html>

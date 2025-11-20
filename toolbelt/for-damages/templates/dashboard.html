@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+{% block title %}Dashboard - damages{% endblock %}
+
+{% block extra_css %}
+<style>
+    .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.5rem; margin-bottom: 2rem; }
+    .stat-card { background: rgba(255, 255, 255, 0.08); padding: 1.5rem; border-radius: 12px; border: 1px solid rgba(255, 255, 255, 0.1); }
+    .stat-value { font-size: 2.5rem; font-weight: 700; margin-bottom: 0.5rem; }
+    .stat-label { color: rgba(255, 255, 255, 0.6); font-size: 0.9rem; }
+    .sessions-table { width: 100%; background: rgba(255, 255, 255, 0.05); border-radius: 12px; overflow: hidden; }
+    .sessions-table table { width: 100%; border-collapse: collapse; }
+    .sessions-table th { background: rgba(0, 0, 0, 0.2); padding: 1rem; text-align: left; font-weight: 600; border-bottom: 1px solid rgba(255, 255, 255, 0.1); }
+    .sessions-table td { padding: 1rem; border-bottom: 1px solid rgba(255, 255, 255, 0.05); }
+    .sessions-table tr:hover { background: rgba(255, 255, 255, 0.05); }
+    .badge { padding: 0.25rem 0.75rem; border-radius: 20px; font-size: 0.85rem; font-weight: 500; }
+    .badge-success { background: rgba(72, 187, 120, 0.2); color: #9ae6b4; }
+    .badge-warning { background: rgba(237, 137, 54, 0.2); color: #fbd38d; }
+    .badge-danger { background: rgba(245, 101, 101, 0.2); color: #fc8181; }
+    .badge-info { background: rgba(66, 153, 225, 0.2); color: #90cdf4; }
+    .empty-state { text-align: center; padding: 4rem 2rem; color: rgba(255, 255, 255, 0.6); }
+    .empty-state-icon { font-size: 4rem; margin-bottom: 1rem; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+    <h1 style="font-size: 2rem; font-weight: 700;">Dashboard</h1>
+    <a href="/upload" class="btn btn-primary">+ New Scan</a>
+</div>
+
+<div class="stats-grid">
+    <div class="stat-card"><div class="stat-value" id="total-scans">-</div><div class="stat-label">Total Scans</div></div>
+    <div class="stat-card"><div class="stat-value" style="color: #9ae6b4;" id="completed-scans">-</div><div class="stat-label">Completed</div></div>
+    <div class="stat-card"><div class="stat-value" style="color: #fbd38d;" id="processing-scans">-</div><div class="stat-label">Processing</div></div>
+    <div class="stat-card"><div class="stat-value" style="color: #fc8181;" id="avg-severity">-</div><div class="stat-label">Avg Severity</div></div>
+</div>
+
+<div class="card">
+    <h2 style="font-size: 1.5rem; margin-bottom: 1.5rem;">Recent Scans</h2>
+    <div class="sessions-table">
+        <table>
+            <thead><tr><th>Date</th><th>Category</th><th>Object</th><th>Photos</th><th>Severity</th><th>Status</th><th>Action</th></tr></thead>
+            <tbody id="sessions-body"><tr><td colspan="7"><div class="empty-state"><div class="empty-state-icon">📸</div><div>Loading...</div></div></td></tr></tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+async function loadDashboard() {
+    try {
+        const response = await fetch('/api/sessions');
+        const sessions = await response.json();
+        document.getElementById('total-scans').textContent = sessions.length;
+        document.getElementById('completed-scans').textContent = sessions.filter(s => s.processing_status === 'completed').length;
+        document.getElementById('processing-scans').textContent = sessions.filter(s => s.processing_status === 'processing' || s.processing_status === 'queued').length;
+        const avgSeverity = sessions.length > 0 ? (sessions.reduce((sum, s) => sum + s.damage_severity, 0) / sessions.length).toFixed(1) : '0';
+        document.getElementById('avg-severity').textContent = avgSeverity;
+        const tbody = document.getElementById('sessions-body');
+        if (sessions.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="7"><div class="empty-state"><div class="empty-state-icon">📦</div><div>No scans yet. Upload photos to get started!</div></div></td></tr>';
+            return;
+        }
+        tbody.innerHTML = sessions.map(s => `<tr><td>${new Date(s.timestamp).toLocaleDateString()}</td><td style="text-transform: capitalize;">${s.category}</td><td>${s.object_type || 'Unknown'} ${s.brand || ''}</td><td>${s.num_photos}</td><td><span class="badge ${getSeverityClass(s.damage_severity)}">${s.damage_severity}/10</span></td><td><span class="badge ${getStatusClass(s.processing_status)}">${s.processing_status}</span></td><td><a href="/viewer/${s.id}" style="color: #90cdf4; text-decoration: none;">View →</a></td></tr>`).join('');
+    } catch (error) {
+        console.error('Error:', error);
+        document.getElementById('sessions-body').innerHTML = '<tr><td colspan="7"><div class="empty-state"><div class="empty-state-icon">⚠️</div><div>Error loading data</div></div></td></tr>';
+    }
+}
+function getSeverityClass(s) { if (s <= 3) return 'badge-success'; if (s <= 6) return 'badge-warning'; return 'badge-danger'; }
+function getStatusClass(s) { const c = {pending: 'badge-info', queued: 'badge-info', processing: 'badge-warning', completed: 'badge-success', failed: 'badge-danger'}; return c[s] || 'badge-info'; }
+document.addEventListener('DOMContentLoaded', loadDashboard);
+setInterval(loadDashboard, 10000);
+</script>
+{% endblock %}
+
+
+<!--
