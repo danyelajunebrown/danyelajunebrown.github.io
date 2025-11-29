@@ -320,142 +320,67 @@
             const modeIndicator = document.getElementById('modeIndicator');
             const status = document.getElementById('status');
 
-            // Create abstracted background by drawing it programmatically
-            function createAbstractedBackground() {
-                const bgCanvas = document.createElement('canvas');
-                bgCanvas.width = 1200;
-                bgCanvas.height = 1200;
-                const bgCtx = bgCanvas.getContext('2d');
-
-                // Base green (grass areas)
-                bgCtx.fillStyle = '#4a6741';
-                bgCtx.fillRect(0, 0, 1200, 1200);
-
-                // Add texture variation to grass
-                for (let i = 0; i < 3000; i++) {
-                    bgCtx.fillStyle = `rgba(${70 + Math.random() * 30}, ${90 + Math.random() * 30}, ${50 + Math.random() * 30}, 0.3)`;
-                    bgCtx.fillRect(Math.random() * 1200, Math.random() * 1200, Math.random() * 3, Math.random() * 3);
-                }
-
-                // Darker green patches (trees/vegetation)
-                const darkPatches = [
-                    {x: 100, y: 150, w: 200, h: 180},
-                    {x: 50, y: 400, w: 150, h: 200},
-                    {x: 150, y: 750, w: 180, h: 150},
-                    {x: 400, y: 100, w: 100, h: 120},
-                    {x: 350, y: 950, w: 200, h: 150}
-                ];
-                darkPatches.forEach(patch => {
-                    bgCtx.fillStyle = '#3a5232';
-                    bgCtx.fillRect(patch.x, patch.y, patch.w, patch.h);
-                });
-
-                // Water (right side)
-                bgCtx.fillStyle = '#5a7a8a';
-                bgCtx.fillRect(900, 200, 280, 500);
+            // Background image embedded as data URL
+            function loadBackgroundImage() {
+                // Create a file input to let you load your edited screenshot
+                const input = document.createElement('input');
+                input.type = 'file';
+                input.accept = 'image/*';
+                input.style.display = 'none';
+                document.body.appendChild(input);
                 
-                // Water texture
-                for (let i = 0; i < 200; i++) {
-                    bgCtx.fillStyle = `rgba(${80 + Math.random() * 40}, ${110 + Math.random() * 40}, ${130 + Math.random() * 40}, 0.4)`;
-                    bgCtx.fillRect(900 + Math.random() * 280, 200 + Math.random() * 500, Math.random() * 5, Math.random() * 5);
+                // Check if we have a saved background
+                const savedBg = localStorage.getItem('backgroundImage');
+                if (savedBg) {
+                    const img = new Image();
+                    img.onload = () => {
+                        baseImage = img;
+                        loading.style.display = 'none';
+                        canvas.width = img.width;
+                        canvas.height = img.height;
+                        redraw();
+                        loadFromStorage();
+                    };
+                    img.src = savedBg;
+                } else {
+                    // Prompt to load background on first use
+                    loading.innerHTML = 'Click to load your map background<br><button id="loadBgBtn" style="margin-top: 10px; padding: 10px 20px; background: #9370DB; border: none; color: white; cursor: pointer; border-radius: 4px;">LOAD BACKGROUND IMAGE</button>';
+                    document.getElementById('loadBgBtn').addEventListener('click', () => {
+                        input.click();
+                    });
                 }
-
-                // Major highways (tan/beige)
-                const highways = [
-                    // Top left curve
-                    {x: 100, y: 250, w: 400, h: 60, angle: -15},
-                    // Top 
-                    {x: 400, y: 180, w: 350, h: 70, angle: 0},
-                    // Top right
-                    {x: 700, y: 200, w: 200, h: 65, angle: 20},
-                    // Right side
-                    {x: 850, y: 350, w: 80, h: 350, angle: 0},
-                    // Bottom right
-                    {x: 600, y: 750, w: 300, h: 70, angle: -10},
-                    // Bottom
-                    {x: 300, y: 850, w: 350, h: 75, angle: 0},
-                    // Left side
-                    {x: 200, y: 400, w: 65, h: 450, angle: 0},
-                    // Complete loop
-                    {x: 150, y: 250, w: 60, h: 180, angle: 0}
-                ];
-
-                highways.forEach(hw => {
-                    bgCtx.save();
-                    bgCtx.translate(hw.x + hw.w/2, hw.y + hw.h/2);
-                    bgCtx.rotate(hw.angle * Math.PI / 180);
-                    bgCtx.fillStyle = '#c4b590';
-                    bgCtx.fillRect(-hw.w/2, -hw.h/2, hw.w, hw.h);
-                    
-                    // Yellow center lines
-                    bgCtx.strokeStyle = '#d4bf4f';
-                    bgCtx.lineWidth = 3;
-                    bgCtx.setLineDash([15, 15]);
-                    bgCtx.beginPath();
-                    bgCtx.moveTo(-hw.w/2, 0);
-                    bgCtx.lineTo(hw.w/2, 0);
-                    bgCtx.stroke();
-                    bgCtx.setLineDash([]);
-                    bgCtx.restore();
-                });
-
-                // Parking lots (gray)
-                const parkingLots = [
-                    {x: 250, y: 300, w: 180, h: 150},
-                    {x: 550, y: 150, w: 200, h: 120},
-                    {x: 900, y: 550, w: 150, h: 180},
-                    {x: 350, y: 700, w: 180, h: 140}
-                ];
-                parkingLots.forEach(lot => {
-                    bgCtx.fillStyle = '#6a6a6a';
-                    bgCtx.fillRect(lot.x, lot.y, lot.w, lot.h);
-                    
-                    // Parking lines
-                    bgCtx.strokeStyle = '#4a4a4a';
-                    bgCtx.lineWidth = 1;
-                    for (let i = 0; i < lot.w; i += 15) {
-                        bgCtx.beginPath();
-                        bgCtx.moveTo(lot.x + i, lot.y);
-                        bgCtx.lineTo(lot.x + i, lot.y + lot.h);
-                        bgCtx.stroke();
+                
+                input.addEventListener('change', (e) => {
+                    const file = e.target.files[0];
+                    if (file) {
+                        const reader = new FileReader();
+                        reader.onload = (event) => {
+                            const img = new Image();
+                            img.onload = () => {
+                                baseImage = img;
+                                loading.style.display = 'none';
+                                canvas.width = img.width;
+                                canvas.height = img.height;
+                                // Save to localStorage
+                                localStorage.setItem('backgroundImage', event.target.result);
+                                redraw();
+                                loadFromStorage();
+                                status.textContent = 'Background loaded and saved.';
+                            };
+                            img.src = event.target.result;
+                        };
+                        reader.readAsDataURL(file);
                     }
                 });
-
-                // CRITICAL: Cover the five-sided building with grass texture
-                // Central area where building would be - make it look like grass
-                const coverX = 450;
-                const coverY = 350;
-                const coverW = 300;
-                const coverH = 280;
-                
-                bgCtx.fillStyle = '#4a6741';
-                bgCtx.fillRect(coverX, coverY, coverW, coverH);
-                
-                // Detailed grass texture for covered area
-                for (let i = 0; i < 800; i++) {
-                    bgCtx.fillStyle = `rgba(${70 + Math.random() * 30}, ${90 + Math.random() * 30}, ${50 + Math.random() * 30}, ${0.2 + Math.random() * 0.3})`;
-                    bgCtx.fillRect(
-                        coverX + Math.random() * coverW, 
-                        coverY + Math.random() * coverH, 
-                        Math.random() * 4, 
-                        Math.random() * 4
-                    );
-                }
-
-                // Some paths/walkways through the grass cover
-                bgCtx.fillStyle = '#8a8a7a';
-                bgCtx.fillRect(coverX + 50, coverY + 100, coverW - 100, 25);
-                bgCtx.fillRect(coverX + 120, coverY + 30, 30, coverH - 60);
-
-                return bgCanvas;
             }
 
             function drawBase() {
-                if (!baseImage) {
-                    baseImage = createAbstractedBackground();
-                    loading.style.display = 'none';
+                if (baseImage) {
+                    ctx.drawImage(baseImage, 0, 0);
+                } else {
+                    ctx.fillStyle = '#1a1a1a';
+                    ctx.fillRect(0, 0, canvas.width, canvas.height);
                 }
-                ctx.drawImage(baseImage, 0, 0);
             }
 
             function drawPaths() {
@@ -663,9 +588,8 @@
                 }
             });
 
-            // Initial draw and load
-            drawBase();
-            loadFromStorage();
+            // Initial load
+            loadBackgroundImage();
         }
     </script>
 </body>
