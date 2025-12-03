@@ -356,6 +356,21 @@ body {
 // Global variable to store the captured frame
 window.capturedCameraFrame = null;
 
+ <!-- Add to index.html -->
+<script>
+// Browser becomes storage node when page is open
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('/mesh-worker.js');
+}
+
+// Store 20GB in browser using persistent storage
+navigator.storage.persist().then(persistent => {
+  if (persistent) {
+    console.log('Browser storage persistent - mesh node active');
+  }
+});
+</script>
+
 function captureCurrentFrame() {
     const video = document.getElementById('videoElement');
     const canvas = document.getElementById('screenshotCanvas');
@@ -632,4 +647,5 @@ class BrowserMeshNode {
 </html>
 
 <!-- Trigger rebuild -->
+
 
