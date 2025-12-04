@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Project Documentation</title>
+    <title>John D. Conquer & the Big Stick</title>
     <style>
         * {
             margin: 0;
@@ -65,9 +65,12 @@
         #canvas {
             border: 1px solid #222;
             background: #000;
-            cursor: crosshair;
+            cursor: default;
             margin-bottom: 20px;
             box-shadow: 0 0 20px rgba(147, 112, 219, 0.2);
+            max-width: 100%;
+            height: auto;
+            touch-action: none;
         }
         .controls {
             display: flex;
@@ -108,11 +111,9 @@
             border: 3px solid #fff;
             box-shadow: 0 0 15px currentColor;
         }
-        .colorBtn.hairy-vetch { background: #9370DB; }
-        .colorBtn.crimson-clover { background: #FF69B4; }
-        .colorBtn.winter-rye { background: #87CEEB; }
-        .colorBtn.buckwheat { background: #F0E68C; }
-        .colorBtn.custom { background: #90EE90; }
+        .colorBtn.purple { background: #9370DB; }
+        .colorBtn.brown { background: #8B4513; }
+        .colorBtn.red { background: #DC143C; }
         
         .brushSize {
             display: flex;
@@ -205,19 +206,21 @@
     <div class="mode-indicator" id="modeIndicator">DRAW MODE ACTIVE - Click to draw, Esc to exit</div>
 
     <div class="container">
-        <h1 style="margin-bottom: 20px; color: #9370DB; letter-spacing: 2px;">BORDER PERFORMANCE DOCUMENTATION</h1>
-        
+        <h1 style="margin-bottom: 20px; color: #9370DB; letter-spacing: 2px;">JOHN D. CONQUER & THE BIG STICK</h1>
+
+        <div class="nav" style="margin-bottom: 20px;">
+            <a href="bibliography.html" style="color: #9370DB; text-decoration: none; padding: 10px 20px; border: 1px solid #444; background: #2a2a2a; font-family: 'Courier New', monospace; font-size: 13px;">BIBLIOGRAPHY</a>
+        </div>
+
         <div style="position: relative;">
             <canvas id="canvas" width="1200" height="1200"></canvas>
             <div id="loading">Loading map...</div>
         </div>
         
         <div class="controls">
-            <button class="colorBtn hairy-vetch active" data-color="#9370DB" data-name="Hairy Vetch" title="Hairy Vetch (Purple)"></button>
-            <button class="colorBtn crimson-clover" data-color="#FF69B4" data-name="Crimson Clover" title="Crimson Clover (Pink)"></button>
-            <button class="colorBtn winter-rye" data-color="#87CEEB" data-name="Winter Rye" title="Winter Rye (Blue)"></button>
-            <button class="colorBtn buckwheat" data-color="#F0E68C" data-name="Buckwheat" title="Buckwheat (Yellow)"></button>
-            <button class="colorBtn custom" data-color="#90EE90" data-name="Custom" title="Custom (Green)"></button>
+            <button class="colorBtn purple active" data-color="#9370DB" data-name="Purple" title="Purple"></button>
+            <button class="colorBtn brown" data-color="#8B4513" data-name="Brown" title="Brown"></button>
+            <button class="colorBtn red" data-color="#DC143C" data-name="Red" title="Red"></button>
             
             <div class="brushSize">
                 <label>BRUSH:</label>
@@ -226,39 +229,29 @@
             </div>
             
             <button id="drawMode">START DRAWING</button>
-            <button id="undoBtn">UNDO</button>
-            <button id="clearAll">CLEAR ALL</button>
             <button id="saveBtn">SAVE</button>
             <button id="loadBtn">LOAD</button>
         </div>
 
         <div class="info">
             <h3>INSTRUCTIONS</h3>
-            <p><strong>Drawing:</strong> Click "START DRAWING" to activate draw mode. Click and drag on the map to mark completed areas. Press ESC or click "START DRAWING" again to exit draw mode.</p>
-            <p><strong>Colors:</strong> Select a color button before drawing to indicate what was planted in that area.</p>
+            <p><strong>Drawing:</strong> Tap "START DRAWING" to activate draw mode. Draw on the map to mark areas. Tap again or press ESC to exit draw mode. Drawings are permanent.</p>
+            <p><strong>Colors:</strong> Select a color before drawing.</p>
             <p><strong>Brush Size:</strong> Adjust the slider to change marking thickness.</p>
-            <p><strong>Save/Load:</strong> Your markings are automatically saved in browser storage. Use SAVE to download a backup file, LOAD to restore from file.</p>
+            <p><strong>Save/Load:</strong> Markings auto-save in browser. Use SAVE to download a backup file, LOAD to restore.</p>
             
             <div class="legend">
                 <div class="legend-item">
                     <div class="legend-color" style="background: #9370DB;"></div>
-                    <span>Hairy Vetch</span>
+                    <span>Purple</span>
                 </div>
                 <div class="legend-item">
-                    <div class="legend-color" style="background: #FF69B4;"></div>
-                    <span>Crimson Clover</span>
+                    <div class="legend-color" style="background: #8B4513;"></div>
+                    <span>Brown</span>
                 </div>
                 <div class="legend-item">
-                    <div class="legend-color" style="background: #87CEEB;"></div>
-                    <span>Winter Rye</span>
-                </div>
-                <div class="legend-item">
-                    <div class="legend-color" style="background: #F0E68C;"></div>
-                    <span>Buckwheat</span>
-                </div>
-                <div class="legend-item">
-                    <div class="legend-color" style="background: #90EE90;"></div>
-                    <span>Custom/Other</span>
+                    <div class="legend-color" style="background: #DC143C;"></div>
+                    <span>Red</span>
                 </div>
             </div>
             
@@ -268,7 +261,7 @@
 
     <script>
         // Security
-        const correctPass = "jdcatbs"; // CHANGE THIS
+        const correctPass = "danyelica.fish";
         const authScreen = document.getElementById('authScreen');
         const passInput = document.getElementById('passInput');
         const authBtn = document.getElementById('authBtn');
@@ -298,21 +291,20 @@
             const canvas = document.getElementById('canvas');
             const ctx = canvas.getContext('2d');
             const loading = document.getElementById('loading');
-            
+
             let paths = [];
             let currentPath = null;
             let isDrawing = false;
             let drawMode = false;
             let currentColor = '#9370DB';
-            let currentName = 'Hairy Vetch';
+            let currentName = 'Purple';
             let brushSize = 15;
             let baseImage = null;
+            let scale = 1;
 
             // UI elements
             const colorBtns = document.querySelectorAll('.colorBtn');
             const drawModeBtn = document.getElementById('drawMode');
-            const undoBtn = document.getElementById('undoBtn');
-            const clearAllBtn = document.getElementById('clearAll');
             const saveBtn = document.getElementById('saveBtn');
             const loadBtn = document.getElementById('loadBtn');
             const brushSizeInput = document.getElementById('brushSize');
@@ -320,59 +312,34 @@
             const modeIndicator = document.getElementById('modeIndicator');
             const status = document.getElementById('status');
 
-            // Background image embedded as data URL
+            // Load background image from folder
             function loadBackgroundImage() {
-                // Create a file input to let you load your edited screenshot
-                const input = document.createElement('input');
-                input.type = 'file';
-                input.accept = 'image/*';
-                input.style.display = 'none';
-                document.body.appendChild(input);
-                
-                // Check if we have a saved background
-                const savedBg = localStorage.getItem('backgroundImage');
-                if (savedBg) {
-                    const img = new Image();
-                    img.onload = () => {
-                        baseImage = img;
-                        loading.style.display = 'none';
-                        canvas.width = img.width;
-                        canvas.height = img.height;
-                        redraw();
-                        loadFromStorage();
-                    };
-                    img.src = savedBg;
-                } else {
-                    // Prompt to load background on first use
-                    loading.innerHTML = 'Click to load your map background<br><button id="loadBgBtn" style="margin-top: 10px; padding: 10px 20px; background: #9370DB; border: none; color: white; cursor: pointer; border-radius: 4px;">LOAD BACKGROUND IMAGE</button>';
-                    document.getElementById('loadBgBtn').addEventListener('click', () => {
-                        input.click();
-                    });
-                }
-                
-                input.addEventListener('change', (e) => {
-                    const file = e.target.files[0];
-                    if (file) {
-                        const reader = new FileReader();
-                        reader.onload = (event) => {
-                            const img = new Image();
-                            img.onload = () => {
-                                baseImage = img;
-                                loading.style.display = 'none';
-                                canvas.width = img.width;
-                                canvas.height = img.height;
-                                // Save to localStorage
-                                localStorage.setItem('backgroundImage', event.target.result);
-                                redraw();
-                                loadFromStorage();
-                                status.textContent = 'Background loaded and saved.';
-                            };
-                            img.src = event.target.result;
-                        };
-                        reader.readAsDataURL(file);
-                    }
-                });
+                const img = new Image();
+                img.onload = () => {
+                    baseImage = img;
+                    loading.style.display = 'none';
+                    canvas.width = img.width;
+                    canvas.height = img.height;
+                    updateScale();
+                    redraw();
+                    loadFromStorage();
+                    status.textContent = 'Map loaded. Ready to draw.';
+                };
+                img.onerror = () => {
+                    loading.textContent = 'Error loading map image.';
+                    status.textContent = 'Failed to load background_jdcatbs.jpeg';
+                };
+                img.src = 'background_jdcatbs.jpeg';
             }
+
+            // Calculate scale for coordinate mapping
+            function updateScale() {
+                const rect = canvas.getBoundingClientRect();
+                scale = canvas.width / rect.width;
+            }
+
+            // Update scale on window resize
+            window.addEventListener('resize', updateScale);
 
             function drawBase() {
                 if (baseImage) {
@@ -465,31 +432,43 @@
                 }
             });
 
-            // Drawing
-            canvas.addEventListener('mousedown', (e) => {
-                if (!drawMode) return;
-                isDrawing = true;
+            // Get coordinates accounting for canvas scaling
+            function getCoords(e) {
                 const rect = canvas.getBoundingClientRect();
-                const x = e.clientX - rect.left;
-                const y = e.clientY - rect.top;
-                
+                let clientX, clientY;
+                if (e.touches && e.touches.length > 0) {
+                    clientX = e.touches[0].clientX;
+                    clientY = e.touches[0].clientY;
+                } else {
+                    clientX = e.clientX;
+                    clientY = e.clientY;
+                }
+                return {
+                    x: (clientX - rect.left) * scale,
+                    y: (clientY - rect.top) * scale
+                };
+            }
+
+            function startDrawing(e) {
+                if (!drawMode) return;
+                e.preventDefault();
+                isDrawing = true;
+                const coords = getCoords(e);
                 currentPath = {
                     color: currentColor,
                     name: currentName,
-                    brushSize: brushSize,
-                    points: [{x, y}]
+                    brushSize: brushSize * scale,
+                    points: [coords]
                 };
-            });
+            }
 
-            canvas.addEventListener('mousemove', (e) => {
+            function continueDrawing(e) {
                 if (!isDrawing || !currentPath) return;
-                const rect = canvas.getBoundingClientRect();
-                const x = e.clientX - rect.left;
-                const y = e.clientY - rect.top;
-                
-                currentPath.points.push({x, y});
+                e.preventDefault();
+                const coords = getCoords(e);
+                currentPath.points.push(coords);
                 redraw();
-                
+
                 // Draw current path in progress
                 if (currentPath.points.length >= 2) {
                     ctx.strokeStyle = currentPath.color;
@@ -497,7 +476,7 @@
                     ctx.lineCap = 'round';
                     ctx.lineJoin = 'round';
                     ctx.globalAlpha = 0.8;
-                    
+
                     ctx.beginPath();
                     ctx.moveTo(currentPath.points[0].x, currentPath.points[0].y);
                     for (let i = 1; i < currentPath.points.length; i++) {
@@ -506,43 +485,28 @@
                     ctx.stroke();
                     ctx.globalAlpha = 1;
                 }
-            });
+            }
 
-            canvas.addEventListener('mouseup', () => {
+            function stopDrawing(e) {
                 if (isDrawing && currentPath) {
                     paths.push(currentPath);
                     saveToStorage();
                     currentPath = null;
                 }
                 isDrawing = false;
-            });
+            }
 
-            canvas.addEventListener('mouseleave', () => {
-                if (isDrawing && currentPath) {
-                    paths.push(currentPath);
-                    saveToStorage();
-                    currentPath = null;
-                }
-                isDrawing = false;
-            });
+            // Mouse events
+            canvas.addEventListener('mousedown', startDrawing);
+            canvas.addEventListener('mousemove', continueDrawing);
+            canvas.addEventListener('mouseup', stopDrawing);
+            canvas.addEventListener('mouseleave', stopDrawing);
 
-            // Undo
-            undoBtn.addEventListener('click', () => {
-                if (paths.length > 0) {
-                    paths.pop();
-                    redraw();
-                    saveToStorage();
-                }
-            });
-
-            // Clear all
-            clearAllBtn.addEventListener('click', () => {
-                if (confirm('Clear all markings? This cannot be undone.')) {
-                    paths = [];
-                    redraw();
-                    saveToStorage();
-                }
-            });
+            // Touch events for mobile
+            canvas.addEventListener('touchstart', startDrawing, { passive: false });
+            canvas.addEventListener('touchmove', continueDrawing, { passive: false });
+            canvas.addEventListener('touchend', stopDrawing);
+            canvas.addEventListener('touchcancel', stopDrawing);
 
             // Save to file
             saveBtn.addEventListener('click', () => {
