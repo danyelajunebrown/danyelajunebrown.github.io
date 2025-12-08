@@ -201,6 +201,19 @@
             font-size: 12px;
             margin-left: 10px;
         }
+
+        .btn-start {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            width: 100%;
+            font-size: 18px;
+            padding: 20px;
+        }
+
+        .btn-start:disabled {
+            opacity: 0.5;
+            background: #9ca3af;
+        }
     </style>
 </head>
 <body>
@@ -224,9 +237,11 @@
             </div>
 
             <div class="info">
-                Start your music, then set the phone down.<br>
-                Streaming starts automatically when phone is still.
+                Start your music, then tap the button below.<br>
+                Set the phone down and streaming starts automatically.
             </div>
+
+            <button id="startBtn" class="btn-start">Tap to Enable Camera & Motion</button>
 
             <div class="settings-toggle" id="settingsToggle">
                 Settings
@@ -278,6 +293,7 @@
         const saveRelayBtn = document.getElementById('saveRelayBtn');
         const settingsToggle = document.getElementById('settingsToggle');
         const settingsSection = document.getElementById('settingsSection');
+        const startBtn = document.getElementById('startBtn');
 
         function generateClientId() {
             const id = 'client_' + Math.random().toString(36).substr(2, 9);
@@ -331,35 +347,39 @@
             setTimeout(() => indicator.remove(), 2000);
         }
 
-        // Initialize motion detection
-        function initMotionDetection() {
+        // Initialize motion detection - MUST be called from user gesture on iOS
+        async function initMotionDetection() {
             if (window.DeviceMotionEvent) {
-                // iOS 13+ requires permission
+                // iOS 13+ requires permission from user gesture
                 if (typeof DeviceMotionEvent.requestPermission === 'function') {
-                    DeviceMotionEvent.requestPermission()
-                        .then(response => {
-                            if (response === 'granted') {
-                                window.addEventListener('devicemotion', handleMotion);
-                                startMotionCheck();
-                            } else {
-                                motionStatus.textContent = 'Motion denied';
-                                // Fallback: start streaming immediately
-                                setTimeout(() => startStreaming(), 3000);
-                            }
-                        })
-                        .catch(() => {
-                            motionStatus.textContent = 'Motion error';
-                            setTimeout(() => startStreaming(), 3000);
-                        });
+                    try {
+                        const response = await DeviceMotionEvent.requestPermission();
+                        if (response === 'granted') {
+                            window.addEventListener('devicemotion', handleMotion);
+                            startMotionCheck();
+                            motionStatus.textContent = 'Motion enabled';
+                        } else {
+                            motionStatus.textContent = 'Motion denied - tap to stream';
+                            // Show manual start option
+                            modeIndicator.textContent = 'Tap screen to start streaming';
+                            modeIndicator.onclick = () => startStreaming();
+                        }
+                    } catch (err) {
+                        console.error('Motion permission error:', err);
+                        motionStatus.textContent = 'Motion unavailable';
+                        modeIndicator.textContent = 'Tap screen to start streaming';
+                        modeIndicator.onclick = () => startStreaming();
+                    }
                 } else {
-                    // Non-iOS or older iOS
+                    // Non-iOS or older iOS - no permission needed
                     window.addEventListener('devicemotion', handleMotion);
                     startMotionCheck();
+                    motionStatus.textContent = 'Motion enabled';
                 }
             } else {
                 motionStatus.textContent = 'No motion sensor';
-                // Fallback: start streaming after delay
-                setTimeout(() => startStreaming(), 3000);
+                modeIndicator.textContent = 'Tap screen to start streaming';
+                modeIndicator.onclick = () => startStreaming();
             }
         }
 
@@ -411,9 +431,14 @@
             }, 200);
         }
 
-        // Start camera
+        // Start camera - called from button tap (user gesture required for iOS)
         async function initCamera() {
             try {
+                startBtn.disabled = true;
+                startBtn.textContent = 'Starting camera...';
+                motionStatus.textContent = 'Requesting camera...';
+
+                // Request video only first to minimize audio interruption
                 videoStream = await navigator.mediaDevices.getUserMedia({
                     video: {
                         facingMode: 'user',
@@ -428,13 +453,20 @@
                 });
 
                 videoPreview.srcObject = videoStream;
+                startBtn.textContent = 'Camera ready!';
                 motionStatus.textContent = 'Camera ready';
 
-                // Initialize motion detection after camera is ready
-                initMotionDetection();
+                // Initialize motion detection (must be in same user gesture chain)
+                await initMotionDetection();
+
+                // Hide button after success
+                startBtn.style.display = 'none';
+                modeIndicator.textContent = 'Set phone down to start streaming';
 
             } catch (err) {
-                motionStatus.textContent = 'Camera error';
+                motionStatus.textContent = 'Camera error: ' + err.message;
+                startBtn.textContent = 'Tap to try again';
+                startBtn.disabled = false;
                 console.error('Camera error:', err);
             }
         }
@@ -560,6 +592,11 @@
         // Initialize on load
         window.addEventListener('load', () => {
             loadSettings();
+            motionStatus.textContent = 'Tap button to start';
+        });
+
+        // Button tap triggers everything (required for iOS permissions)
+        startBtn.addEventListener('click', () => {
             initCamera();
         });
     </script>
