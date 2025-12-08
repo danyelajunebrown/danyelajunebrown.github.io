@@ -356,21 +356,6 @@ body {
 // Global variable to store the captured frame
 window.capturedCameraFrame = null;
 
- <!-- Add to index.html -->
-<script>
-// Browser becomes storage node when page is open
-if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('/mesh-worker.js');
-}
-
-// Store 20GB in browser using persistent storage
-navigator.storage.persist().then(persistent => {
-  if (persistent) {
-    console.log('Browser storage persistent - mesh node active');
-  }
-});
-</script>
-
 function captureCurrentFrame() {
     const video = document.getElementById('videoElement');
     const canvas = document.getElementById('screenshotCanvas');
@@ -560,37 +545,7 @@ window.addEventListener('load', function() {
             });
         });
     });
- // Add to existing index.html
-class BrowserMeshNode {
-  constructor() {
-    this.peerId = this.generatePeerId();
-    this.storage = new IndexedDB('mesh-documents');
-    this.connections = new Map();
-    this.setupWebRTC();
-  }
-  
-  async setupWebRTC() {
-    // Browser-to-browser connections
-    this.peerConnection = new RTCPeerConnection({
-      iceServers: [{ urls: 'stun:stun.l.google.com:19302' }]
-    });
-    
-    // Discover nearby browsers on same WiFi
-    await this.discoverLocalPeers();
-  }
-  
-  async storeDocument(documentId, fileBlob) {
-    // Store in browser's IndexedDB
-    await this.storage.put(documentId, fileBlob);
-    
-    // Replicate to 2 connected peers
-    const peers = Array.from(this.connections.values()).slice(0, 2);
-    for (const peer of peers) {
-      await peer.send('store', { documentId, data: fileBlob });
-    }
-  }
-}
-    
+
     // Cursor dodge effect - only on desktop
     if (window.matchMedia("(pointer: fine)").matches) {
         document.addEventListener('mousemove', function(e) {
