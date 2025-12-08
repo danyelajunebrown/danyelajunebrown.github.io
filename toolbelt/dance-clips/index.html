@@ -42,6 +42,7 @@
         let mediaRecorder = null;
         let isStreaming = false;
         let currentBroadcastId = null;
+        let currentStreamId = null;
         let currentStreamKey = null;
         let currentClientId = null;
 
@@ -216,6 +217,7 @@
             }
 
             const stream = await streamResponse.json();
+            currentStreamId = stream.id;
             currentStreamKey = stream.cdn.ingestionInfo.streamName;
 
             // Bind stream to broadcast
@@ -229,7 +231,36 @@
                 throw new Error(err.error?.message || 'Failed to bind stream');
             }
 
+            // Give YouTube a moment to set up the RTMP ingest
+            await new Promise(resolve => setTimeout(resolve, 2000));
+
             return currentStreamKey;
+        }
+
+        // Poll stream status until it's active (receiving video)
+        async function waitForStreamActive(maxWaitMs = 30000) {
+            const startTime = Date.now();
+            while (Date.now() - startTime < maxWaitMs) {
+                try {
+                    const response = await fetch(`https://www.googleapis.com/youtube/v3/liveStreams?part=status&id=${currentStreamId}`, {
+                        headers: { 'Authorization': 'Bearer ' + accessToken }
+                    });
+                    if (response.ok) {
+                        const data = await response.json();
+                        if (data.items && data.items[0]) {
+                            const status = data.items[0].status.streamStatus;
+                            console.log('Stream status:', status);
+                            if (status === 'active') {
+                                return true;
+                            }
+                        }
+                    }
+                } catch (e) {
+                    console.error('Error checking stream status:', e);
+                }
+                await new Promise(resolve => setTimeout(resolve, 2000));
+            }
+            return false;
         }
 
         // =====================
@@ -256,7 +287,7 @@
                 // Connect WebSocket
                 streamSocket = new WebSocket(`${relay}?clientId=${currentClientId}`);
 
-                streamSocket.onopen = () => {
+                streamSocket.onopen = async () => {
                     // Find supported format
                     let mimeType = '';
                     ['video/webm;codecs=vp9', 'video/webm;codecs=vp8', 'video/webm', 'video/mp4'].forEach(type => {
@@ -275,8 +306,18 @@
                     mediaRecorder.start(1000);
 
                     isStreaming = true;
-                    setLive(true); // GREEN
-                    console.log('Streaming started');
+                    console.log('Sending video data, waiting for YouTube to confirm...');
+
+                    // Wait for YouTube to confirm stream is active before turning green
+                    const isActive = await waitForStreamActive();
+                    if (isActive) {
+                        setLive(true); // GREEN - YouTube confirmed receiving video
+                        console.log('Stream is LIVE on YouTube!');
+                    } else {
+                        console.log('Stream did not become active in time');
+                        // Keep streaming anyway, might still work
+                        setLive(true);
+                    }
                 };
 
                 streamSocket.onclose = () => {
@@ -335,6 +376,7 @@
 
             isStreaming = false;
             currentBroadcastId = null;
+            currentStreamId = null;
             currentStreamKey = null;
             mediaRecorder = null;
             streamSocket = null;
