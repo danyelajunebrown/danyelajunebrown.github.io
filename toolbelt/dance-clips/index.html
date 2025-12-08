@@ -208,11 +208,22 @@
             width: 100%;
             font-size: 18px;
             padding: 20px;
+            cursor: pointer;
+            -webkit-tap-highlight-color: rgba(0,0,0,0.1);
+            touch-action: manipulation;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        .btn-start:active {
+            transform: scale(0.98);
+            opacity: 0.9;
         }
 
         .btn-start:disabled {
             opacity: 0.5;
             background: #9ca3af;
+            cursor: not-allowed;
         }
     </style>
 </head>
@@ -593,11 +604,12 @@
         window.addEventListener('load', () => {
             loadSettings();
             motionStatus.textContent = 'Tap button to start';
-        });
 
-        // Button tap triggers everything (required for iOS permissions)
-        startBtn.addEventListener('click', () => {
-            initCamera();
+            // Button tap triggers everything (required for iOS permissions)
+            startBtn.addEventListener('click', () => {
+                console.log('Button clicked!');
+                initCamera();
+            });
         });
     </script>
 </body>
