@@ -128,31 +128,15 @@
             if (window.DeviceMotionEvent) {
                 window.addEventListener('devicemotion', handleMotion);
                 startMotionCheck();
-
-                // On iOS, check if we actually get events after 1 second
-                // If not, permission might need user gesture
-                if (typeof DeviceMotionEvent.requestPermission === 'function') {
-                    setTimeout(() => {
-                        if (!motionReceived) {
-                            // No events received - need to wait for tap
-                            console.log('Motion permission needs user gesture - tap screen');
-                            document.body.addEventListener('click', requestMotionOnTap, { once: true });
-                        }
-                    }, 1000);
-                }
-            } else {
-                // No motion sensor available - start streaming after delay
-                setTimeout(startStreaming, 3000);
             }
-        }
 
-        function requestMotionOnTap() {
-            DeviceMotionEvent.requestPermission().then(response => {
-                if (response === 'granted') {
-                    console.log('Motion permission granted');
-                    // Listener already added, events should start flowing
+            // Start streaming after 3 second delay regardless of motion
+            // Motion is only used for STOPPING the stream (picking up phone)
+            setTimeout(() => {
+                if (!isStreaming && videoStream) {
+                    startStreaming();
                 }
-            }).catch(err => console.error('Motion permission error:', err));
+            }, 3000);
         }
 
         function handleMotion(e) {
@@ -161,29 +145,15 @@
             if (!a) return;
             const movement = Math.abs(Math.sqrt(a.x*a.x + a.y*a.y + a.z*a.z) - 9.8);
 
-            if (movement > 1.5) {
-                lastMotion = Date.now();
-                if (isStill && isStreaming) {
-                    // Phone was picked up - stop streaming
-                    stopStreaming();
-                }
-                isStill = false;
+            if (movement > 1.5 && isStreaming) {
+                // Phone was picked up - stop streaming
+                stopStreaming();
             }
         }
 
         function startMotionCheck() {
-            setInterval(() => {
-                // Only check stillness if we're actually receiving motion data
-                if (!motionReceived) return;
-
-                const stillTime = Date.now() - lastMotion;
-                if (!isStill && stillTime > 3000) {
-                    isStill = true;
-                    if (!isStreaming && videoStream) {
-                        startStreaming();
-                    }
-                }
-            }, 200);
+            // This interval just keeps motion detection active
+            // Actual stop logic is in handleMotion
         }
 
         // =====================
