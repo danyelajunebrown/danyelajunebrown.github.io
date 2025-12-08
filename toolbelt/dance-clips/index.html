@@ -514,11 +514,25 @@
                 streamSocket.onopen = () => {
                     console.log('Connected to relay server');
 
+                    // Find a supported mimeType
+                    let mimeType = '';
+                    if (MediaRecorder.isTypeSupported('video/webm;codecs=vp9,opus')) {
+                        mimeType = 'video/webm;codecs=vp9,opus';
+                    } else if (MediaRecorder.isTypeSupported('video/webm;codecs=vp8,opus')) {
+                        mimeType = 'video/webm;codecs=vp8,opus';
+                    } else if (MediaRecorder.isTypeSupported('video/webm')) {
+                        mimeType = 'video/webm';
+                    } else if (MediaRecorder.isTypeSupported('video/mp4')) {
+                        mimeType = 'video/mp4';
+                    }
+
+                    console.log('Using mimeType:', mimeType);
+
                     // Start sending video
-                    streamMediaRecorder = new MediaRecorder(videoStream, {
-                        mimeType: 'video/webm;codecs=vp9,opus',
-                        videoBitsPerSecond: 2500000
-                    });
+                    const recorderOptions = { videoBitsPerSecond: 2500000 };
+                    if (mimeType) recorderOptions.mimeType = mimeType;
+
+                    streamMediaRecorder = new MediaRecorder(videoStream, recorderOptions);
 
                     streamMediaRecorder.ondataavailable = (event) => {
                         if (event.data.size > 0 && streamSocket.readyState === WebSocket.OPEN) {
