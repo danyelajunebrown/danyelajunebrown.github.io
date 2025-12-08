@@ -449,13 +449,45 @@
                 startBtn.textContent = 'Starting camera...';
                 motionStatus.textContent = 'Requesting camera...';
 
-                // Request video only first to minimize audio interruption
+                // Request video ONLY first - don't touch audio yet
                 videoStream = await navigator.mediaDevices.getUserMedia({
                     video: {
                         facingMode: 'user',
                         width: { ideal: 1280 },
                         height: { ideal: 720 }
                     },
+                    audio: false
+                });
+
+                videoPreview.srcObject = videoStream;
+                startBtn.textContent = 'Camera ready! Tap again to enable mic';
+                motionStatus.textContent = 'Camera ready';
+
+                // Initialize motion detection (must be in same user gesture chain)
+                await initMotionDetection();
+
+                // Change button to enable audio
+                startBtn.disabled = false;
+                startBtn.textContent = 'Tap to Enable Microphone';
+                startBtn.onclick = enableAudio;
+
+            } catch (err) {
+                motionStatus.textContent = 'Camera error: ' + err.message;
+                startBtn.textContent = 'Tap to try again';
+                startBtn.disabled = false;
+                console.error('Camera error:', err);
+            }
+        }
+
+        // Second step - enable audio (separate to not interrupt music immediately)
+        async function enableAudio() {
+            try {
+                startBtn.disabled = true;
+                startBtn.textContent = 'Enabling mic...';
+
+                // Get audio stream
+                const audioStream = await navigator.mediaDevices.getUserMedia({
+                    video: false,
                     audio: {
                         echoCancellation: false,
                         noiseSuppression: false,
@@ -463,22 +495,19 @@
                     }
                 });
 
-                videoPreview.srcObject = videoStream;
-                startBtn.textContent = 'Camera ready!';
-                motionStatus.textContent = 'Camera ready';
+                // Combine video and audio tracks
+                const audioTrack = audioStream.getAudioTracks()[0];
+                videoStream.addTrack(audioTrack);
 
-                // Initialize motion detection (must be in same user gesture chain)
-                await initMotionDetection();
-
-                // Hide button after success
                 startBtn.style.display = 'none';
                 modeIndicator.textContent = 'Set phone down to start streaming';
+                motionStatus.textContent = 'Ready to stream';
 
             } catch (err) {
-                motionStatus.textContent = 'Camera error: ' + err.message;
-                startBtn.textContent = 'Tap to try again';
+                motionStatus.textContent = 'Mic error: ' + err.message;
+                startBtn.textContent = 'Tap to try mic again';
                 startBtn.disabled = false;
-                console.error('Camera error:', err);
+                console.error('Audio error:', err);
             }
         }
 
