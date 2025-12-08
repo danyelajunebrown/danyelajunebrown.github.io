@@ -121,28 +121,42 @@
         // =====================
         // MOTION DETECTION
         // =====================
+        let motionReceived = false;
+
         function initMotion() {
-            if (typeof DeviceMotionEvent !== 'undefined' && typeof DeviceMotionEvent.requestPermission === 'function') {
-                // iOS - need to request permission, but it should already be granted from main site
-                DeviceMotionEvent.requestPermission().then(response => {
-                    if (response === 'granted') {
-                        window.addEventListener('devicemotion', handleMotion);
-                        startMotionCheck();
-                    } else {
-                        // Fallback: start streaming after delay
-                        setTimeout(startStreaming, 3000);
-                    }
-                }).catch(() => setTimeout(startStreaming, 3000));
-            } else if (window.DeviceMotionEvent) {
+            // Try adding listener first - works if permission already granted
+            if (window.DeviceMotionEvent) {
                 window.addEventListener('devicemotion', handleMotion);
                 startMotionCheck();
+
+                // On iOS, check if we actually get events after 1 second
+                // If not, permission might need user gesture
+                if (typeof DeviceMotionEvent.requestPermission === 'function') {
+                    setTimeout(() => {
+                        if (!motionReceived) {
+                            // No events received - need to wait for tap
+                            console.log('Motion permission needs user gesture - tap screen');
+                            document.body.addEventListener('click', requestMotionOnTap, { once: true });
+                        }
+                    }, 1000);
+                }
             } else {
-                // No motion sensor - start after delay
+                // No motion sensor available - start streaming after delay
                 setTimeout(startStreaming, 3000);
             }
         }
 
+        function requestMotionOnTap() {
+            DeviceMotionEvent.requestPermission().then(response => {
+                if (response === 'granted') {
+                    console.log('Motion permission granted');
+                    // Listener already added, events should start flowing
+                }
+            }).catch(err => console.error('Motion permission error:', err));
+        }
+
         function handleMotion(e) {
+            motionReceived = true;
             const a = e.accelerationIncludingGravity;
             if (!a) return;
             const movement = Math.abs(Math.sqrt(a.x*a.x + a.y*a.y + a.z*a.z) - 9.8);
