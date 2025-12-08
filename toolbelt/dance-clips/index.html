@@ -155,6 +155,98 @@
             color: #374151;
             margin-bottom: 5px;
         }
+
+        .settings-section {
+            background: #f9fafb;
+            border: 1px solid #e5e7eb;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 15px;
+        }
+
+        .settings-section h3 {
+            font-size: 14px;
+            color: #374151;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .input-group {
+            display: flex;
+            gap: 10px;
+        }
+
+        .input-group input {
+            flex: 1;
+            padding: 12px 15px;
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+            font-size: 14px;
+            font-family: monospace;
+        }
+
+        .input-group input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .btn-secondary {
+            background: #6b7280;
+            color: white;
+            min-width: auto;
+            padding: 12px 20px;
+        }
+
+        .btn-secondary:hover {
+            background: #4b5563;
+        }
+
+        .stream-status {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-top: 10px;
+            font-size: 13px;
+        }
+
+        .stream-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #9ca3af;
+        }
+
+        .stream-dot.connected {
+            background: #10b981;
+        }
+
+        .stream-dot.streaming {
+            background: #ef4444;
+            animation: pulse 1.5s ease-in-out infinite;
+        }
+
+        .btn-stream {
+            background: linear-gradient(135deg, #ff0000 0%, #cc0000 100%);
+            color: white;
+        }
+
+        .btn-stream:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(255, 0, 0, 0.3);
+        }
+
+        .btn-stream.streaming {
+            background: linear-gradient(135deg, #374151 0%, #1f2937 100%);
+        }
+
+        .saved-indicator {
+            color: #10b981;
+            font-size: 12px;
+            margin-left: 10px;
+        }
     </style>
 </head>
 <body>
@@ -170,12 +262,32 @@
         <div class="controls">
             <div class="timer" id="timer">00:00</div>
             
+            <div class="settings-section">
+                <h3>YouTube Live Streaming</h3>
+                <div class="input-group">
+                    <input type="text" id="streamKeyInput" placeholder="Paste your YouTube stream key" />
+                    <button id="saveKeyBtn" class="btn-secondary">Save</button>
+                </div>
+                <div class="input-group" style="margin-top: 10px;">
+                    <input type="text" id="relayUrlInput" placeholder="Relay server URL (e.g., wss://your-server.com)" value="wss://dance.danyelica.fish" />
+                    <button id="saveRelayBtn" class="btn-secondary">Save</button>
+                </div>
+                <div class="stream-status">
+                    <div class="stream-dot" id="streamDot"></div>
+                    <span id="streamStatusText">Not connected</span>
+                </div>
+            </div>
+
             <div class="button-group">
                 <button id="startBtn" class="btn-primary">Start Camera</button>
                 <button id="recordBtn" class="btn-danger" disabled>Start Recording</button>
                 <button id="stopBtn" class="btn-success" disabled>Stop & Download</button>
             </div>
-            
+
+            <div class="button-group">
+                <button id="streamBtn" class="btn-stream" disabled>Go Live to YouTube</button>
+            </div>
+
             <div class="info">
                 <strong>📱 How to use:</strong>
                 1. Start playing music on your iPhone (Spotify, Apple Music, etc.)<br>
@@ -194,12 +306,73 @@
         let recordingStartTime = null;
         let timerInterval = null;
 
+        // Streaming variables
+        let streamSocket = null;
+        let streamMediaRecorder = null;
+        let isStreaming = false;
+        let clientId = localStorage.getItem('clientId') || generateClientId();
+
         const videoPreview = document.getElementById('videoPreview');
         const startBtn = document.getElementById('startBtn');
         const recordBtn = document.getElementById('recordBtn');
         const stopBtn = document.getElementById('stopBtn');
         const status = document.getElementById('status');
         const timer = document.getElementById('timer');
+
+        // Streaming elements
+        const streamKeyInput = document.getElementById('streamKeyInput');
+        const relayUrlInput = document.getElementById('relayUrlInput');
+        const saveKeyBtn = document.getElementById('saveKeyBtn');
+        const saveRelayBtn = document.getElementById('saveRelayBtn');
+        const streamBtn = document.getElementById('streamBtn');
+        const streamDot = document.getElementById('streamDot');
+        const streamStatusText = document.getElementById('streamStatusText');
+
+        function generateClientId() {
+            const id = 'client_' + Math.random().toString(36).substr(2, 9);
+            localStorage.setItem('clientId', id);
+            return id;
+        }
+
+        // Load saved settings
+        function loadSettings() {
+            const savedKey = localStorage.getItem('youtubeStreamKey');
+            const savedRelay = localStorage.getItem('relayServerUrl');
+            if (savedKey) streamKeyInput.value = savedKey;
+            if (savedRelay) relayUrlInput.value = savedRelay;
+        }
+
+        // Save stream key
+        saveKeyBtn.addEventListener('click', () => {
+            const key = streamKeyInput.value.trim();
+            if (key) {
+                localStorage.setItem('youtubeStreamKey', key);
+                showSavedIndicator(saveKeyBtn);
+            }
+        });
+
+        // Save relay URL
+        saveRelayBtn.addEventListener('click', () => {
+            const url = relayUrlInput.value.trim();
+            if (url) {
+                localStorage.setItem('relayServerUrl', url);
+                showSavedIndicator(saveRelayBtn);
+            }
+        });
+
+        function showSavedIndicator(btn) {
+            const indicator = document.createElement('span');
+            indicator.className = 'saved-indicator';
+            indicator.textContent = 'Saved!';
+            btn.parentNode.appendChild(indicator);
+            setTimeout(() => indicator.remove(), 2000);
+        }
+
+        // Update stream status UI
+        function updateStreamStatus(status, text) {
+            streamDot.className = 'stream-dot ' + status;
+            streamStatusText.textContent = text;
+        }
 
         // Start camera
         startBtn.addEventListener('click', async () => {
@@ -222,11 +395,127 @@
                 videoPreview.srcObject = videoStream;
                 startBtn.disabled = true;
                 recordBtn.disabled = false;
+                streamBtn.disabled = false;
             } catch (err) {
                 alert('Error accessing camera: ' + err.message);
                 console.error(err);
             }
         });
+
+        // Start/Stop YouTube Live stream
+        streamBtn.addEventListener('click', async () => {
+            if (isStreaming) {
+                stopStreaming();
+            } else {
+                startStreaming();
+            }
+        });
+
+        async function startStreaming() {
+            const streamKey = streamKeyInput.value.trim() || localStorage.getItem('youtubeStreamKey');
+            const relayUrl = relayUrlInput.value.trim() || localStorage.getItem('relayServerUrl');
+
+            if (!streamKey) {
+                alert('Please enter your YouTube stream key');
+                return;
+            }
+
+            if (!relayUrl) {
+                alert('Please enter your relay server URL');
+                return;
+            }
+
+            try {
+                // First, register the stream key with the relay server
+                const httpUrl = relayUrl.replace('wss://', 'https://').replace('ws://', 'http://');
+                const response = await fetch(`${httpUrl}/start-stream`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ streamKey, clientId })
+                });
+
+                if (!response.ok) {
+                    throw new Error('Failed to register stream with relay server');
+                }
+
+                // Connect WebSocket to relay server
+                const wsUrl = `${relayUrl}?clientId=${clientId}`;
+                streamSocket = new WebSocket(wsUrl);
+
+                streamSocket.onopen = () => {
+                    console.log('Connected to relay server');
+                    updateStreamStatus('connected', 'Connected to relay');
+
+                    // Start sending video data
+                    streamMediaRecorder = new MediaRecorder(videoStream, {
+                        mimeType: 'video/webm;codecs=vp9,opus',
+                        videoBitsPerSecond: 2500000
+                    });
+
+                    streamMediaRecorder.ondataavailable = (event) => {
+                        if (event.data.size > 0 && streamSocket.readyState === WebSocket.OPEN) {
+                            streamSocket.send(event.data);
+                        }
+                    };
+
+                    streamMediaRecorder.start(1000); // Send data every second
+                    isStreaming = true;
+                    updateStreamStatus('streaming', 'LIVE on YouTube');
+                    streamBtn.textContent = 'Stop Streaming';
+                    streamBtn.classList.add('streaming');
+                };
+
+                streamSocket.onclose = () => {
+                    console.log('Disconnected from relay server');
+                    if (isStreaming) {
+                        stopStreaming();
+                    }
+                };
+
+                streamSocket.onerror = (error) => {
+                    console.error('WebSocket error:', error);
+                    updateStreamStatus('', 'Connection error');
+                    alert('Failed to connect to relay server');
+                };
+
+            } catch (err) {
+                console.error('Streaming error:', err);
+                alert('Error starting stream: ' + err.message);
+                updateStreamStatus('', 'Error: ' + err.message);
+            }
+        }
+
+        async function stopStreaming() {
+            if (streamMediaRecorder && streamMediaRecorder.state !== 'inactive') {
+                streamMediaRecorder.stop();
+            }
+
+            if (streamSocket) {
+                streamSocket.close();
+            }
+
+            // Notify relay server to stop
+            const relayUrl = relayUrlInput.value.trim() || localStorage.getItem('relayServerUrl');
+            if (relayUrl) {
+                try {
+                    const httpUrl = relayUrl.replace('wss://', 'https://').replace('ws://', 'http://');
+                    await fetch(`${httpUrl}/stop-stream`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ clientId })
+                    });
+                } catch (err) {
+                    console.error('Error stopping stream:', err);
+                }
+            }
+
+            isStreaming = false;
+            streamSocket = null;
+            streamMediaRecorder = null;
+            updateStreamStatus('', 'Not connected');
+            streamBtn.textContent = 'Go Live to YouTube';
+            streamBtn.classList.remove('streaming');
+        }
 
         // Start recording
         recordBtn.addEventListener('click', async () => {
@@ -291,6 +580,7 @@
 
         // Auto-start camera on load
         window.addEventListener('load', () => {
+            loadSettings();
             startBtn.click();
         });
     </script>
