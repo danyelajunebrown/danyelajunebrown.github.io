@@ -12,7 +12,7 @@
         }
 
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             min-height: 100vh;
             display: flex;
@@ -26,634 +26,397 @@
             background: white;
             border-radius: 20px;
             box-shadow: 0 20px 60px rgba(0,0,0,0.3);
-            overflow: hidden;
-            max-width: 800px;
+            padding: 40px 30px;
+            max-width: 400px;
             width: 100%;
+            text-align: center;
         }
 
-        .video-container {
-            position: relative;
-            background: #000;
-            aspect-ratio: 16/9;
+        h1 {
+            font-size: 24px;
+            color: #374151;
+            margin-bottom: 10px;
         }
 
-        #videoPreview {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
-
-        .status-overlay {
-            position: absolute;
-            top: 20px;
-            left: 20px;
-            right: 20px;
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-        }
-
-        .status {
-            background: rgba(0,0,0,0.7);
-            color: white;
-            padding: 10px 20px;
+        .status-badge {
+            display: inline-block;
+            padding: 8px 20px;
             border-radius: 20px;
             font-size: 14px;
-            display: flex;
-            align-items: center;
-            gap: 10px;
+            font-weight: 600;
+            margin-bottom: 30px;
+            background: #f3f4f6;
+            color: #6b7280;
         }
 
-        .recording-indicator {
-            width: 12px;
-            height: 12px;
+        .status-badge.live {
             background: #ef4444;
-            border-radius: 50%;
+            color: white;
             animation: pulse 1.5s ease-in-out infinite;
         }
 
-        .motion-status {
-            background: rgba(0,0,0,0.7);
+        .status-badge.ready {
+            background: #10b981;
             color: white;
-            padding: 10px 20px;
-            border-radius: 20px;
-            font-size: 14px;
-        }
-
-        .motion-status.ready {
-            background: rgba(16, 185, 129, 0.9);
-        }
-
-        .motion-status.waiting {
-            background: rgba(234, 179, 8, 0.9);
         }
 
         @keyframes pulse {
             0%, 100% { opacity: 1; }
-            50% { opacity: 0.3; }
-        }
-
-        .controls {
-            padding: 30px;
-            display: flex;
-            flex-direction: column;
-            gap: 20px;
+            50% { opacity: 0.7; }
         }
 
         .timer {
-            font-size: 48px;
+            font-size: 64px;
             font-weight: 700;
             color: #374151;
-            text-align: center;
             font-variant-numeric: tabular-nums;
+            margin-bottom: 30px;
         }
 
-        .mode-indicator {
-            text-align: center;
-            font-size: 18px;
-            color: #6b7280;
-            padding: 15px;
-            background: #f3f4f6;
-            border-radius: 10px;
-        }
-
-        .mode-indicator.live {
-            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
-            color: white;
-            font-weight: 600;
-        }
-
-        .settings-toggle {
-            text-align: center;
-            color: #9ca3af;
-            font-size: 12px;
-            cursor: pointer;
-            padding: 10px;
-        }
-
-        .settings-section {
+        .instructions {
             background: #f9fafb;
-            border: 1px solid #e5e7eb;
             padding: 20px;
-            border-radius: 10px;
-            display: none;
-        }
-
-        .settings-section.visible {
-            display: block;
-        }
-
-        .settings-section h3 {
-            font-size: 14px;
-            color: #374151;
-            margin-bottom: 12px;
-        }
-
-        .input-group {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 10px;
-        }
-
-        .input-group input {
-            flex: 1;
-            padding: 12px 15px;
-            border: 1px solid #d1d5db;
-            border-radius: 8px;
-            font-size: 14px;
-            font-family: monospace;
-        }
-
-        .input-group input:focus {
-            outline: none;
-            border-color: #667eea;
+            border-radius: 12px;
+            margin-bottom: 25px;
+            font-size: 15px;
+            color: #4b5563;
+            line-height: 1.6;
         }
 
         button {
-            padding: 15px 30px;
+            width: 100%;
+            padding: 18px;
             border: none;
-            border-radius: 10px;
-            font-size: 16px;
+            border-radius: 12px;
+            font-size: 18px;
             font-weight: 600;
             cursor: pointer;
-            transition: all 0.3s ease;
+            transition: all 0.2s ease;
+            -webkit-tap-highlight-color: transparent;
         }
 
-        .btn-secondary {
-            background: #6b7280;
-            color: white;
-            min-width: auto;
-            padding: 12px 20px;
-        }
-
-        .info {
-            background: #f3f4f6;
-            padding: 15px;
-            border-radius: 10px;
-            font-size: 14px;
-            color: #6b7280;
-            line-height: 1.6;
-            text-align: center;
-        }
-
-        .saved-indicator {
-            color: #10b981;
-            font-size: 12px;
-            margin-left: 10px;
-        }
-
-        .btn-start {
+        .btn-primary {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
-            width: 100%;
-            font-size: 18px;
-            padding: 20px;
-            cursor: pointer;
-            -webkit-tap-highlight-color: rgba(0,0,0,0.1);
-            touch-action: manipulation;
-            user-select: none;
-            -webkit-user-select: none;
         }
 
-        .btn-start:active {
+        .btn-primary:active {
             transform: scale(0.98);
-            opacity: 0.9;
         }
 
-        .btn-start:disabled {
-            opacity: 0.5;
-            background: #9ca3af;
+        .btn-primary:disabled {
+            opacity: 0.6;
             cursor: not-allowed;
+        }
+
+        .btn-stop {
+            background: #374151;
+            color: white;
+            margin-top: 15px;
+        }
+
+        .settings-link {
+            margin-top: 25px;
+            color: #9ca3af;
+            font-size: 13px;
+            cursor: pointer;
+        }
+
+        .settings {
+            display: none;
+            margin-top: 20px;
+            text-align: left;
+        }
+
+        .settings.visible {
+            display: block;
+        }
+
+        .settings input {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            font-size: 14px;
+            margin-bottom: 10px;
+            font-family: monospace;
+        }
+
+        .settings button {
+            padding: 10px;
+            font-size: 14px;
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <div class="video-container">
-            <video id="videoPreview" autoplay muted playsinline></video>
-            <div class="status-overlay">
-                <div class="status" id="status" style="display: none;">
-                    <div class="recording-indicator"></div>
-                    <span>LIVE</span>
-                </div>
-                <div class="motion-status" id="motionStatus">Initializing...</div>
-            </div>
+        <h1>Dance Livestream</h1>
+        <div class="status-badge" id="statusBadge">Ready</div>
+
+        <div class="timer" id="timer">00:00</div>
+
+        <div class="instructions" id="instructions">
+            1. Start your music<br>
+            2. Tap the button below<br>
+            3. Set phone down to stream
         </div>
 
-        <div class="controls">
-            <div class="timer" id="timer">00:00</div>
+        <button id="mainBtn" class="btn-primary">Start Camera</button>
+        <button id="stopBtn" class="btn-stop" style="display:none;">Stop Streaming</button>
 
-            <div class="mode-indicator" id="modeIndicator">
-                Set your phone down to start streaming
-            </div>
-
-            <div class="info">
-                Start your music, then tap the button below.<br>
-                Set the phone down and streaming starts automatically.
-            </div>
-
-            <button id="startBtn" class="btn-start">Tap to Enable Camera & Motion</button>
-
-            <div class="settings-toggle" id="settingsToggle">
-                Settings
-            </div>
-
-            <div class="settings-section" id="settingsSection">
-                <h3>YouTube Live Settings</h3>
-                <div class="input-group">
-                    <input type="text" id="streamKeyInput" placeholder="YouTube stream key" />
-                    <button id="saveKeyBtn" class="btn-secondary">Save</button>
-                </div>
-                <div class="input-group">
-                    <input type="text" id="relayUrlInput" placeholder="Relay server URL" />
-                    <button id="saveRelayBtn" class="btn-secondary">Save</button>
-                </div>
-            </div>
+        <div class="settings-link" id="settingsLink">Settings</div>
+        <div class="settings" id="settings">
+            <input type="text" id="streamKey" placeholder="YouTube Stream Key">
+            <input type="text" id="relayUrl" placeholder="Relay Server URL">
+            <button class="btn-primary" id="saveBtn">Save Settings</button>
         </div>
     </div>
 
     <script>
-        // Config - saved in localStorage after first setup
-        const DEFAULT_RELAY_URL = 'wss://dance.danyelica.fish';
-        const DEFAULT_STREAM_KEY = '1xu2-30tz-mbau-m685-8f0u';
+        // Default config
+        const DEFAULT_RELAY = 'wss://dance.danyelica.fish';
+        const DEFAULT_KEY = '1xu2-30tz-mbau-m685-8f0u';
 
+        // State
         let videoStream = null;
         let streamSocket = null;
-        let streamMediaRecorder = null;
+        let mediaRecorder = null;
         let isStreaming = false;
-        let streamingStartTime = null;
         let timerInterval = null;
-        let clientId = localStorage.getItem('clientId') || generateClientId();
+        let startTime = null;
+        let clientId = localStorage.getItem('clientId') || generateId();
 
         // Motion detection
-        let lastMotionTime = Date.now();
-        let isStationary = false;
-        let motionThreshold = 1.5; // Acceleration threshold
-        let stationaryDelay = 3000; // 3 seconds of stillness to trigger
-        let motionCheckInterval = null;
+        let lastMotion = Date.now();
+        let isStill = false;
 
-        // DOM elements
-        const videoPreview = document.getElementById('videoPreview');
-        const status = document.getElementById('status');
+        // Elements
+        const mainBtn = document.getElementById('mainBtn');
+        const stopBtn = document.getElementById('stopBtn');
+        const statusBadge = document.getElementById('statusBadge');
         const timer = document.getElementById('timer');
-        const motionStatus = document.getElementById('motionStatus');
-        const modeIndicator = document.getElementById('modeIndicator');
-        const streamKeyInput = document.getElementById('streamKeyInput');
-        const relayUrlInput = document.getElementById('relayUrlInput');
-        const saveKeyBtn = document.getElementById('saveKeyBtn');
-        const saveRelayBtn = document.getElementById('saveRelayBtn');
-        const settingsToggle = document.getElementById('settingsToggle');
-        const settingsSection = document.getElementById('settingsSection');
-        const startBtn = document.getElementById('startBtn');
+        const instructions = document.getElementById('instructions');
+        const settingsLink = document.getElementById('settingsLink');
+        const settings = document.getElementById('settings');
+        const streamKeyInput = document.getElementById('streamKey');
+        const relayUrlInput = document.getElementById('relayUrl');
+        const saveBtn = document.getElementById('saveBtn');
 
-        function generateClientId() {
-            const id = 'client_' + Math.random().toString(36).substr(2, 9);
+        function generateId() {
+            const id = 'c_' + Math.random().toString(36).substr(2, 9);
             localStorage.setItem('clientId', id);
             return id;
         }
 
-        // Load saved settings or use defaults
+        // Load settings
         function loadSettings() {
-            const savedKey = localStorage.getItem('youtubeStreamKey') || DEFAULT_STREAM_KEY;
-            const savedRelay = localStorage.getItem('relayServerUrl') || DEFAULT_RELAY_URL;
-            streamKeyInput.value = savedKey;
-            relayUrlInput.value = savedRelay;
-            // Auto-save defaults if not already saved
-            if (!localStorage.getItem('youtubeStreamKey')) {
-                localStorage.setItem('youtubeStreamKey', DEFAULT_STREAM_KEY);
+            streamKeyInput.value = localStorage.getItem('streamKey') || DEFAULT_KEY;
+            relayUrlInput.value = localStorage.getItem('relayUrl') || DEFAULT_RELAY;
+            if (!localStorage.getItem('streamKey')) localStorage.setItem('streamKey', DEFAULT_KEY);
+            if (!localStorage.getItem('relayUrl')) localStorage.setItem('relayUrl', DEFAULT_RELAY);
+        }
+
+        // Save settings
+        saveBtn.onclick = () => {
+            localStorage.setItem('streamKey', streamKeyInput.value);
+            localStorage.setItem('relayUrl', relayUrlInput.value);
+            settings.classList.remove('visible');
+            statusBadge.textContent = 'Saved!';
+            setTimeout(() => statusBadge.textContent = 'Ready', 1500);
+        };
+
+        settingsLink.onclick = () => settings.classList.toggle('visible');
+
+        // Main button click
+        mainBtn.onclick = async () => {
+            if (!videoStream) {
+                await startCamera();
             }
-            if (!localStorage.getItem('relayServerUrl')) {
-                localStorage.setItem('relayServerUrl', DEFAULT_RELAY_URL);
+        };
+
+        // Stop button
+        stopBtn.onclick = () => stopStreaming();
+
+        // Start camera (video only - no audio to avoid stopping music)
+        async function startCamera() {
+            try {
+                mainBtn.disabled = true;
+                mainBtn.textContent = 'Starting...';
+
+                videoStream = await navigator.mediaDevices.getUserMedia({
+                    video: { facingMode: 'user', width: 1280, height: 720 },
+                    audio: false
+                });
+
+                statusBadge.textContent = 'Camera On';
+                statusBadge.className = 'status-badge ready';
+                instructions.innerHTML = 'Set your phone down.<br>Streaming starts when still for 3 seconds.';
+                mainBtn.style.display = 'none';
+
+                // Start motion detection
+                initMotion();
+
+            } catch (err) {
+                console.error(err);
+                mainBtn.disabled = false;
+                mainBtn.textContent = 'Try Again';
+                statusBadge.textContent = 'Error: ' + err.message;
             }
         }
 
-        // Settings toggle
-        settingsToggle.addEventListener('click', () => {
-            settingsSection.classList.toggle('visible');
-        });
-
-        // Save stream key
-        saveKeyBtn.addEventListener('click', () => {
-            const key = streamKeyInput.value.trim();
-            if (key) {
-                localStorage.setItem('youtubeStreamKey', key);
-                showSavedIndicator(saveKeyBtn);
-            }
-        });
-
-        // Save relay URL
-        saveRelayBtn.addEventListener('click', () => {
-            const url = relayUrlInput.value.trim();
-            if (url) {
-                localStorage.setItem('relayServerUrl', url);
-                showSavedIndicator(saveRelayBtn);
-            }
-        });
-
-        function showSavedIndicator(btn) {
-            const indicator = document.createElement('span');
-            indicator.className = 'saved-indicator';
-            indicator.textContent = 'Saved!';
-            btn.parentNode.appendChild(indicator);
-            setTimeout(() => indicator.remove(), 2000);
-        }
-
-        // Initialize motion detection - MUST be called from user gesture on iOS
-        async function initMotionDetection() {
-            if (window.DeviceMotionEvent) {
-                // iOS 13+ requires permission from user gesture
-                if (typeof DeviceMotionEvent.requestPermission === 'function') {
-                    try {
-                        const response = await DeviceMotionEvent.requestPermission();
-                        if (response === 'granted') {
-                            window.addEventListener('devicemotion', handleMotion);
-                            startMotionCheck();
-                            motionStatus.textContent = 'Motion enabled';
-                        } else {
-                            motionStatus.textContent = 'Motion denied - tap to stream';
-                            // Show manual start option
-                            modeIndicator.textContent = 'Tap screen to start streaming';
-                            modeIndicator.onclick = () => startStreaming();
-                        }
-                    } catch (err) {
-                        console.error('Motion permission error:', err);
-                        motionStatus.textContent = 'Motion unavailable';
-                        modeIndicator.textContent = 'Tap screen to start streaming';
-                        modeIndicator.onclick = () => startStreaming();
+        // Motion detection
+        function initMotion() {
+            if (typeof DeviceMotionEvent.requestPermission === 'function') {
+                DeviceMotionEvent.requestPermission().then(response => {
+                    if (response === 'granted') {
+                        window.addEventListener('devicemotion', handleMotion);
+                        startMotionCheck();
+                    } else {
+                        // Fallback: just start streaming after 3 seconds
+                        setTimeout(startStreaming, 3000);
                     }
-                } else {
-                    // Non-iOS or older iOS - no permission needed
-                    window.addEventListener('devicemotion', handleMotion);
-                    startMotionCheck();
-                    motionStatus.textContent = 'Motion enabled';
-                }
+                }).catch(() => setTimeout(startStreaming, 3000));
+            } else if (window.DeviceMotionEvent) {
+                window.addEventListener('devicemotion', handleMotion);
+                startMotionCheck();
             } else {
-                motionStatus.textContent = 'No motion sensor';
-                modeIndicator.textContent = 'Tap screen to start streaming';
-                modeIndicator.onclick = () => startStreaming();
+                setTimeout(startStreaming, 3000);
             }
         }
 
-        function handleMotion(event) {
-            const acc = event.accelerationIncludingGravity;
-            if (!acc) return;
-
-            // Calculate total acceleration change
-            const totalAcc = Math.sqrt(acc.x * acc.x + acc.y * acc.y + acc.z * acc.z);
-
-            // Gravity is ~9.8, so we look for changes beyond that
-            const motion = Math.abs(totalAcc - 9.8);
-
-            if (motion > motionThreshold) {
-                lastMotionTime = Date.now();
-                if (isStationary) {
-                    isStationary = false;
-                    motionStatus.textContent = 'Moving...';
-                    motionStatus.className = 'motion-status';
-
-                    // Stop streaming if phone is picked up
-                    if (isStreaming) {
-                        stopStreaming();
-                    }
+        function handleMotion(e) {
+            const a = e.accelerationIncludingGravity;
+            if (!a) return;
+            const movement = Math.abs(Math.sqrt(a.x*a.x + a.y*a.y + a.z*a.z) - 9.8);
+            if (movement > 1.5) {
+                lastMotion = Date.now();
+                if (isStill && isStreaming) {
+                    stopStreaming();
+                    instructions.innerHTML = 'Phone picked up.<br>Set down to stream again.';
                 }
+                isStill = false;
             }
         }
 
         function startMotionCheck() {
-            motionCheckInterval = setInterval(() => {
-                const timeSinceMotion = Date.now() - lastMotionTime;
-
-                if (!isStationary && timeSinceMotion > stationaryDelay) {
-                    isStationary = true;
-                    motionStatus.textContent = 'Ready!';
-                    motionStatus.className = 'motion-status ready';
-
-                    // Auto-start streaming
+            setInterval(() => {
+                const stillTime = Date.now() - lastMotion;
+                if (!isStill && stillTime > 3000) {
+                    isStill = true;
                     if (!isStreaming && videoStream) {
                         startStreaming();
-                    }
-                } else if (!isStationary) {
-                    const countdown = Math.ceil((stationaryDelay - timeSinceMotion) / 1000);
-                    if (countdown > 0) {
-                        motionStatus.textContent = `Hold still... ${countdown}`;
-                        motionStatus.className = 'motion-status waiting';
                     }
                 }
             }, 200);
         }
 
-        // Start camera - called from button tap (user gesture required for iOS)
-        async function initCamera() {
-            try {
-                startBtn.disabled = true;
-                startBtn.textContent = 'Starting camera...';
-                motionStatus.textContent = 'Requesting camera...';
-
-                // Request video ONLY first - don't touch audio yet
-                videoStream = await navigator.mediaDevices.getUserMedia({
-                    video: {
-                        facingMode: 'user',
-                        width: { ideal: 1280 },
-                        height: { ideal: 720 }
-                    },
-                    audio: false
-                });
-
-                videoPreview.srcObject = videoStream;
-                startBtn.textContent = 'Camera ready! Tap again to enable mic';
-                motionStatus.textContent = 'Camera ready';
-
-                // Initialize motion detection (must be in same user gesture chain)
-                await initMotionDetection();
-
-                // Change button to enable audio
-                startBtn.disabled = false;
-                startBtn.textContent = 'Tap to Enable Microphone';
-                startBtn.onclick = enableAudio;
-
-            } catch (err) {
-                motionStatus.textContent = 'Camera error: ' + err.message;
-                startBtn.textContent = 'Tap to try again';
-                startBtn.disabled = false;
-                console.error('Camera error:', err);
-            }
-        }
-
-        // Second step - enable audio (separate to not interrupt music immediately)
-        async function enableAudio() {
-            try {
-                startBtn.disabled = true;
-                startBtn.textContent = 'Enabling mic...';
-
-                // Get audio stream
-                const audioStream = await navigator.mediaDevices.getUserMedia({
-                    video: false,
-                    audio: {
-                        echoCancellation: false,
-                        noiseSuppression: false,
-                        autoGainControl: false
-                    }
-                });
-
-                // Combine video and audio tracks
-                const audioTrack = audioStream.getAudioTracks()[0];
-                videoStream.addTrack(audioTrack);
-
-                startBtn.style.display = 'none';
-                modeIndicator.textContent = 'Set phone down to start streaming';
-                motionStatus.textContent = 'Ready to stream';
-
-            } catch (err) {
-                motionStatus.textContent = 'Mic error: ' + err.message;
-                startBtn.textContent = 'Tap to try mic again';
-                startBtn.disabled = false;
-                console.error('Audio error:', err);
-            }
-        }
-
+        // Start streaming to YouTube
         async function startStreaming() {
-            const streamKey = localStorage.getItem('youtubeStreamKey');
-            const relayUrl = localStorage.getItem('relayServerUrl');
+            const key = localStorage.getItem('streamKey');
+            const relay = localStorage.getItem('relayUrl');
 
-            if (!streamKey || !relayUrl) {
-                modeIndicator.textContent = 'Missing settings - check below';
-                settingsSection.classList.add('visible');
+            if (!key || !relay) {
+                statusBadge.textContent = 'Missing settings';
+                settings.classList.add('visible');
                 return;
             }
 
             try {
-                modeIndicator.textContent = 'Connecting...';
+                statusBadge.textContent = 'Connecting...';
 
-                // Register stream with relay server
-                const httpUrl = relayUrl.replace('wss://', 'https://').replace('ws://', 'http://');
-                const response = await fetch(`${httpUrl}/start-stream`, {
+                // Register with relay
+                const http = relay.replace('wss://', 'https://').replace('ws://', 'http://');
+                await fetch(`${http}/start-stream`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ streamKey, clientId })
+                    body: JSON.stringify({ streamKey: key, clientId })
                 });
 
-                if (!response.ok) {
-                    throw new Error('Failed to connect to relay');
-                }
-
                 // Connect WebSocket
-                const wsUrl = `${relayUrl}?clientId=${clientId}`;
-                streamSocket = new WebSocket(wsUrl);
+                streamSocket = new WebSocket(`${relay}?clientId=${clientId}`);
 
                 streamSocket.onopen = () => {
-                    console.log('Connected to relay server');
-
-                    // Find a supported mimeType
+                    // Find supported format
                     let mimeType = '';
-                    if (MediaRecorder.isTypeSupported('video/webm;codecs=vp9,opus')) {
-                        mimeType = 'video/webm;codecs=vp9,opus';
-                    } else if (MediaRecorder.isTypeSupported('video/webm;codecs=vp8,opus')) {
-                        mimeType = 'video/webm;codecs=vp8,opus';
-                    } else if (MediaRecorder.isTypeSupported('video/webm')) {
-                        mimeType = 'video/webm';
-                    } else if (MediaRecorder.isTypeSupported('video/mp4')) {
-                        mimeType = 'video/mp4';
-                    }
+                    ['video/webm;codecs=vp9', 'video/webm;codecs=vp8', 'video/webm', 'video/mp4'].forEach(type => {
+                        if (!mimeType && MediaRecorder.isTypeSupported(type)) mimeType = type;
+                    });
 
-                    console.log('Using mimeType:', mimeType);
+                    const options = { videoBitsPerSecond: 2500000 };
+                    if (mimeType) options.mimeType = mimeType;
 
-                    // Start sending video
-                    const recorderOptions = { videoBitsPerSecond: 2500000 };
-                    if (mimeType) recorderOptions.mimeType = mimeType;
-
-                    streamMediaRecorder = new MediaRecorder(videoStream, recorderOptions);
-
-                    streamMediaRecorder.ondataavailable = (event) => {
-                        if (event.data.size > 0 && streamSocket.readyState === WebSocket.OPEN) {
-                            streamSocket.send(event.data);
+                    mediaRecorder = new MediaRecorder(videoStream, options);
+                    mediaRecorder.ondataavailable = (e) => {
+                        if (e.data.size > 0 && streamSocket.readyState === WebSocket.OPEN) {
+                            streamSocket.send(e.data);
                         }
                     };
+                    mediaRecorder.start(1000);
 
-                    streamMediaRecorder.start(1000);
                     isStreaming = true;
-                    streamingStartTime = Date.now();
+                    startTime = Date.now();
                     updateTimer();
 
-                    status.style.display = 'flex';
-                    modeIndicator.textContent = 'STREAMING LIVE';
-                    modeIndicator.className = 'mode-indicator live';
-                    motionStatus.textContent = 'LIVE';
-                    motionStatus.className = 'motion-status ready';
+                    statusBadge.textContent = 'LIVE';
+                    statusBadge.className = 'status-badge live';
+                    instructions.innerHTML = 'Streaming to YouTube!<br>Pick up phone to stop.';
+                    stopBtn.style.display = 'block';
                 };
 
                 streamSocket.onclose = () => {
-                    console.log('Disconnected from relay');
-                    if (isStreaming) {
-                        stopStreaming();
-                    }
+                    if (isStreaming) stopStreaming();
                 };
 
-                streamSocket.onerror = (error) => {
-                    console.error('WebSocket error:', error);
-                    modeIndicator.textContent = 'Connection error';
+                streamSocket.onerror = () => {
+                    statusBadge.textContent = 'Connection Error';
                 };
 
             } catch (err) {
-                console.error('Streaming error:', err);
-                modeIndicator.textContent = 'Error: ' + err.message;
+                console.error(err);
+                statusBadge.textContent = 'Error';
             }
         }
 
+        // Stop streaming
         async function stopStreaming() {
-            if (streamMediaRecorder && streamMediaRecorder.state !== 'inactive') {
-                streamMediaRecorder.stop();
+            if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+                mediaRecorder.stop();
             }
-
             if (streamSocket) {
                 streamSocket.close();
             }
 
-            // Notify relay server
-            const relayUrl = localStorage.getItem('relayServerUrl');
-            if (relayUrl) {
+            const relay = localStorage.getItem('relayUrl');
+            if (relay) {
                 try {
-                    const httpUrl = relayUrl.replace('wss://', 'https://').replace('ws://', 'http://');
-                    await fetch(`${httpUrl}/stop-stream`, {
+                    const http = relay.replace('wss://', 'https://').replace('ws://', 'http://');
+                    await fetch(`${http}/stop-stream`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ clientId })
                     });
-                } catch (err) {
-                    console.error('Error stopping stream:', err);
-                }
+                } catch (e) {}
             }
 
             isStreaming = false;
-            streamSocket = null;
-            streamMediaRecorder = null;
             clearInterval(timerInterval);
-
-            status.style.display = 'none';
-            modeIndicator.textContent = 'Stream ended - set phone down to restart';
-            modeIndicator.className = 'mode-indicator';
+            statusBadge.textContent = 'Stopped';
+            statusBadge.className = 'status-badge';
+            stopBtn.style.display = 'none';
             timer.textContent = '00:00';
         }
 
         function updateTimer() {
             timerInterval = setInterval(() => {
-                const elapsed = Math.floor((Date.now() - streamingStartTime) / 1000);
-                const minutes = Math.floor(elapsed / 60).toString().padStart(2, '0');
-                const seconds = (elapsed % 60).toString().padStart(2, '0');
-                timer.textContent = `${minutes}:${seconds}`;
+                const s = Math.floor((Date.now() - startTime) / 1000);
+                const m = Math.floor(s / 60).toString().padStart(2, '0');
+                const sec = (s % 60).toString().padStart(2, '0');
+                timer.textContent = `${m}:${sec}`;
             }, 1000);
         }
 
-        // Initialize on load
-        window.addEventListener('load', () => {
-            loadSettings();
-            motionStatus.textContent = 'Tap button to start';
-
-            // Button tap triggers everything (required for iOS permissions)
-            startBtn.addEventListener('click', () => {
-                console.log('Button clicked!');
-                initCamera();
-            });
-        });
+        // Init
+        window.onload = loadSettings;
     </script>
 </body>
 </html>
