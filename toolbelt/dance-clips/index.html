@@ -30,7 +30,9 @@
         // =====================
         const CLIENT_ID = '129984821928-u6iqasj284ffcmkh15on4gsnbbah7pvo.apps.googleusercontent.com';
         const SCOPES = 'https://www.googleapis.com/auth/youtube';
-        const REDIRECT_URI = window.location.origin + window.location.pathname;
+        // Remove index.html from pathname to match OAuth config
+        const pathname = window.location.pathname.replace(/index\.html$/, '');
+        const REDIRECT_URI = window.location.origin + pathname;
         const DEFAULT_RELAY = 'wss://dance.danyelica.fish';
 
         // =====================
