@@ -312,8 +312,17 @@
                     mediaRecorder.start(1000);
 
                     isStreaming = true;
-                    setLive(true); // GREEN immediately - stream is flowing
-                    console.log('Streaming started!');
+                    console.log('Streaming started, waiting for YouTube to confirm...');
+
+                    // Wait for YouTube to confirm stream is active before turning green
+                    const isActive = await waitForStreamActive(60000); // 60 second timeout
+                    if (isActive) {
+                        setLive(true); // GREEN - YouTube confirmed receiving video
+                        console.log('Stream is LIVE on YouTube!');
+                    } else {
+                        console.log('Stream active timeout - turning green anyway');
+                        setLive(true); // Turn green after timeout regardless
+                    }
                 };
 
                 streamSocket.onclose = () => {
