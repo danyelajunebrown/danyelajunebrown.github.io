@@ -312,18 +312,8 @@
                     mediaRecorder.start(1000);
 
                     isStreaming = true;
-                    console.log('Sending video data, waiting for YouTube to confirm...');
-
-                    // Wait for YouTube to confirm stream is active before turning green
-                    const isActive = await waitForStreamActive();
-                    if (isActive) {
-                        setLive(true); // GREEN - YouTube confirmed receiving video
-                        console.log('Stream is LIVE on YouTube!');
-                    } else {
-                        console.log('Stream did not become active in time');
-                        // Keep streaming anyway, might still work
-                        setLive(true);
-                    }
+                    setLive(true); // GREEN immediately - stream is flowing
+                    console.log('Streaming started!');
                 };
 
                 streamSocket.onclose = () => {
