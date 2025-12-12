@@ -1,0 +1,554 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Audio Capture Test Harness</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            padding: 20px;
+            background: #1a1a1a;
+            color: #fff;
+        }
+        .container { max-width: 800px; margin: 0 auto; }
+        h1 { margin-bottom: 20px; color: #4ade80; }
+        .test-section {
+            background: #2a2a2a;
+            padding: 20px;
+            margin-bottom: 20px;
+            border-radius: 8px;
+            border-left: 4px solid #4ade80;
+        }
+        .test-section.testing { border-left-color: #fbbf24; }
+        .test-section.success { border-left-color: #10b981; }
+        .test-section.failed { border-left-color: #ef4444; }
+        
+        button {
+            background: #4ade80;
+            color: #000;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            font-weight: 600;
+            cursor: pointer;
+            margin-right: 10px;
+            margin-bottom: 10px;
+        }
+        button:disabled {
+            background: #666;
+            cursor: not-allowed;
+        }
+        button.danger {
+            background: #ef4444;
+        }
+        
+        .log {
+            background: #000;
+            padding: 15px;
+            border-radius: 6px;
+            margin-top: 10px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .log-entry {
+            margin-bottom: 5px;
+            padding: 4px;
+        }
+        .log-info { color: #60a5fa; }
+        .log-success { color: #10b981; }
+        .log-error { color: #ef4444; }
+        .log-warning { color: #fbbf24; }
+        
+        .result-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 600;
+            margin-left: 10px;
+        }
+        .result-pending { background: #666; }
+        .result-testing { background: #fbbf24; color: #000; }
+        .result-success { background: #10b981; color: #000; }
+        .result-failed { background: #ef4444; }
+        
+        .instructions {
+            background: #1e40af;
+            padding: 15px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+        }
+        .instructions h3 { margin-bottom: 10px; color: #fff; }
+        .instructions ol { margin-left: 20px; }
+        .instructions li { margin-bottom: 5px; }
+        
+        .status-indicator {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+        .status-idle { background: #666; }
+        .status-active { background: #10b981; }
+        .status-error { background: #ef4444; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎵 Audio Capture Test Harness</h1>
+        
+        <div class="instructions">
+            <h3>📋 Testing Instructions</h3>
+            <ol>
+                <li><strong>Start your music app</strong> (Spotify, Apple Music, etc.)</li>
+                <li><strong>Play a song</strong> - make sure it's audible on your phone</li>
+                <li><strong>Click each test button below</strong> - one at a time</li>
+                <li><strong>Report if music continues or stops</strong> for each test</li>
+                <li>Tests will automatically log results below</li>
+            </ol>
+        </div>
+
+        <div class="test-section" id="test1a">
+            <h2>
+                Test 1A: Simultaneous Video + Audio Request
+                <span class="result-badge result-pending" id="test1a-badge">Pending</span>
+            </h2>
+            <p>Request video and audio together in single getUserMedia call</p>
+            <button onclick="runTest1A()">Run Test 1A</button>
+            <button onclick="stopTest()" class="danger">Stop</button>
+            <div class="log" id="test1a-log"></div>
+        </div>
+
+        <div class="test-section" id="test1b">
+            <h2>
+                Test 1B: Audio with Minimal Processing
+                <span class="result-badge result-pending" id="test1b-badge">Pending</span>
+            </h2>
+            <p>Request audio with all processing disabled (no echo cancellation, AGC, etc.)</p>
+            <button onclick="runTest1B()">Run Test 1B</button>
+            <button onclick="stopTest()" class="danger">Stop</button>
+            <div class="log" id="test1b-log"></div>
+        </div>
+
+        <div class="test-section" id="test1c">
+            <h2>
+                Test 1C: Delayed Audio Request
+                <span class="result-badge result-pending" id="test1c-badge">Pending</span>
+            </h2>
+            <p>Request video first, wait 5 seconds, then request audio separately</p>
+            <button onclick="runTest1C()">Run Test 1C</button>
+            <button onclick="stopTest()" class="danger">Stop</button>
+            <div class="log" id="test1c-log"></div>
+        </div>
+
+        <div class="test-section" id="test2a">
+            <h2>
+                Test 2A: Display Capture API
+                <span class="result-badge result-pending" id="test2a-badge">Pending</span>
+            </h2>
+            <p>Try getDisplayMedia for screen/audio capture</p>
+            <button onclick="runTest2A()">Run Test 2A</button>
+            <button onclick="stopTest()" class="danger">Stop</button>
+            <div class="log" id="test2a-log"></div>
+        </div>
+
+        <div class="test-section" id="test2b">
+            <h2>
+                Test 2B: Dual Stream (Video + Display Audio)
+                <span class="result-badge result-pending" id="test2b-badge">Pending</span>
+            </h2>
+            <p>Camera video + display capture audio, merged</p>
+            <button onclick="runTest2B()">Run Test 2B</button>
+            <button onclick="stopTest()" class="danger">Stop</button>
+            <div class="log" id="test2b-log"></div>
+        </div>
+
+        <div class="test-section" id="test3a">
+            <h2>
+                Test 3A: Web Audio API Routing
+                <span class="result-badge result-pending" id="test3a-badge">Pending</span>
+            </h2>
+            <p>Capture audio through Web Audio API with custom routing</p>
+            <button onclick="runTest3A()">Run Test 3A</button>
+            <button onclick="stopTest()" class="danger">Stop</button>
+            <div class="log" id="test3a-log"></div>
+        </div>
+
+        <div class="test-section" id="test4a">
+            <h2>
+                Test 4A: Audio with Voice Processing
+                <span class="result-badge result-pending" id="test4a-badge">Pending</span>
+            </h2>
+            <p>Test if voice processing mode affects music playback</p>
+            <button onclick="runTest4A()">Run Test 4A</button>
+            <button onclick="stopTest()" class="danger">Stop</button>
+            <div class="log" id="test4a-log"></div>
+        </div>
+
+        <div class="test-section" id="test5a">
+            <h2>
+                Test 5A: Background Mode Request
+                <span class="result-badge result-pending" id="test5a-badge">Pending</span>
+            </h2>
+            <p>Request microphone with background audio compatibility hints</p>
+            <button onclick="runTest5A()">Run Test 5A</button>
+            <button onclick="stopTest()" class="danger">Stop</button>
+            <div class="log" id="test5a-log"></div>
+        </div>
+
+        <div class="instructions" style="background: #065f46; margin-top: 30px;">
+            <h3>📊 Report Results</h3>
+            <p><strong>For each test, note:</strong></p>
+            <ol>
+                <li>Did background music continue playing? (YES/NO)</li>
+                <li>Did the test capture audio successfully? (check logs)</li>
+                <li>Any error messages in the logs?</li>
+            </ol>
+            <p style="margin-top: 10px;">Copy all logs and report back which tests (if any) kept music playing!</p>
+        </div>
+    </div>
+
+    <script>
+        let currentStream = null;
+        let currentTest = null;
+
+        function log(testId, message, type = 'info') {
+            const logDiv = document.getElementById(`${testId}-log`);
+            const entry = document.createElement('div');
+            entry.className = `log-entry log-${type}`;
+            entry.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+            logDiv.appendChild(entry);
+            logDiv.scrollTop = logDiv.scrollHeight;
+            console.log(`[${testId}] ${message}`);
+        }
+
+        function updateBadge(testId, status) {
+            const badge = document.getElementById(`${testId}-badge`);
+            badge.className = `result-badge result-${status}`;
+            badge.textContent = status.charAt(0).toUpperCase() + status.slice(1);
+        }
+
+        function stopTest() {
+            if (currentStream) {
+                currentStream.getTracks().forEach(track => track.stop());
+                currentStream = null;
+            }
+            if (currentTest) {
+                log(currentTest, 'Test stopped by user', 'warning');
+            }
+        }
+
+        // TEST 1A: Simultaneous Video + Audio
+        async function runTest1A() {
+            const testId = 'test1a';
+            currentTest = testId;
+            updateBadge(testId, 'testing');
+            
+            try {
+                log(testId, '🎬 Starting Test 1A: Simultaneous video + audio request', 'info');
+                log(testId, '❓ Did your music stop playing? Check now!', 'warning');
+                
+                const stream = await navigator.mediaDevices.getUserMedia({
+                    video: { facingMode: 'user', width: 1280, height: 720 },
+                    audio: true
+                });
+                
+                currentStream = stream;
+                
+                const videoTracks = stream.getVideoTracks();
+                const audioTracks = stream.getAudioTracks();
+                
+                log(testId, `✅ SUCCESS: Got ${videoTracks.length} video track(s)`, 'success');
+                log(testId, `✅ SUCCESS: Got ${audioTracks.length} audio track(s)`, 'success');
+                
+                if (audioTracks.length > 0) {
+                    const settings = audioTracks[0].getSettings();
+                    log(testId, `🎤 Audio settings: ${JSON.stringify(settings)}`, 'info');
+                }
+                
+                log(testId, '⚠️ CRITICAL: Is your background music STILL PLAYING?', 'warning');
+                log(testId, 'If YES = Test PASSED! If NO = Test FAILED', 'warning');
+                
+                updateBadge(testId, 'success');
+                
+            } catch (error) {
+                log(testId, `❌ ERROR: ${error.message}`, 'error');
+                log(testId, `Error name: ${error.name}`, 'error');
+                updateBadge(testId, 'failed');
+            }
+        }
+
+        // TEST 1B: Audio with Minimal Processing
+        async function runTest1B() {
+            const testId = 'test1b';
+            currentTest = testId;
+            updateBadge(testId, 'testing');
+            
+            try {
+                log(testId, '🎬 Starting Test 1B: Audio with minimal processing', 'info');
+                log(testId, '❓ Did your music stop playing? Check now!', 'warning');
+                
+                const stream = await navigator.mediaDevices.getUserMedia({
+                    video: { facingMode: 'user', width: 1280, height: 720 },
+                    audio: {
+                        echoCancellation: false,
+                        autoGainControl: false,
+                        noiseSuppression: false,
+                        sampleRate: 44100
+                    }
+                });
+                
+                currentStream = stream;
+                
+                const audioTracks = stream.getAudioTracks();
+                log(testId, `✅ SUCCESS: Got ${audioTracks.length} audio track(s)`, 'success');
+                
+                if (audioTracks.length > 0) {
+                    const settings = audioTracks[0].getSettings();
+                    log(testId, `🎤 Audio settings: ${JSON.stringify(settings)}`, 'info');
+                }
+                
+                log(testId, '⚠️ CRITICAL: Is your background music STILL PLAYING?', 'warning');
+                updateBadge(testId, 'success');
+                
+            } catch (error) {
+                log(testId, `❌ ERROR: ${error.message}`, 'error');
+                updateBadge(testId, 'failed');
+            }
+        }
+
+        // TEST 1C: Delayed Audio Request
+        async function runTest1C() {
+            const testId = 'test1c';
+            currentTest = testId;
+            updateBadge(testId, 'testing');
+            
+            try {
+                log(testId, '🎬 Starting Test 1C: Delayed audio request', 'info');
+                log(testId, 'Step 1: Requesting VIDEO only...', 'info');
+                
+                const videoStream = await navigator.mediaDevices.getUserMedia({
+                    video: { facingMode: 'user', width: 1280, height: 720 },
+                    audio: false
+                });
+                
+                log(testId, '✅ Video stream obtained', 'success');
+                log(testId, '⏳ Waiting 5 seconds before requesting audio...', 'info');
+                
+                await new Promise(resolve => setTimeout(resolve, 5000));
+                
+                log(testId, 'Step 2: Now requesting AUDIO...', 'info');
+                log(testId, '❓ Did your music stop playing NOW? Check!', 'warning');
+                
+                const audioStream = await navigator.mediaDevices.getUserMedia({
+                    audio: true
+                });
+                
+                currentStream = new MediaStream([
+                    ...videoStream.getVideoTracks(),
+                    ...audioStream.getAudioTracks()
+                ]);
+                
+                log(testId, '✅ Audio stream obtained', 'success');
+                log(testId, '⚠️ CRITICAL: Is your background music STILL PLAYING?', 'warning');
+                updateBadge(testId, 'success');
+                
+            } catch (error) {
+                log(testId, `❌ ERROR: ${error.message}`, 'error');
+                updateBadge(testId, 'failed');
+            }
+        }
+
+        // TEST 2A: Display Capture API
+        async function runTest2A() {
+            const testId = 'test2a';
+            currentTest = testId;
+            updateBadge(testId, 'testing');
+            
+            try {
+                log(testId, '🎬 Starting Test 2A: Display Capture API', 'info');
+                log(testId, 'Note: May not be supported on iOS Safari', 'warning');
+                
+                if (!navigator.mediaDevices.getDisplayMedia) {
+                    throw new Error('getDisplayMedia not supported on this browser');
+                }
+                
+                log(testId, '❓ Did your music stop playing? Check now!', 'warning');
+                
+                const stream = await navigator.mediaDevices.getDisplayMedia({
+                    video: true,
+                    audio: true
+                });
+                
+                currentStream = stream;
+                
+                const audioTracks = stream.getAudioTracks();
+                log(testId, `✅ Got ${audioTracks.length} audio track(s)`, 'success');
+                log(testId, '⚠️ CRITICAL: Is your background music STILL PLAYING?', 'warning');
+                updateBadge(testId, 'success');
+                
+            } catch (error) {
+                log(testId, `❌ ERROR: ${error.message}`, 'error');
+                log(testId, 'This API may not be available on iOS', 'warning');
+                updateBadge(testId, 'failed');
+            }
+        }
+
+        // TEST 2B: Dual Stream
+        async function runTest2B() {
+            const testId = 'test2b';
+            currentTest = testId;
+            updateBadge(testId, 'testing');
+            
+            try {
+                log(testId, '🎬 Starting Test 2B: Dual Stream', 'info');
+                log(testId, 'Getting camera video...', 'info');
+                
+                const videoStream = await navigator.mediaDevices.getUserMedia({
+                    video: true,
+                    audio: false
+                });
+                
+                log(testId, '✅ Video stream obtained', 'success');
+                
+                if (!navigator.mediaDevices.getDisplayMedia) {
+                    throw new Error('getDisplayMedia not supported');
+                }
+                
+                log(testId, 'Getting display audio...', 'info');
+                log(testId, '❓ Did your music stop playing? Check now!', 'warning');
+                
+                const displayStream = await navigator.mediaDevices.getDisplayMedia({
+                    video: false,
+                    audio: true
+                });
+                
+                currentStream = new MediaStream([
+                    ...videoStream.getVideoTracks(),
+                    ...displayStream.getAudioTracks()
+                ]);
+                
+                log(testId, '✅ Merged video + display audio', 'success');
+                log(testId, '⚠️ CRITICAL: Is your background music STILL PLAYING?', 'warning');
+                updateBadge(testId, 'success');
+                
+            } catch (error) {
+                log(testId, `❌ ERROR: ${error.message}`, 'error');
+                updateBadge(testId, 'failed');
+            }
+        }
+
+        // TEST 3A: Web Audio API
+        async function runTest3A() {
+            const testId = 'test3a';
+            currentTest = testId;
+            updateBadge(testId, 'testing');
+            
+            try {
+                log(testId, '🎬 Starting Test 3A: Web Audio API Routing', 'info');
+                log(testId, '❓ Did your music stop playing? Check now!', 'warning');
+                
+                const stream = await navigator.mediaDevices.getUserMedia({
+                    video: true,
+                    audio: true
+                });
+                
+                const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                const source = audioContext.createMediaStreamSource(stream);
+                const destination = audioContext.createMediaStreamDestination();
+                
+                source.connect(destination);
+                
+                currentStream = new MediaStream([
+                    ...stream.getVideoTracks(),
+                    ...destination.stream.getAudioTracks()
+                ]);
+                
+                log(testId, '✅ Web Audio routing established', 'success');
+                log(testId, '⚠️ CRITICAL: Is your background music STILL PLAYING?', 'warning');
+                updateBadge(testId, 'success');
+                
+            } catch (error) {
+                log(testId, `❌ ERROR: ${error.message}`, 'error');
+                updateBadge(testId, 'failed');
+            }
+        }
+
+        // TEST 4A: Voice Processing
+        async function runTest4A() {
+            const testId = 'test4a';
+            currentTest = testId;
+            updateBadge(testId, 'testing');
+            
+            try {
+                log(testId, '🎬 Starting Test 4A: Voice Processing Mode', 'info');
+                log(testId, '❓ Did your music stop playing? Check now!', 'warning');
+                
+                const stream = await navigator.mediaDevices.getUserMedia({
+                    video: true,
+                    audio: {
+                        echoCancellation: true,
+                        autoGainControl: true,
+                        noiseSuppression: true,
+                        voiceIsolation: true
+                    }
+                });
+                
+                currentStream = stream;
+                log(testId, '✅ Audio with voice processing obtained', 'success');
+                log(testId, '⚠️ CRITICAL: Is your background music STILL PLAYING?', 'warning');
+                updateBadge(testId, 'success');
+                
+            } catch (error) {
+                log(testId, `❌ ERROR: ${error.message}`, 'error');
+                updateBadge(testId, 'failed');
+            }
+        }
+
+        // TEST 5A: Background Mode
+        async function runTest5A() {
+            const testId = 'test5a';
+            currentTest = testId;
+            updateBadge(testId, 'testing');
+            
+            try {
+                log(testId, '🎬 Starting Test 5A: Background Mode Request', 'info');
+                log(testId, '❓ Did your music stop playing? Check now!', 'warning');
+                
+                const stream = await navigator.mediaDevices.getUserMedia({
+                    video: true,
+                    audio: {
+                        channelCount: 2,
+                        sampleRate: 44100,
+                        latency: 0,
+                        echoCancellation: false,
+                        autoGainControl: false,
+                        noiseSuppression: false
+                    }
+                });
+                
+                currentStream = stream;
+                log(testId, '✅ Audio stream obtained', 'success');
+                log(testId, '⚠️ CRITICAL: Is your background music STILL PLAYING?', 'warning');
+                updateBadge(testId, 'success');
+                
+            } catch (error) {
+                log(testId, `❌ ERROR: ${error.message}`, 'error');
+                updateBadge(testId, 'failed');
+            }
+        }
+
+        // Auto-log initial state
+        window.onload = () => {
+            console.log('🎵 Audio Capture Test Harness Ready');
+            console.log('📱 User Agent:', navigator.userAgent);
+            console.log('🌐 Platform:', navigator.platform);
+        };
+    </script>
+</body>
+</html>
