@@ -1863,43 +1863,77 @@
         async function downloadDiaryCardPDF() {
             const pdfBtn = document.getElementById('pdfBtn');
             const reportText = document.getElementById('reportText');
-            
+
             const originalText = pdfBtn.textContent;
             pdfBtn.textContent = 'Generating...';
             pdfBtn.disabled = true;
             reportText.classList.add('pdf-generating');
-            
+
             try {
+                // Check if libraries are loaded
+                if (typeof html2canvas !== 'function') {
+                    throw new Error('html2canvas library not loaded');
+                }
+                if (!window.jspdf || !window.jspdf.jsPDF) {
+                    throw new Error('jsPDF library not loaded');
+                }
+
                 const canvas = await html2canvas(reportText, {
                     scale: 2,
                     useCORS: true,
                     logging: false,
-                    backgroundColor: '#ffffff'
+                    backgroundColor: '#ffffff',
+                    allowTaint: true
                 });
-                
+
                 const { jsPDF } = window.jspdf;
-                
+
                 const imgWidth = 210;
                 const imgHeight = (canvas.height * imgWidth) / canvas.width;
-                
+
+                // Use landscape if content is wider than tall, otherwise portrait
+                const orientation = imgHeight > 297 ? 'portrait' : 'landscape';
+                const pageHeight = orientation === 'portrait' ? 297 : 210;
+                const pageWidth = orientation === 'portrait' ? 210 : 297;
+
                 const pdf = new jsPDF({
-                    orientation: imgHeight > imgWidth ? 'portrait' : 'landscape',
+                    orientation: orientation,
                     unit: 'mm',
                     format: 'a4'
                 });
-                
-                const imgData = canvas.toDataURL('image/png');
-                pdf.addImage(imgData, 'PNG', 0, 0, imgWidth, imgHeight);
-                
+
+                const imgData = canvas.toDataURL('image/png', 1.0);
+
+                // Scale to fit page width while maintaining aspect ratio
+                const scaledWidth = pageWidth;
+                const scaledHeight = (canvas.height * scaledWidth) / canvas.width;
+
+                pdf.addImage(imgData, 'PNG', 0, 0, scaledWidth, scaledHeight);
+
                 const today = new Date();
                 const filename = `DBT_Diary_Card_${today.getFullYear()}-${(today.getMonth()+1).toString().padStart(2,'0')}-${today.getDate().toString().padStart(2,'0')}.pdf`;
-                
-                pdf.save(filename);
-                
+
+                // Use blob-based download for better browser compatibility
+                const pdfBlob = pdf.output('blob');
+                const blobUrl = URL.createObjectURL(pdfBlob);
+
+                const downloadLink = document.createElement('a');
+                downloadLink.href = blobUrl;
+                downloadLink.download = filename;
+                downloadLink.style.display = 'none';
+                document.body.appendChild(downloadLink);
+                downloadLink.click();
+
+                // Cleanup after a short delay
+                setTimeout(() => {
+                    document.body.removeChild(downloadLink);
+                    URL.revokeObjectURL(blobUrl);
+                }, 100);
+
                 showSuccess('PDF downloaded successfully!');
             } catch (error) {
                 console.error('Error generating PDF:', error);
-                showError('Error generating PDF. Please try again.');
+                showError('Error generating PDF: ' + error.message);
             } finally {
                 pdfBtn.textContent = originalText;
                 pdfBtn.disabled = false;
