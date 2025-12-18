@@ -206,13 +206,25 @@ async function handleFileUpload(file) {
     uploadStatus.textContent = 'Uploading...';
 
     try {
+        // Get file's last modified date as recorded_at timestamp
+        const recordedAt = file.lastModified
+            ? new Date(file.lastModified).toISOString()
+            : null;
+
         // Create interview record
         const { data: interview, error: dbError } = await db
             .from('interviews')
             .insert({
                 title: file.name.replace(/\.[^/.]+$/, ''),
                 uploaded_by: currentUser.id,
-                processing_status: 'uploaded'
+                processing_status: 'uploaded',
+                recorded_at: recordedAt,
+                metadata: {
+                    original_filename: file.name,
+                    file_size: file.size,
+                    file_type: file.type,
+                    file_last_modified: recordedAt
+                }
             })
             .select()
             .single();
