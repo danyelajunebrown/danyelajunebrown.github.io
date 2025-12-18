@@ -7,9 +7,9 @@ const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
 // Initialize Supabase client
 const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-// API Keys (store securely - these are placeholders)
+// API Keys
 const CONFIG = {
-    DEEPGRAM_API_KEY: 'YOUR_DEEPGRAM_API_KEY', // Only used in Edge Functions
+    DEEPGRAM_API_KEY: 'cb855c7cd17d16a8db5ba55bb242e5123e1ff5e7',
     SENDGRID_API_KEY: 'YOUR_SENDGRID_API_KEY', // Only used in Edge Functions
     STUDY_LEAD_EMAIL: 'YOUR_EMAIL@example.com'
 };
