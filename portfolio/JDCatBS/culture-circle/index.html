@@ -1,0 +1,740 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Service Culture Circle - Admin</title>
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            background: #000;
+            font-family: 'Courier New', monospace;
+            color: #fff;
+            min-height: 100vh;
+        }
+
+        /* Auth Screen */
+        #authScreen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: #000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+        }
+        #authScreen.hidden { display: none; }
+        .authBox {
+            text-align: center;
+            max-width: 350px;
+            padding: 30px;
+        }
+        .authBox h1 {
+            color: #9370DB;
+            font-size: 14px;
+            letter-spacing: 3px;
+            margin-bottom: 10px;
+        }
+        .authBox h2 {
+            color: #9370DB;
+            font-size: 20px;
+            margin-bottom: 30px;
+        }
+        .authBox input {
+            width: 100%;
+            padding: 12px;
+            margin-bottom: 10px;
+            background: #1a1a1a;
+            border: 1px solid #333;
+            color: #fff;
+            font-family: inherit;
+        }
+        .authBox input:focus {
+            outline: none;
+            border-color: #9370DB;
+        }
+        .authBox button {
+            width: 100%;
+            padding: 12px;
+            background: #9370DB;
+            border: none;
+            color: #fff;
+            cursor: pointer;
+            font-family: inherit;
+            font-size: 14px;
+            letter-spacing: 1px;
+        }
+        .authBox button:hover {
+            background: #7a5dc7;
+        }
+        .authBox .error {
+            color: #f44336;
+            font-size: 12px;
+            margin-top: 10px;
+        }
+
+        /* Main Container */
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        /* Header */
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 0;
+            border-bottom: 1px solid #333;
+            margin-bottom: 30px;
+        }
+        header h1 {
+            color: #9370DB;
+            font-size: 16px;
+            letter-spacing: 2px;
+        }
+        header .user-info {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        header .user-email {
+            color: #888;
+            font-size: 12px;
+        }
+        #logoutBtn {
+            padding: 8px 16px;
+            background: transparent;
+            border: 1px solid #444;
+            color: #888;
+            cursor: pointer;
+            font-family: inherit;
+            font-size: 12px;
+        }
+        #logoutBtn:hover {
+            border-color: #666;
+            color: #fff;
+        }
+
+        /* Navigation Tabs */
+        .tabs {
+            display: flex;
+            gap: 0;
+            margin-bottom: 30px;
+            border-bottom: 1px solid #333;
+        }
+        .tab {
+            padding: 12px 24px;
+            background: transparent;
+            border: none;
+            color: #888;
+            cursor: pointer;
+            font-family: inherit;
+            font-size: 13px;
+            letter-spacing: 1px;
+            border-bottom: 2px solid transparent;
+            margin-bottom: -1px;
+        }
+        .tab:hover {
+            color: #fff;
+        }
+        .tab.active {
+            color: #9370DB;
+            border-bottom-color: #9370DB;
+        }
+
+        /* Tab Content */
+        .tab-content {
+            display: none;
+        }
+        .tab-content.active {
+            display: block;
+        }
+
+        /* Cards */
+        .card {
+            background: #1a1a1a;
+            border: 1px solid #333;
+            border-radius: 4px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        .card h2 {
+            color: #9370DB;
+            font-size: 14px;
+            letter-spacing: 1px;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #333;
+        }
+        .card h3 {
+            color: #fff;
+            font-size: 13px;
+            margin-bottom: 10px;
+        }
+
+        /* Upload Zone */
+        .drop-zone {
+            border: 2px dashed #444;
+            border-radius: 4px;
+            padding: 40px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .drop-zone:hover, .drop-zone.dragover {
+            border-color: #9370DB;
+            background: rgba(147, 112, 219, 0.1);
+        }
+        .drop-zone p {
+            color: #888;
+            margin-bottom: 10px;
+        }
+        .drop-zone .hint {
+            font-size: 11px;
+            color: #666;
+        }
+
+        /* Progress Bar */
+        .progress-container {
+            margin-top: 20px;
+        }
+        .progress-bar {
+            height: 4px;
+            background: #333;
+            border-radius: 2px;
+            overflow: hidden;
+        }
+        .progress-fill {
+            height: 100%;
+            background: #9370DB;
+            width: 0%;
+            transition: width 0.3s;
+        }
+        .progress-status {
+            font-size: 12px;
+            color: #888;
+            margin-top: 10px;
+        }
+
+        /* Interview List */
+        .interview-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px;
+            background: #0a0a0a;
+            border: 1px solid #333;
+            border-radius: 4px;
+            margin-bottom: 10px;
+        }
+        .interview-item:hover {
+            border-color: #444;
+        }
+        .interview-info h4 {
+            color: #fff;
+            font-size: 13px;
+            margin-bottom: 5px;
+        }
+        .interview-info .meta {
+            color: #666;
+            font-size: 11px;
+        }
+        .interview-actions {
+            display: flex;
+            gap: 10px;
+        }
+        .status-badge {
+            padding: 4px 10px;
+            border-radius: 3px;
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        .status-pending { background: #3d3d00; color: #ffeb3b; }
+        .status-transcribing { background: #1a237e; color: #7986cb; }
+        .status-review { background: #4a148c; color: #ce93d8; }
+        .status-completed { background: #1b5e20; color: #81c784; }
+        .status-failed { background: #b71c1c; color: #ef9a9a; }
+
+        /* Buttons */
+        .btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+            font-family: inherit;
+            font-size: 12px;
+        }
+        .btn-primary {
+            background: #9370DB;
+            color: #fff;
+        }
+        .btn-primary:hover {
+            background: #7a5dc7;
+        }
+        .btn-secondary {
+            background: #2a2a2a;
+            color: #fff;
+            border: 1px solid #444;
+        }
+        .btn-secondary:hover {
+            background: #333;
+        }
+        .btn-danger {
+            background: #c62828;
+            color: #fff;
+        }
+        .btn-danger:hover {
+            background: #b71c1c;
+        }
+
+        /* Modal */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(0, 0, 0, 0.8);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+        .modal-overlay.hidden { display: none; }
+        .modal {
+            background: #1a1a1a;
+            border: 1px solid #333;
+            border-radius: 4px;
+            max-width: 800px;
+            width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+        .modal-header {
+            padding: 20px;
+            border-bottom: 1px solid #333;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .modal-header h2 {
+            color: #9370DB;
+            font-size: 14px;
+        }
+        .modal-close {
+            background: none;
+            border: none;
+            color: #888;
+            font-size: 20px;
+            cursor: pointer;
+        }
+        .modal-close:hover { color: #fff; }
+        .modal-body {
+            padding: 20px;
+        }
+
+        /* Speaker Tagging */
+        .speaker-section {
+            margin-bottom: 25px;
+            padding: 15px;
+            background: #0a0a0a;
+            border: 1px solid #333;
+            border-radius: 4px;
+        }
+        .speaker-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        .speaker-label {
+            color: #9370DB;
+            font-size: 13px;
+        }
+        .segment-count {
+            color: #666;
+            font-size: 11px;
+        }
+        .suggestions {
+            margin-bottom: 15px;
+        }
+        .suggestions p {
+            color: #888;
+            font-size: 11px;
+            margin-bottom: 8px;
+        }
+        .suggestion-btn {
+            display: inline-block;
+            padding: 6px 12px;
+            margin-right: 8px;
+            margin-bottom: 8px;
+            background: #2a2a2a;
+            border: 1px solid #444;
+            border-radius: 3px;
+            color: #fff;
+            cursor: pointer;
+            font-family: inherit;
+            font-size: 11px;
+        }
+        .suggestion-btn:hover {
+            border-color: #9370DB;
+        }
+        .suggestion-btn.selected {
+            background: #9370DB;
+            border-color: #9370DB;
+        }
+        .match-score {
+            color: #81c784;
+            margin-left: 5px;
+        }
+        .manual-assign {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+        .manual-assign select {
+            flex: 1;
+            padding: 8px;
+            background: #2a2a2a;
+            border: 1px solid #444;
+            color: #fff;
+            font-family: inherit;
+        }
+        .new-participant-form {
+            margin-top: 15px;
+            padding: 15px;
+            background: #1a1a1a;
+            border: 1px solid #444;
+            border-radius: 4px;
+        }
+        .new-participant-form.hidden { display: none; }
+        .new-participant-form input {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 10px;
+            background: #2a2a2a;
+            border: 1px solid #444;
+            color: #fff;
+            font-family: inherit;
+        }
+        .form-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        /* Transcript Preview */
+        .transcript-preview {
+            margin-top: 20px;
+            max-height: 300px;
+            overflow-y: auto;
+            border: 1px solid #333;
+            border-radius: 4px;
+        }
+        .segment {
+            padding: 12px 15px;
+            border-bottom: 1px solid #333;
+        }
+        .segment:last-child { border-bottom: none; }
+        .segment .speaker-badge {
+            display: inline-block;
+            padding: 2px 8px;
+            background: #9370DB;
+            border-radius: 3px;
+            font-size: 10px;
+            margin-right: 10px;
+        }
+        .segment .timestamp {
+            color: #666;
+            font-size: 11px;
+        }
+        .segment p {
+            margin-top: 8px;
+            color: #ccc;
+            font-size: 13px;
+            line-height: 1.5;
+        }
+
+        /* Participants Table */
+        .participants-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .participants-table th,
+        .participants-table td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #333;
+        }
+        .participants-table th {
+            color: #888;
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        .participants-table td {
+            font-size: 13px;
+        }
+        .participants-table tr:hover td {
+            background: #0a0a0a;
+        }
+
+        /* Audit Log */
+        .audit-filters {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        .audit-filters select,
+        .audit-filters input {
+            padding: 8px 12px;
+            background: #2a2a2a;
+            border: 1px solid #444;
+            color: #fff;
+            font-family: inherit;
+        }
+        .audit-entry {
+            padding: 12px;
+            background: #0a0a0a;
+            border: 1px solid #333;
+            border-radius: 4px;
+            margin-bottom: 8px;
+            font-size: 12px;
+        }
+        .audit-entry .timestamp {
+            color: #666;
+        }
+        .audit-entry .action {
+            color: #9370DB;
+            margin: 0 10px;
+        }
+        .audit-entry .details {
+            color: #888;
+            margin-top: 5px;
+        }
+
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+        }
+        .empty-state p {
+            margin-bottom: 15px;
+        }
+
+        /* Back Link */
+        .back-link {
+            display: inline-block;
+            margin-bottom: 20px;
+            color: #9370DB;
+            text-decoration: none;
+            font-size: 12px;
+        }
+        .back-link:hover {
+            text-decoration: underline;
+        }
+
+        .hidden { display: none !important; }
+    </style>
+</head>
+<body>
+    <!-- Auth Screen -->
+    <div id="authScreen">
+        <div class="authBox">
+            <h1>JOHN D. CONQUER & THE BIG STICK</h1>
+            <h2>Service Culture Circle</h2>
+            <p style="color: #888; margin-bottom: 20px; font-size: 12px;">Study Lead Access</p>
+            <input type="email" id="emailInput" placeholder="Email" />
+            <input type="password" id="passInput" placeholder="Password" />
+            <button id="authBtn">ACCESS</button>
+            <p id="authError" class="error"></p>
+            <p style="color: #666; font-size: 11px; margin-top: 20px;">
+                First time? <a href="#" id="signUpLink" style="color: #9370DB;">Create account</a>
+            </p>
+        </div>
+    </div>
+
+    <!-- Main App -->
+    <div id="mainApp" class="hidden">
+        <div class="container">
+            <a href="../index.html" class="back-link">&larr; BACK TO MAP</a>
+
+            <header>
+                <h1>SERVICE CULTURE CIRCLE</h1>
+                <div class="user-info">
+                    <span id="userEmail" class="user-email"></span>
+                    <button id="logoutBtn">LOGOUT</button>
+                </div>
+            </header>
+
+            <!-- Tabs -->
+            <div class="tabs">
+                <button class="tab active" data-tab="interviews">INTERVIEWS</button>
+                <button class="tab" data-tab="participants">PARTICIPANTS</button>
+                <button class="tab" data-tab="audit">AUDIT LOG</button>
+            </div>
+
+            <!-- Interviews Tab -->
+            <div id="interviews" class="tab-content active">
+                <!-- Upload Section -->
+                <div class="card">
+                    <h2>UPLOAD INTERVIEW</h2>
+                    <div id="dropZone" class="drop-zone">
+                        <p>Drag & drop audio file or click to browse</p>
+                        <p class="hint">Supported: .mp3, .wav, .m4a (max 500MB)</p>
+                        <input type="file" id="audioInput" accept="audio/*" hidden />
+                    </div>
+                    <div id="uploadProgress" class="progress-container hidden">
+                        <div class="progress-bar">
+                            <div id="progressFill" class="progress-fill"></div>
+                        </div>
+                        <p id="uploadStatus" class="progress-status">Uploading...</p>
+                    </div>
+                </div>
+
+                <!-- Pending Review -->
+                <div class="card">
+                    <h2>PENDING SPEAKER TAGGING</h2>
+                    <div id="pendingList">
+                        <div class="empty-state">
+                            <p>No interviews pending review</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Completed -->
+                <div class="card">
+                    <h2>COMPLETED INTERVIEWS</h2>
+                    <div id="completedList">
+                        <div class="empty-state">
+                            <p>No completed interviews yet</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Participants Tab -->
+            <div id="participants" class="tab-content">
+                <div class="card">
+                    <h2>PARTICIPANTS</h2>
+                    <div id="participantsList">
+                        <table class="participants-table">
+                            <thead>
+                                <tr>
+                                    <th>Name</th>
+                                    <th>Email</th>
+                                    <th>Status</th>
+                                    <th>Last Login</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="participantsBody">
+                            </tbody>
+                        </table>
+                        <div id="noParticipants" class="empty-state">
+                            <p>No participants yet</p>
+                            <p style="font-size: 11px;">Participants are added when you tag speakers in interviews</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Email Change Requests -->
+                <div class="card">
+                    <h2>EMAIL CHANGE REQUESTS</h2>
+                    <div id="emailChangeRequests">
+                        <div class="empty-state">
+                            <p>No pending email change requests</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Audit Tab -->
+            <div id="audit" class="tab-content">
+                <div class="card">
+                    <h2>AUDIT LOG</h2>
+                    <div class="audit-filters">
+                        <select id="auditActorFilter">
+                            <option value="">All Actors</option>
+                            <option value="study_lead">Study Lead</option>
+                            <option value="participant">Participant</option>
+                            <option value="system">System</option>
+                        </select>
+                        <select id="auditResourceFilter">
+                            <option value="">All Resources</option>
+                            <option value="interview">Interview</option>
+                            <option value="participant">Participant</option>
+                            <option value="transcript">Transcript</option>
+                        </select>
+                        <input type="date" id="auditDateFilter" />
+                        <button class="btn btn-secondary" id="exportAuditBtn">Export CSV</button>
+                    </div>
+                    <div id="auditList">
+                        <div class="empty-state">
+                            <p>No audit entries yet</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Speaker Tagging Modal -->
+    <div id="taggerModal" class="modal-overlay hidden">
+        <div class="modal">
+            <div class="modal-header">
+                <h2>TAG SPEAKERS</h2>
+                <button class="modal-close" id="closeTaggerBtn">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div id="speakerSections"></div>
+                <div class="transcript-preview">
+                    <div id="transcriptPreview"></div>
+                </div>
+                <div style="margin-top: 20px; text-align: right;">
+                    <button class="btn btn-secondary" id="cancelTaggingBtn">Cancel</button>
+                    <button class="btn btn-primary" id="saveTagsBtn">Save & Notify Participants</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- New Participant Modal -->
+    <div id="newParticipantModal" class="modal-overlay hidden">
+        <div class="modal" style="max-width: 400px;">
+            <div class="modal-header">
+                <h2>NEW PARTICIPANT</h2>
+                <button class="modal-close" id="closeNewParticipantBtn">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p style="color: #888; font-size: 12px; margin-bottom: 15px;">
+                    Enter the participant's details. A unique login key will be generated and emailed to them.
+                </p>
+                <input type="text" id="newParticipantName" placeholder="Name" style="width: 100%; padding: 10px; margin-bottom: 10px; background: #2a2a2a; border: 1px solid #444; color: #fff;" />
+                <input type="email" id="newParticipantEmail" placeholder="Email" style="width: 100%; padding: 10px; margin-bottom: 10px; background: #2a2a2a; border: 1px solid #444; color: #fff;" />
+                <div class="form-actions">
+                    <button class="btn btn-secondary" id="cancelNewParticipantBtn">Cancel</button>
+                    <button class="btn btn-primary" id="createParticipantBtn">Create & Send Key</button>
+                </div>
+                <p id="newParticipantError" class="error" style="margin-top: 10px;"></p>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/supabase-config.js"></script>
+    <script src="js/admin.js"></script>
+</body>
+</html>

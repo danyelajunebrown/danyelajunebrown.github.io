@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Service Culture Circle - Participant Access</title>
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            background: #000;
+            font-family: 'Courier New', monospace;
+            color: #fff;
+            min-height: 100vh;
+        }
+
+        /* Login Screen */
+        .login-container {
+            max-width: 400px;
+            margin: 0 auto;
+            padding: 20px;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            text-align: center;
+        }
+        .login-container h1 {
+            color: #9370DB;
+            font-size: 14px;
+            letter-spacing: 3px;
+            margin-bottom: 10px;
+        }
+        .login-container h2 {
+            color: #9370DB;
+            font-size: 20px;
+            margin-bottom: 30px;
+        }
+        .login-container p {
+            color: #888;
+            font-size: 12px;
+            margin-bottom: 20px;
+        }
+        .key-input {
+            font-family: monospace;
+            font-size: 18px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            padding: 15px;
+            width: 100%;
+            background: #1a1a1a;
+            border: 1px solid #333;
+            color: #fff;
+            text-align: center;
+        }
+        .key-input:focus {
+            outline: none;
+            border-color: #9370DB;
+        }
+        .key-input::placeholder {
+            font-size: 14px;
+            letter-spacing: 1px;
+        }
+        .login-btn {
+            margin-top: 15px;
+            padding: 12px 30px;
+            background: #9370DB;
+            border: none;
+            color: #fff;
+            cursor: pointer;
+            font-family: inherit;
+            font-size: 14px;
+            letter-spacing: 1px;
+            width: 100%;
+        }
+        .login-btn:hover {
+            background: #7a5dc7;
+        }
+        .login-btn:disabled {
+            background: #444;
+            cursor: not-allowed;
+        }
+        .error-message {
+            color: #f44336;
+            font-size: 12px;
+            margin-top: 15px;
+        }
+        .help-text {
+            margin-top: 30px;
+            font-size: 11px;
+            color: #666;
+        }
+
+        /* Consent Screen */
+        .consent-container {
+            max-width: 700px;
+            margin: 0 auto;
+            padding: 40px 20px;
+        }
+        .consent-container h1 {
+            color: #9370DB;
+            font-size: 18px;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+        .consent-content {
+            background: #1a1a1a;
+            border: 1px solid #333;
+            border-radius: 4px;
+            padding: 30px;
+            margin-bottom: 30px;
+            max-height: 400px;
+            overflow-y: auto;
+            line-height: 1.7;
+        }
+        .consent-content h2 {
+            color: #9370DB;
+            font-size: 14px;
+            margin: 20px 0 10px;
+        }
+        .consent-content h2:first-child {
+            margin-top: 0;
+        }
+        .consent-content p {
+            color: #ccc;
+            font-size: 13px;
+            margin-bottom: 15px;
+        }
+        .consent-content ul {
+            color: #ccc;
+            font-size: 13px;
+            margin-left: 20px;
+            margin-bottom: 15px;
+        }
+        .consent-content li {
+            margin-bottom: 8px;
+        }
+        .consent-checkbox {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+        .consent-checkbox input {
+            margin-top: 3px;
+            width: 18px;
+            height: 18px;
+            accent-color: #9370DB;
+        }
+        .consent-checkbox label {
+            color: #ccc;
+            font-size: 13px;
+            cursor: pointer;
+        }
+        .consent-actions {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+        }
+        .btn {
+            padding: 12px 30px;
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+            font-family: inherit;
+            font-size: 13px;
+        }
+        .btn-primary {
+            background: #9370DB;
+            color: #fff;
+        }
+        .btn-primary:hover {
+            background: #7a5dc7;
+        }
+        .btn-primary:disabled {
+            background: #444;
+            cursor: not-allowed;
+        }
+        .btn-secondary {
+            background: #2a2a2a;
+            color: #fff;
+            border: 1px solid #444;
+        }
+        .btn-secondary:hover {
+            background: #333;
+        }
+
+        /* Portal Screen */
+        .portal-container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 0;
+            border-bottom: 1px solid #333;
+            margin-bottom: 30px;
+        }
+        header h1 {
+            color: #9370DB;
+            font-size: 16px;
+            letter-spacing: 2px;
+        }
+        header .welcome {
+            color: #fff;
+            font-size: 14px;
+        }
+        header .welcome span {
+            color: #9370DB;
+        }
+        #logoutBtn {
+            padding: 8px 16px;
+            background: transparent;
+            border: 1px solid #444;
+            color: #888;
+            cursor: pointer;
+            font-family: inherit;
+            font-size: 12px;
+        }
+        #logoutBtn:hover {
+            border-color: #666;
+            color: #fff;
+        }
+
+        /* Transcripts */
+        .transcript-section {
+            margin-bottom: 30px;
+        }
+        .transcript-section h2 {
+            color: #9370DB;
+            font-size: 14px;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #333;
+        }
+        .interview-card {
+            background: #1a1a1a;
+            border: 1px solid #333;
+            border-radius: 4px;
+            margin-bottom: 15px;
+        }
+        .interview-header {
+            padding: 15px 20px;
+            border-bottom: 1px solid #333;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+        }
+        .interview-header:hover {
+            background: #222;
+        }
+        .interview-header h3 {
+            color: #fff;
+            font-size: 14px;
+        }
+        .interview-header .meta {
+            color: #666;
+            font-size: 11px;
+        }
+        .interview-header .toggle {
+            color: #9370DB;
+            font-size: 12px;
+        }
+        .interview-segments {
+            display: none;
+            padding: 0;
+        }
+        .interview-segments.expanded {
+            display: block;
+        }
+        .my-segment {
+            padding: 15px 20px;
+            border-bottom: 1px solid #333;
+            background: #0f0f0f;
+        }
+        .my-segment:last-child {
+            border-bottom: none;
+        }
+        .my-segment .timestamp {
+            color: #9370DB;
+            font-size: 11px;
+            margin-bottom: 8px;
+        }
+        .my-segment p {
+            color: #ccc;
+            font-size: 13px;
+            line-height: 1.6;
+        }
+        .other-segment {
+            padding: 15px 20px;
+            border-bottom: 1px solid #333;
+            opacity: 0.5;
+        }
+        .other-segment:last-child {
+            border-bottom: none;
+        }
+        .other-segment .speaker {
+            color: #666;
+            font-size: 11px;
+            margin-bottom: 8px;
+        }
+        .other-segment p {
+            color: #888;
+            font-size: 13px;
+            line-height: 1.6;
+            font-style: italic;
+        }
+
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #666;
+        }
+        .empty-state p {
+            margin-bottom: 10px;
+        }
+
+        /* Settings */
+        .settings-card {
+            background: #1a1a1a;
+            border: 1px solid #333;
+            border-radius: 4px;
+            padding: 20px;
+            margin-top: 30px;
+        }
+        .settings-card h3 {
+            color: #9370DB;
+            font-size: 13px;
+            margin-bottom: 15px;
+        }
+        .settings-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 0;
+            border-bottom: 1px solid #333;
+        }
+        .settings-item:last-child {
+            border-bottom: none;
+        }
+        .settings-item label {
+            color: #ccc;
+            font-size: 13px;
+        }
+        .settings-item .value {
+            color: #888;
+            font-size: 12px;
+        }
+
+        .hidden { display: none !important; }
+    </style>
+</head>
+<body>
+    <!-- Login Screen -->
+    <div id="loginScreen" class="login-container">
+        <h1>JOHN D. CONQUER & THE BIG STICK</h1>
+        <h2>Service Culture Circle</h2>
+        <p>Enter your access key to view your interview transcript portions</p>
+        <input type="text" id="keyInput" class="key-input" placeholder="SCC-XXXX-XXXX-XXXX-XXXX" maxlength="23" />
+        <button id="loginBtn" class="login-btn">ACCESS</button>
+        <p id="loginError" class="error-message hidden"></p>
+        <p class="help-text">
+            Lost your key? Contact the study lead to have it resent.
+        </p>
+    </div>
+
+    <!-- Consent Screen -->
+    <div id="consentScreen" class="consent-container hidden">
+        <h1>Research Participant Consent</h1>
+        <div id="consentContent" class="consent-content">
+            <!-- Consent form content loaded dynamically -->
+        </div>
+        <div class="consent-checkbox">
+            <input type="checkbox" id="consentCheckbox" />
+            <label for="consentCheckbox">
+                I have read and understand the above consent form. I voluntarily agree to participate and understand that I may withdraw my consent at any time.
+            </label>
+        </div>
+        <div class="consent-actions">
+            <button class="btn btn-secondary" id="declineConsentBtn">Decline</button>
+            <button class="btn btn-primary" id="acceptConsentBtn" disabled>Accept & Continue</button>
+        </div>
+    </div>
+
+    <!-- Main Portal -->
+    <div id="portalScreen" class="portal-container hidden">
+        <header>
+            <div>
+                <h1>SERVICE CULTURE CIRCLE</h1>
+                <p class="welcome">Welcome, <span id="participantName"></span></p>
+            </div>
+            <button id="logoutBtn">LOGOUT</button>
+        </header>
+
+        <div class="transcript-section">
+            <h2>YOUR INTERVIEW TRANSCRIPTS</h2>
+            <div id="transcriptsList">
+                <div class="empty-state">
+                    <p>No transcripts available yet</p>
+                    <p style="font-size: 11px;">You will be notified when new content is ready</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="settings-card">
+            <h3>ACCOUNT SETTINGS</h3>
+            <div class="settings-item">
+                <label>Email</label>
+                <span id="participantEmail" class="value"></span>
+            </div>
+            <div class="settings-item">
+                <label>Request email change</label>
+                <button class="btn btn-secondary" id="requestEmailChangeBtn" style="padding: 6px 12px; font-size: 11px;">Request Change</button>
+            </div>
+            <div class="settings-item">
+                <label>Withdraw consent</label>
+                <button class="btn btn-secondary" id="withdrawConsentBtn" style="padding: 6px 12px; font-size: 11px; border-color: #c62828; color: #ef9a9a;">Withdraw</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Email Change Modal -->
+    <div id="emailChangeModal" class="hidden" style="position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.8); display: flex; align-items: center; justify-content: center; z-index: 1000;">
+        <div style="background: #1a1a1a; border: 1px solid #333; border-radius: 4px; padding: 30px; max-width: 400px; width: 90%;">
+            <h3 style="color: #9370DB; margin-bottom: 20px;">Request Email Change</h3>
+            <p style="color: #888; font-size: 12px; margin-bottom: 15px;">
+                Your request will be reviewed by the study lead for approval.
+            </p>
+            <input type="email" id="newEmailInput" placeholder="New email address" style="width: 100%; padding: 10px; margin-bottom: 15px; background: #2a2a2a; border: 1px solid #444; color: #fff; font-family: inherit;" />
+            <div style="display: flex; gap: 10px;">
+                <button class="btn btn-secondary" id="cancelEmailChangeBtn">Cancel</button>
+                <button class="btn btn-primary" id="submitEmailChangeBtn">Submit Request</button>
+            </div>
+            <p id="emailChangeError" class="error-message hidden" style="margin-top: 10px;"></p>
+        </div>
+    </div>
+
+    <script src="js/supabase-config.js"></script>
+    <script src="js/participant.js"></script>
+</body>
+</html>
