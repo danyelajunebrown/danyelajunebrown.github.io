@@ -17,7 +17,7 @@ const CONFIG = {
 // Helper: Log audit event
 async function logAudit(actorType, actorId, action, resourceType, resourceId, details = {}) {
     try {
-        await supabase.from('audit_logs').insert({
+        await db.from('audit_logs').insert({
             actor_type: actorType,
             actor_id: actorId,
             action: action,
