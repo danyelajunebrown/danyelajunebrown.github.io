@@ -557,8 +557,10 @@
             <h1>JOHN D. CONQUER & THE BIG STICK</h1>
             <h2>Service Culture Circle</h2>
             <p style="color: #888; margin-bottom: 20px; font-size: 12px;">Study Lead Access</p>
-            <input type="email" id="emailInput" placeholder="Email" />
-            <input type="password" id="passInput" placeholder="Password" />
+            <form id="authForm" autocomplete="on">
+                <input type="email" id="emailInput" placeholder="Email" autocomplete="email" />
+                <input type="password" id="passInput" placeholder="Password" autocomplete="current-password" />
+            </form>
             <button id="authBtn">ACCESS</button>
             <p id="authError" class="error"></p>
             <p style="color: #666; font-size: 11px; margin-top: 20px;">

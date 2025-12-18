@@ -34,6 +34,10 @@ document.addEventListener('DOMContentLoaded', async () => {
 function setupEventListeners() {
     // Auth
     document.getElementById('authBtn').addEventListener('click', handleAuth);
+    document.getElementById('authForm').addEventListener('submit', (e) => {
+        e.preventDefault();
+        handleAuth();
+    });
     document.getElementById('passInput').addEventListener('keypress', (e) => {
         if (e.key === 'Enter') handleAuth();
     });
