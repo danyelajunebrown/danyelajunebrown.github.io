@@ -105,7 +105,7 @@ async function handleLogin() {
         const keyHash = await hashKey(loginKey);
 
         // Find participant by key hash
-        const { data: participant, error } = await supabase
+        const { data: participant, error } = await db
             .from('participants')
             .select('id, name, email, status')
             .eq('login_key_hash', keyHash)
@@ -120,7 +120,7 @@ async function handleLogin() {
         }
 
         // Check consent status
-        const { data: consent } = await supabase
+        const { data: consent } = await db
             .from('consent_records')
             .select('id')
             .eq('participant_id', participant.id)
@@ -128,7 +128,7 @@ async function handleLogin() {
             .single();
 
         // Update last login
-        await supabase
+        await db
             .from('participants')
             .update({ last_login: new Date().toISOString(), status: 'active' })
             .eq('id', participant.id);
@@ -209,7 +209,7 @@ function showPortalScreen() {
 // ============================================
 async function loadConsentForm() {
     try {
-        const { data: consentForm } = await supabase
+        const { data: consentForm } = await db
             .from('consent_forms')
             .select('*')
             .eq('is_active', true)
@@ -244,7 +244,7 @@ async function handleAcceptConsent() {
 
     try {
         // Create consent record
-        const { error } = await supabase
+        const { error } = await db
             .from('consent_records')
             .insert({
                 participant_id: currentParticipant.id,
@@ -285,7 +285,7 @@ function handleDeclineConsent() {
 async function loadTranscripts() {
     try {
         // Get all interviews where this participant has segments
-        const { data: segments } = await supabase
+        const { data: segments } = await db
             .from('transcript_segments')
             .select(`
                 *,
@@ -324,7 +324,7 @@ async function loadTranscripts() {
 
         // Also get other segments from these interviews for context
         const interviewIds = Object.keys(interviewMap);
-        const { data: allSegments } = await supabase
+        const { data: allSegments } = await db
             .from('transcript_segments')
             .select('*')
             .in('interview_id', interviewIds)
@@ -434,7 +434,7 @@ async function submitEmailChange() {
     }
 
     try {
-        const { error } = await supabase
+        const { error } = await db
             .from('email_change_requests')
             .insert({
                 participant_id: currentParticipant.id,
@@ -469,7 +469,7 @@ async function handleWithdrawConsent() {
 
     try {
         // Update consent record
-        await supabase
+        await db
             .from('consent_records')
             .update({
                 withdrawal_at: new Date().toISOString(),

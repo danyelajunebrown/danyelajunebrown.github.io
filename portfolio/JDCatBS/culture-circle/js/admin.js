@@ -9,7 +9,7 @@ let speakerAssignments = {};
 // ============================================
 document.addEventListener('DOMContentLoaded', async () => {
     // Check for existing session
-    const { data: { session } } = await supabase.auth.getSession();
+    const { data: { session } } = await db.auth.getSession();
     if (session) {
         currentUser = session.user;
         showMainApp();
@@ -17,7 +17,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     // Auth state changes
-    supabase.auth.onAuthStateChange((event, session) => {
+    db.auth.onAuthStateChange((event, session) => {
         if (event === 'SIGNED_IN' && session) {
             currentUser = session.user;
             showMainApp();
@@ -100,7 +100,7 @@ async function handleAuth() {
     }
 
     try {
-        const { data, error } = await supabase.auth.signInWithPassword({
+        const { data, error } = await db.auth.signInWithPassword({
             email,
             password
         });
@@ -130,7 +130,7 @@ async function handleSignUp() {
     }
 
     try {
-        const { data, error } = await supabase.auth.signUp({
+        const { data, error } = await db.auth.signUp({
             email,
             password
         });
@@ -147,7 +147,7 @@ async function handleSignUp() {
 }
 
 async function handleLogout() {
-    await supabase.auth.signOut();
+    await db.auth.signOut();
 }
 
 function showAuthScreen() {
@@ -203,7 +203,7 @@ async function handleFileUpload(file) {
 
     try {
         // Create interview record
-        const { data: interview, error: dbError } = await supabase
+        const { data: interview, error: dbError } = await db
             .from('interviews')
             .insert({
                 title: file.name.replace(/\.[^/.]+$/, ''),
@@ -220,7 +220,7 @@ async function handleFileUpload(file) {
 
         // Upload to storage
         const filePath = `${interview.id}/${file.name}`;
-        const { error: uploadError } = await supabase.storage
+        const { error: uploadError } = await db.storage
             .from('interview-audio')
             .upload(filePath, file, {
                 onUploadProgress: (progress) => {
@@ -262,10 +262,10 @@ async function handleFileUpload(file) {
 // Simulate transcription for demo (replace with Edge Function call)
 async function simulateTranscription(interviewId) {
     // In production, call the Edge Function:
-    // await supabase.functions.invoke('process-audio', { body: { interview_id: interviewId } });
+    // await db.functions.invoke('process-audio', { body: { interview_id: interviewId } });
 
     // For demo, create mock transcript segments
-    await supabase
+    await db
         .from('interviews')
         .update({ processing_status: 'transcribing' })
         .eq('id', interviewId);
@@ -282,14 +282,14 @@ async function simulateTranscription(interviewId) {
     ];
 
     for (const seg of mockSegments) {
-        await supabase.from('transcript_segments').insert({
+        await db.from('transcript_segments').insert({
             interview_id: interviewId,
             ...seg,
             confidence: 0.95
         });
     }
 
-    await supabase
+    await db
         .from('interviews')
         .update({
             processing_status: 'pending_review',
@@ -310,7 +310,7 @@ async function loadAllData() {
 
 async function loadInterviews() {
     // Load pending review
-    const { data: pending } = await supabase
+    const { data: pending } = await db
         .from('interviews')
         .select('*')
         .eq('processing_status', 'pending_review')
@@ -319,7 +319,7 @@ async function loadInterviews() {
     renderInterviewList('pendingList', pending || [], true);
 
     // Load completed
-    const { data: completed } = await supabase
+    const { data: completed } = await db
         .from('interviews')
         .select('*')
         .eq('processing_status', 'completed')
@@ -328,7 +328,7 @@ async function loadInterviews() {
     renderInterviewList('completedList', completed || [], false);
 
     // Load in progress
-    const { data: processing } = await supabase
+    const { data: processing } = await db
         .from('interviews')
         .select('*')
         .in('processing_status', ['uploaded', 'transcribing'])
@@ -409,20 +409,20 @@ async function openTaggerModal(interviewId) {
     speakerAssignments = {};
 
     // Load segments
-    const { data: segments } = await supabase
+    const { data: segments } = await db
         .from('transcript_segments')
         .select('*')
         .eq('interview_id', interviewId)
         .order('sequence_order');
 
     // Load existing participants
-    const { data: participants } = await supabase
+    const { data: participants } = await db
         .from('participants')
         .select('id, name, email')
         .order('name');
 
     // Load suggestions
-    const { data: suggestions } = await supabase
+    const { data: suggestions } = await db
         .from('speaker_suggestions')
         .select(`
             speaker_label,
@@ -559,7 +559,7 @@ async function createNewParticipant() {
         const loginKeyHash = await hashKey(loginKey);
 
         // Create participant
-        const { data: participant, error } = await supabase
+        const { data: participant, error } = await db
             .from('participants')
             .insert({
                 name,
@@ -583,7 +583,7 @@ async function createNewParticipant() {
         await logAudit('study_lead', currentUser.id, 'create_participant', 'participant', participant.id, { name, email });
 
         // TODO: Send email via Edge Function
-        // await supabase.functions.invoke('send-login-key', { body: { participant_id: participant.id } });
+        // await db.functions.invoke('send-login-key', { body: { participant_id: participant.id } });
 
         console.log('Login key for', name, ':', loginKey); // For demo - remove in production
 
@@ -622,7 +622,7 @@ async function saveSpeakerTags() {
     try {
         // Update transcript segments with participant IDs
         for (const [speaker, participantId] of Object.entries(speakerAssignments)) {
-            await supabase
+            await db
                 .from('transcript_segments')
                 .update({
                     participant_id: participantId,
@@ -634,7 +634,7 @@ async function saveSpeakerTags() {
         }
 
         // Update interview status
-        await supabase
+        await db
             .from('interviews')
             .update({ processing_status: 'completed' })
             .eq('id', currentInterviewId);
@@ -646,7 +646,7 @@ async function saveSpeakerTags() {
 
         // TODO: Notify participants via Edge Function
         // for (const participantId of Object.values(speakerAssignments)) {
-        //     await supabase.functions.invoke('send-login-key', {
+        //     await db.functions.invoke('send-login-key', {
         //         body: { participant_id: participantId, type: 'new_content' }
         //     });
         // }
@@ -671,7 +671,7 @@ function viewTranscript(interviewId) {
 // PARTICIPANTS
 // ============================================
 async function loadParticipants() {
-    const { data: participants } = await supabase
+    const { data: participants } = await db
         .from('participants')
         .select('*')
         .order('created_at', { ascending: false });
@@ -713,7 +713,7 @@ async function loadParticipants() {
 async function resendKey(participantId) {
     try {
         // TODO: Call Edge Function
-        // await supabase.functions.invoke('send-login-key', { body: { participant_id: participantId, is_resend: true } });
+        // await db.functions.invoke('send-login-key', { body: { participant_id: participantId, is_resend: true } });
 
         await logAudit('study_lead', currentUser.id, 'resend_key', 'participant', participantId, {});
 
@@ -727,7 +727,7 @@ async function suspendParticipant(participantId) {
     if (!confirm('Are you sure you want to suspend this participant?')) return;
 
     try {
-        await supabase
+        await db
             .from('participants')
             .update({ status: 'suspended' })
             .eq('id', participantId);
@@ -742,7 +742,7 @@ async function suspendParticipant(participantId) {
 
 async function activateParticipant(participantId) {
     try {
-        await supabase
+        await db
             .from('participants')
             .update({ status: 'active' })
             .eq('id', participantId);
@@ -756,7 +756,7 @@ async function activateParticipant(participantId) {
 }
 
 async function loadEmailChangeRequests() {
-    const { data: requests } = await supabase
+    const { data: requests } = await db
         .from('email_change_requests')
         .select(`
             *,
@@ -795,7 +795,7 @@ async function loadEmailChangeRequests() {
 
 async function approveEmailChange(requestId) {
     try {
-        const { data: request } = await supabase
+        const { data: request } = await db
             .from('email_change_requests')
             .select('*')
             .eq('id', requestId)
@@ -804,13 +804,13 @@ async function approveEmailChange(requestId) {
         if (!request) throw new Error('Request not found');
 
         // Update participant email
-        await supabase
+        await db
             .from('participants')
             .update({ email: request.new_email })
             .eq('id', request.participant_id);
 
         // Update request status
-        await supabase
+        await db
             .from('email_change_requests')
             .update({
                 status: 'approved',
@@ -832,7 +832,7 @@ async function approveEmailChange(requestId) {
 
 async function rejectEmailChange(requestId) {
     try {
-        await supabase
+        await db
             .from('email_change_requests')
             .update({
                 status: 'rejected',
@@ -855,7 +855,7 @@ async function loadAuditLog() {
     const resourceFilter = document.getElementById('auditResourceFilter').value;
     const dateFilter = document.getElementById('auditDateFilter').value;
 
-    let query = supabase
+    let query = db
         .from('audit_logs')
         .select('*')
         .order('timestamp', { ascending: false })
@@ -896,7 +896,7 @@ async function loadAuditLog() {
 }
 
 async function exportAuditLog() {
-    const { data: logs } = await supabase
+    const { data: logs } = await db
         .from('audit_logs')
         .select('*')
         .order('timestamp', { ascending: false });

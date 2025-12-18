@@ -5,7 +5,7 @@ const SUPABASE_URL = 'https://ezttcqgkegfikrmftlmo.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImV6dHRjcWdrZWdmaWtybWZ0bG1vIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjYwNzM4OTcsImV4cCI6MjA4MTY0OTg5N30.pEnSBfcJB7rgdZWrHkdT4snqbKhgd71-ZSWOPH0kxeo';
 
 // Initialize Supabase client
-const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 // API Keys (store securely - these are placeholders)
 const CONFIG = {
