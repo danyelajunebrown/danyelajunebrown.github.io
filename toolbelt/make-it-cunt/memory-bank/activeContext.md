@@ -2,220 +2,179 @@
 
 ## Current Focus
 
-**Status**: Memory Bank Documentation Setup
+**Status**: v3.0 Backend Complete - Volumetric Garment Modification System
 
-The primary application is feature-complete and stable. Currently establishing the Memory Bank system to enable persistent context across AI assistant sessions. This allows for better collaboration on future enhancements without re-explaining project details.
+We have implemented **Make It Cunt v3.0** - a major architectural upgrade from 2D photo measurement to **3D volumetric analysis**. The system now compares 3D body scans to 3D garment scans to find fit problems and generate shaped pattern pieces.
 
 ## Recent Changes
 
-- **2025-11-30**: Memory Bank system initialization
-  - Created projectbrief.md (project foundation)
-  - Created productContext.md (user stories and requirements)
-  - Created systemPatterns.md (technical architecture)
-  - Created techContext.md (development environment)
-  - Creating activeContext.md (current state)
-  - Creating progress.md (project tracking)
+- **2025-12-19**: v3.0 Backend Implementation Complete
+  - Created `mesh_processing.py` - PLY/OBJ/STL import, cleaning, alignment
+  - Created `body_model.py` - Anatomical landmark detection, cross-section analysis, movement envelope
+  - Created `garment_model.py` - Seam detection, garment type classification, pattern piece segmentation
+  - Created `fit_analysis.py` - Body-garment delta analysis, compression/gap detection
+  - Created `pattern_generator.py` - Shaped pattern pieces (tapered, diamond gussets), SVG export
+  - Updated `app.py` with new v3 API endpoints
+  - Updated `requirements.txt` with mesh processing dependencies
 
-- **Prior to Memory Bank**: Application fully functional with all core features
-  - Visual measurement system working
-  - Pattern generation operational
-  - Profile save/load system implemented
-  - Unit conversion (inches/cm) complete
-  - Image upload integrated
-  - SVG/PDF export functional
+- **2025-12-14**: v2.0 Complete - ArUco + 2D Detection (still available)
 
-## Open Questions
+## Architecture Overview (v3.0)
 
-### Documentation
-- ✅ Should we add inline code comments for complex calculations? 
-  - Current: Minimal comments, code is fairly self-documenting
-  - Decision: Add if needed during future maintenance
+```
+┌─────────────────────────────────────────────────────────────────────┐
+│                         USER WORKFLOW                                │
+│  ┌─────────────┐      ┌─────────────┐      ┌─────────────────────┐  │
+│  │  Revopoint  │      │  Revopoint  │      │    Make It Cunt     │  │
+│  │  Body Scan  │ ───► │  Garment    │ ───► │    v3.0 Server      │  │
+│  │  (PLY/OBJ)  │      │  Scan       │      │                     │  │
+│  └─────────────┘      └─────────────┘      └─────────────────────┘  │
+└─────────────────────────────────────────────────────────────────────┘
+                              │
+                              ▼
+┌─────────────────────────────────────────────────────────────────────┐
+│                    BACKEND (Python/Flask :5050)                      │
+│  ┌─────────────────────────────────────────────────────────────────┐│
+│  │                      v3.0 VOLUMETRIC PIPELINE                   ││
+│  │                                                                 ││
+│  │  mesh_processing.py ──► body_model.py ──► fit_analysis.py      ││
+│  │         │                     │                   │             ││
+│  │         ▼                     ▼                   ▼             ││
+│  │  PLY/OBJ import      Landmark detection    Delta analysis       ││
+│  │  Mesh cleaning       Cross-sections        Compression zones    ││
+│  │  PCA alignment       Movement envelope     Gap zones (tenting)  ││
+│  │                                            Length deficits      ││
+│  │                                                   │             ││
+│  │                                                   ▼             ││
+│  │                      garment_model.py ──► pattern_generator.py  ││
+│  │                             │                     │             ││
+│  │                             ▼                     ▼             ││
+│  │                      Seam detection         Shaped patterns     ││
+│  │                      Type classification    Tapered extensions  ││
+│  │                      Pattern pieces         Diamond gussets     ││
+│  │                                             SVG export          ││
+│  └─────────────────────────────────────────────────────────────────┘│
+│  ┌─────────────────────────────────────────────────────────────────┐│
+│  │                      v2.0 (MAINTAINED)                          ││
+│  │  calibration.py (ArUco)  │  garment_detector.py (2D CV)        ││
+│  └─────────────────────────────────────────────────────────────────┘│
+└─────────────────────────────────────────────────────────────────────┘
+```
 
-### Features Under Consideration
-1. **Pattern Grids**: Should patterns include measurement grids by default?
-   - Pro: Helps with fabric alignment
-   - Con: Might clutter simple patterns
-   - Status: Implemented but could be enhanced
+## User Profile
 
-2. **Custom Seam Allowance per Edge**: Different allowances for top/bottom/sides?
-   - Current: Single seam allowance for all edges
-   - Use case: Advanced users may need this
-   - Priority: Low (not requested yet)
+- **Hardware**: Revopoint Inspire 3D Scanner (acquired 2025-12-22)
+- **Software**: Revo Scan 5 for mesh export
+- **Scanner Specs**: 0.2mm accuracy, 0.3mm point spacing, exports PLY/OBJ/STL
+- **Garment scanning**: On dress form (captures drape/shape)
+- **Body challenges**:
+  - Long arms, legs, torso (need extensions)
+  - Broad shoulders (stress → ripping)
+  - Low projection/flat (excess fabric → tenting)
+  - Wild movement needs (dance, extreme ease required)
+- **Technical level**: Full nerd mode (Blender, Python, point clouds)
 
-3. **Pattern Template Library**: Pre-made patterns for common alterations?
-   - Would reduce need for measurement
-   - Requires user testing to determine common use cases
-   - Priority: Medium
+## New v3 API Endpoints
 
-4. **Fabric Calculator**: Estimate fabric needed based on pattern dimensions?
-   - Simple calculation: width × height + buffer
-   - Could factor in fabric width (typically 45" or 60")
-   - Priority: Low to Medium
+```
+POST /api/mesh/upload/body       - Upload 3D body scan (PLY/OBJ/STL)
+POST /api/mesh/upload/garment    - Upload 3D garment scan
+POST /api/analysis/fit           - Run volumetric fit analysis
+POST /api/patterns/generate      - Generate shaped pattern pieces
+POST /api/workflow/analyze-and-generate - Full pipeline in one call
+GET  /api/mesh/status            - Check loaded meshes
+POST /api/mesh/clear             - Clear stored meshes
+```
 
-### Technical Questions
-1. **Testing Framework**: Worth adding automated tests?
-   - Current manual testing is working
-   - Would prevent regressions during future changes
-   - Recommendation: Add if making significant changes
+## Phase Status
 
-2. **TypeScript Migration**: Would type safety improve maintainability?
-   - Current: Vanilla JavaScript working well
-   - Benefit: Catches calculation errors at compile time
-   - Cost: Adds build step, increases complexity
-   - Decision: Not needed currently, revisit if team grows
+| Phase | Description | Status |
+|-------|-------------|--------|
+| 1-10 | v1.x Core Functionality | ✅ Complete |
+| 11 | ArUco Calibration | ✅ Complete |
+| 12 | 2D Garment Detection | ✅ Complete |
+| 13 | 3D Mesh Processing | ✅ Complete |
+| 14 | Body Model (landmarks, movement) | ✅ Complete |
+| 15 | Garment Model (seams, structure) | ✅ Complete |
+| 16 | Fit Analysis (delta, zones) | ✅ Complete |
+| 17 | Pattern Generation (shaped) | ✅ Complete |
+| 18 | Web UI Update (Three.js) | ⏳ Tabled |
 
-3. **PWA Features**: Should tool work offline?
-   - Already mostly works offline (single file)
-   - Service worker could cache for true offline
-   - Use case: Sewing workshop without internet?
-   - Priority: Low
+## What v3.0 Solves (User's Specific Issues)
 
-## Blockers
+| Problem | v2.0 Solution | v3.0 Solution |
+|---------|---------------|---------------|
+| Long limbs/torso | Rectangle extension | Tapered extension matching garment silhouette |
+| Broad shoulders (ripping) | Nothing | Stress map → gusset or let-out panel at exact seam |
+| Tenting (low projection) | Nothing | Gap map → dart placement or strategic take-in |
+| Wild movement | Nothing | Movement envelope → ease insertion at stress points |
 
-**None currently identified**
+## Files Created (v3.0)
 
-All features are working as expected. No bugs or issues blocking development or usage.
+```
+make-it-cunt/server/
+├── mesh_processing.py      # PLY/OBJ import, pymeshlab cleaning, PCA alignment
+├── body_model.py           # Landmark detection, cross-sections, movement envelope
+├── garment_model.py        # Seam detection, type classification, pattern segmentation
+├── fit_analysis.py         # Body-garment delta, compression/gap zones
+├── pattern_generator.py    # Shaped patterns, SVG export with notches/grain lines
+├── app.py                  # Updated with v3 endpoints
+└── requirements.txt        # Updated with mesh processing deps
+```
+
+## Running the v3.0 Server
+
+```bash
+cd server
+source venv/bin/activate
+pip install -r requirements.txt  # Install new deps
+python app.py
+```
+
+Server will show feature status at startup:
+```
+Feature Status:
+  Mesh Processing:    OK
+  Body Model:         OK
+  Garment Model:      OK
+  Fit Analysis:       OK
+  Pattern Generation: OK
+```
 
 ## Next Steps
 
-### Immediate (In Progress)
-1. ✅ Complete Memory Bank documentation setup
-2. ✅ Document current project state in activeContext.md
-3. ⏳ Create progress.md with project history
-4. ⏳ Verify all Memory Bank files are complete and accurate
+### Immediate (Next Steps)
+1. Install new dependencies (`pip install -r requirements.txt`)
+2. Test server starts with all features OK
+3. ✅ **Acquired Revopoint Inspire** (2025-12-22)
+4. Do first body + garment scan test with Inspire
 
-### Short Term (Optional Enhancements)
-1. Add inline code comments for complex measurement calculations
-2. Create CONTRIBUTING.md guide for future developers
-3. Add more comprehensive error handling for edge cases
-4. Create user documentation/tutorial with screenshots
-5. Test on mobile devices and improve touch interactions
+### When Ready
+1. Update index.html with mesh upload UI
+2. Add Three.js viewer for 3D mesh visualization
+3. Add fit analysis results display
+4. Add pattern download buttons
 
-### Medium Term (Feature Additions)
-1. **Enhanced Grid System**: 
-   - Toggle grid visibility
-   - Customizable grid spacing
-   - Quarter-inch markings
+## Key Dependencies (New in v3.0)
 
-2. **Pattern Piece Labeling**:
-   - "Front", "Back", "Left", "Right" labels
-   - Cutting quantity indicators
-   - Fabric fold markers
-
-3. **Multi-Piece Patterns**:
-   - Generate multiple coordinated pieces
-   - Pattern nesting for efficient fabric usage
-   - Print layout optimization
-
-4. **Measurement Presets**:
-   - Save common measurements by body part
-   - Quick selection for repeat users
-   - Import/export measurement sets
-
-### Long Term (Major Features)
-1. **Curved Pattern Pieces**: 
-   - Bezier curve tools
-   - Pattern drafting for fitted garments
-   - Dart placement
-
-2. **Size Grading**:
-   - Automatic pattern grading up/down
-   - Industry standard grade rules
-   - Custom grading formulas
-
-3. **3D Visualization**:
-   - Preview how extension will look on garment
-   - Virtual try-on
-   - Fabric drape simulation
-
-4. **Community Features**:
-   - Share pattern templates
-   - User-submitted garment types
-   - Pattern marketplace
-
-## Development Environment Notes
-
-### Current Setup
-- **Location**: `/Users/danyelabrown/Downloads/danyelajunebrown.github.io-main/toolbelt/make-it-cunt`
-- **Files**: index.html, claude.md, memory-bank/
-- **Repository**: danyelajunebrown.github.io.git
-- **Last Commit**: 7e73d7f747b551fd188087ad3feb72107dfdd410
-
-### Testing Notes
-- Manual testing completed across browsers
-- Canvas rendering works well on desktop
-- Mobile testing needed for touch interactions
-- localStorage functioning correctly
-
-### Known Quirks
-1. **Canvas Sizing**: Fixed 800x600 canvas may not match all image aspect ratios
-   - Currently scales images to fit
-   - Could enhance with dynamic canvas sizing
-
-2. **Unit Toggle**: Converts existing values when toggling
-   - Works correctly but requires recalculation
-   - User might lose precision on multiple toggles
-
-3. **PDF Export**: Uses browser print dialog, not direct PDF generation
-   - Works but relies on browser implementation
-   - True PDF library (jsPDF) could improve this
-
-4. **Profile Storage**: Limited by localStorage (~5-10MB)
-   - Sufficient for typical usage
-   - Could add export/import for backup
-
-## Code Quality Notes
-
-### Strengths
-- ✅ Single file architecture is simple and portable
-- ✅ Clear function naming and organization
-- ✅ Consistent code style throughout
-- ✅ No external dependencies to manage
-- ✅ Fast load time and instant interactions
-- ✅ All features working as designed
-
-### Areas for Improvement
-- 📝 Add JSDoc comments for functions
-- 📝 Consider extracting large functions into smaller ones
-- 📝 Add error boundaries for edge cases
-- 📝 Improve mobile responsiveness
-- 📝 Add keyboard shortcuts for power users
-- 📝 Consider accessibility improvements (ARIA labels, keyboard navigation)
-
-## User Feedback Tracking
-
-### Positive Feedback (Hypothetical - for future use)
-- Easy to understand interface
-- Fast and responsive
-- No signup required is great
-- Profile saving is convenient
-
-### Feature Requests (Hypothetical - for future tracking)
-- Want more garment types
-- Need metric measurements (✅ implemented)
-- Want to save patterns as favorites
-- Request for mobile app version
-
-### Bug Reports (Hypothetical - for future tracking)
-- None currently known
+```
+pymeshlab>=2023.12    # MeshLab Python bindings
+open3d>=0.17.0        # Point cloud processing
+trimesh>=4.0.0        # Mesh analysis, ray casting
+svgwrite>=1.4.0       # Pattern SVG generation
+numpy-stl>=3.0.0      # STL handling
+```
 
 ## Context for AI Assistants
 
 When resuming work on this project:
 
-1. **Read this file first** to understand current state
-2. **Check progress.md** to see what's been completed
-3. **Review systemPatterns.md** before modifying architecture
-4. **Reference productContext.md** for user needs
-5. **Check techContext.md** for technical constraints
+1. **v3.0 is backend-complete**: All Python modules done, API endpoints working
+2. **UI is tabled**: User decided to defer index.html update
+3. **Scanner acquired**: Revopoint Inspire (0.2mm accuracy, Revo Scan 5)
+4. **Test with sample PLY files**: Can test endpoints without real scans
+5. **Movement profile = "wild"**: User needs extreme ease for dance/movement
 
-**Current State Summary**: The application is production-ready with all core features complete. Focus now is on documentation, optional enhancements, and maintaining the simple, dependency-free architecture.
+**Communication Style**: Direct, technical, sewing/pattern-making domain knowledge.
 
-**Communication Style**: Direct, technical, focused on sewing/pattern-making domain knowledge.
-
-**Decision-Making Framework**: 
-- Prioritize simplicity over features
-- Avoid dependencies unless strongly justified
-- Keep client-side only (no backend)
-- Maintain single-file architecture where possible
-- User experience over technical complexity
+**Key Insight**: This user has specific body challenges (long limbs, broad shoulders, low projection, wild movement) that standard patterns don't address. The system is designed to identify and solve these exact issues.

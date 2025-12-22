@@ -1,327 +1,227 @@
 # Progress Tracking
 
-## Completed
+## Version Summary
 
-### Phase 1: Core Functionality ✅
-- [x] HTML structure with semantic markup - Completed
-- [x] CSS styling with purple gradient theme - Completed
-- [x] Canvas-based measurement interface - Completed
-- [x] Two-point click measurement system - Completed
-- [x] Pixel-to-real-world scale calculation - Completed
-- [x] Extension length calculation logic - Completed
-- [x] Basic SVG pattern generation - Completed
-- [x] Pattern dimension labeling - Completed
-- [x] Seam allowance system (0.5" default) - Completed
+| Version | Description | Status |
+|---------|-------------|--------|
+| v1.x | Core manual measurement | ✅ Complete |
+| v2.0 | ArUco + 2D auto-detection | ✅ Complete |
+| v3.0 | Volumetric 3D analysis | ✅ Backend Complete |
 
-### Phase 2: Garment Types ✅
-- [x] Preset garment types (pants, shirt, sleeve, dress, skirt) - Completed
-- [x] Default widths for each garment type - Completed
-- [x] Custom width option for unique garments - Completed
-- [x] Garment type selector dropdown - Completed
-- [x] Dynamic width input visibility - Completed
+---
 
-### Phase 3: Export & Download ✅
-- [x] SVG download functionality - Completed
-- [x] Blob creation and URL generation - Completed
-- [x] Automatic filename generation - Completed
-- [x] PDF export via print dialog - Completed
-- [x] Print-optimized styling - Completed
+## v3.0 - Volumetric Garment Modification System
 
-### Phase 4: Profile Management ✅
-- [x] localStorage integration - Completed
-- [x] Profile save functionality - Completed
-- [x] Profile load functionality - Completed
-- [x] Profile delete functionality - Completed
-- [x] Profile list display - Completed
-- [x] Profile name input validation - Completed
-- [x] JSON serialization for profiles - Completed
+### Phase 13: 3D Mesh Processing ✅ (2025-12-19)
+- [x] Create mesh_processing.py module
+- [x] PLY/OBJ/STL file import via trimesh
+- [x] Mesh cleaning with pymeshlab (noise removal, hole filling, smoothing)
+- [x] Automatic unit detection (mm/cm/m/inches)
+- [x] PCA-based mesh orientation (body upright, garment aligned)
+- [x] Body-garment mesh alignment
+- [x] Mesh statistics and metadata extraction
 
-### Phase 5: Unit Conversion ✅
-- [x] Inches to centimeters conversion - Completed
-- [x] Centimeters to inches conversion - Completed
-- [x] Unit toggle button - Completed
-- [x] Automatic value conversion on toggle - Completed
-- [x] Unit label updates throughout UI - Completed
-- [x] State persistence for unit preference - Completed
+### Phase 14: Body Model ✅ (2025-12-19)
+- [x] Create body_model.py module
+- [x] Cross-section generation at height intervals
+- [x] Anatomical landmark detection:
+  - [x] Waist (minimum circumference)
+  - [x] Hip (maximum below waist)
+  - [x] Bust (maximum above waist)
+  - [x] Shoulders (widest upper body)
+  - [x] Crotch (circumference drop)
+  - [x] Knees, ankles
+- [x] Circumference measurement from cross-sections
+- [x] Body measurement extraction (inseam, rise, torso length)
+- [x] Movement envelope generation ("wild" profile for dance)
+- [x] Configurable ease values per body zone
 
-### Phase 6: Image Integration ✅
-- [x] File upload input - Completed
-- [x] FileReader API integration - Completed
-- [x] Image loading and scaling - Completed
-- [x] Canvas image rendering - Completed
-- [x] Aspect ratio preservation - Completed
-- [x] Responsive canvas sizing - Completed
+### Phase 15: Garment Model ✅ (2025-12-19)
+- [x] Create garment_model.py module
+- [x] Garment type detection (pants, shirt, dress)
+- [x] Seam line detection (sharp edges, boundary edges)
+- [x] Seam classification (inseam, outseam, side, waistband, hem)
+- [x] Pattern piece segmentation
+- [x] Basic UV unwrap for 2D pattern extraction
+- [x] Garment measurement extraction
 
-### Phase 7: Enhanced UI/UX ✅
-- [x] Status message system with color coding - Completed
-- [x] Instructions panel - Completed
-- [x] Measurement display - Completed
-- [x] Calculation results display - Completed
-- [x] Visual feedback for measurement points - Completed
-- [x] Measurement line visualization - Completed
-- [x] Responsive grid layout - Completed
-- [x] Mobile-friendly styling (partial) - Completed
+### Phase 16: Fit Analysis ✅ (2025-12-19)
+- [x] Create fit_analysis.py module
+- [x] Body-to-garment distance map computation
+- [x] Compression zone detection (body > garment = stress/ripping)
+- [x] Gap zone detection (body < garment = tenting/excess)
+- [x] Length deficit detection (garment too short)
+- [x] Movement envelope conflict detection
+- [x] Body zone classification (shoulders, bust, waist, hips, etc.)
+- [x] Severity scoring (minor, moderate, severe, critical)
+- [x] Modification recommendation generation
+- [x] Overall fit score calculation (0-100)
 
-### Phase 8: Pattern Enhancements ✅
-- [x] Grid overlay on patterns - Completed
-- [x] Dimension arrows and labels - Completed
-- [x] Grainline indicator - Completed
-- [x] Cutting instructions - Completed
-- [x] Pattern metadata (type, extension, seam allowance) - Completed
-- [x] Professional pattern styling - Completed
+### Phase 17: Pattern Generation ✅ (2025-12-19)
+- [x] Create pattern_generator.py module
+- [x] Tapered extension patterns (not rectangles!)
+- [x] Diamond gusset patterns (for shoulders, movement)
+- [x] Football crotch gusset patterns
+- [x] Dart marking templates
+- [x] Let-out panel patterns
+- [x] Seam allowance calculation (fabric-specific)
+- [x] Notch placement
+- [x] Grain line indicators
+- [x] SVG export with dimensions
+- [x] Basic SVG fallback (no svgwrite dependency)
 
-### Phase 9: Documentation ✅
-- [x] claude.md project documentation - Completed
-- [x] Inline code organization - Completed
-- [x] Function naming conventions - Completed
-- [x] README-style documentation - Completed
+### Phase 18: API Integration ✅ (2025-12-19)
+- [x] Update app.py with v3 endpoints
+- [x] POST /api/mesh/upload/body endpoint
+- [x] POST /api/mesh/upload/garment endpoint
+- [x] POST /api/analysis/fit endpoint
+- [x] POST /api/patterns/generate endpoint
+- [x] POST /api/workflow/analyze-and-generate (full pipeline)
+- [x] GET /api/mesh/status endpoint
+- [x] POST /api/mesh/clear endpoint
+- [x] Feature availability detection on startup
+- [x] Graceful degradation when dependencies missing
+- [x] Update requirements.txt with new dependencies
 
-### Phase 10: Memory Bank System ✅
-- [x] Create memory-bank directory - Completed (2025-11-30)
-- [x] Create projectbrief.md - Completed (2025-11-30)
-- [x] Create productContext.md - Completed (2025-11-30)
-- [x] Create systemPatterns.md - Completed (2025-11-30)
-- [x] Create techContext.md - Completed (2025-11-30)
-- [x] Create activeContext.md - Completed (2025-11-30)
-- [x] Create progress.md - Completed (2025-11-30)
+### Phase 19: Web UI Update ⏳ (Tabled)
+- [ ] Add mesh upload UI for body + garment
+- [ ] Integrate Three.js for 3D mesh visualization
+- [ ] Display fit analysis results with issue highlighting
+- [ ] Show modification recommendations
+- [ ] Pattern download buttons
+- [ ] SVG pattern preview
 
-## In Progress
+---
 
-**None currently** - All planned features have been implemented.
+## v2.0 - Automated Measurement System ✅
 
-## Upcoming
+### Phase 11: ArUco Calibration System ✅ (2025-12-14)
+- [x] Create server directory structure
+- [x] Set up Python virtual environment
+- [x] Create requirements.txt with dependencies
+- [x] Implement ArUco marker detection (calibration.py)
+- [x] Generate printable ArUco card SVG
+- [x] Create Flask backend (app.py)
+- [x] Add /api/calibrate endpoint
+- [x] Add /api/calibration-card endpoint
+- [x] Frontend: Backend health check on load
+- [x] Frontend: ArUco card download section
+- [x] Frontend: Auto-calibration from uploaded photo
 
-### Short-Term Enhancements (Optional)
-- [ ] Add JSDoc comments to all functions
-- [ ] Create CONTRIBUTING.md for future developers
-- [ ] Improve mobile touch interactions
-- [ ] Add keyboard shortcuts (e.g., 'r' to reset, 'g' to generate)
-- [ ] Implement error boundaries for edge cases
-- [ ] Add ARIA labels for accessibility
-- [ ] Create user tutorial with screenshots
+### Phase 12: Garment Keypoint Detection ✅ (2025-12-14)
+- [x] Create garment_detector.py module
+- [x] Implement pants detection algorithm (edge detection, contours)
+- [x] Waist, crotch, hem point detection
+- [x] Inseam/outseam calculation
+- [x] Add /api/measure/garment endpoint
+- [x] Add /api/measure/garment/visualize endpoint
+- [x] Frontend: Auto-detect garment button
+- [x] Frontend: Keypoint visualization on canvas
+- [x] Frontend: Measurement display table
 
-### Medium-Term Features (Backlog)
-- [ ] Enhanced grid system with toggle visibility
-- [ ] Pattern piece labeling (Front/Back/Left/Right)
-- [ ] Fabric requirement calculator
-- [ ] Multiple pattern pieces per project
-- [ ] Pattern history/undo functionality
-- [ ] Export to DXF format for CAD software
-- [ ] Dark mode toggle
-- [ ] Print layout optimization (tile large patterns)
+---
 
-### Long-Term Vision (Future)
-- [ ] Curved pattern piece support
-- [ ] Dart and gusset placement tools
-- [ ] Size grading functionality
-- [ ] Body measurement integration
-- [ ] 3D garment preview
-- [ ] Pattern template marketplace
-- [ ] Community sharing features
-- [ ] Mobile app version
+## v1.x - Core Functionality ✅
 
-## Key Decisions
+### Phase 1-9: Core Features ✅
+- [x] Canvas measurement interface
+- [x] Two-point click measurement
+- [x] Pixel-to-real-world scale calculation
+- [x] SVG pattern generation
+- [x] Garment type presets
+- [x] Profile save/load (localStorage)
+- [x] Unit conversion (inches/cm)
+- [x] Image upload and overlay
+- [x] Pattern enhancements (grid, arrows, grainline)
 
-### Architecture Decisions
-1. **Single-Page Application** (Chosen over multi-page)
-   - **Reasoning**: Simple tool doesn't need routing or multiple pages
-   - **Result**: Fast, portable, easy to understand
-   - **Date**: Initial development
+### Phase 10: Memory Bank ✅ (2025-11-30)
+- [x] Create memory-bank directory
+- [x] Create all context files
 
-2. **Zero Dependencies** (Chosen over using frameworks/libraries)
-   - **Reasoning**: No need for React/Vue/jQuery for this scope
-   - **Result**: Tiny file size, no build process, no dependency management
-   - **Date**: Initial development
+---
 
-3. **Inline Architecture** (Chosen over separate CSS/JS files)
-   - **Reasoning**: Single-file portability, no build step
-   - **Result**: Easy deployment, simple structure
-   - **Trade-off**: Harder to maintain if grows significantly
-   - **Date**: Initial development
+## Key Decisions Log
 
-4. **Client-Side Only** (Chosen over client-server)
-   - **Reasoning**: No need for backend, database, or user accounts
-   - **Result**: Privacy-focused, works offline, zero hosting costs
-   - **Date**: Initial development
+### v3.0 Architecture Decisions
 
-### Feature Decisions
-1. **localStorage for Profiles** (Chosen over cloud storage)
-   - **Reasoning**: Privacy, simplicity, no backend needed
-   - **Trade-off**: Data doesn't sync across devices
-   - **Result**: Works well for single-device use
-   - **Date**: Phase 4
+1. **3D Volumetric over 2D Enhancement** (2025-12-19)
+   - **Reasoning**: User's body challenges (broad shoulders, low projection, wild movement) can't be solved with 2D
+   - **Result**: Full 3D mesh processing pipeline
+   - **Trade-off**: Requires 3D scanner purchase
 
-2. **Print Dialog for PDF** (Chosen over jsPDF library)
-   - **Reasoning**: Avoid adding dependency, browser PDF works well
-   - **Trade-off**: Less control over PDF layout
-   - **Result**: Simple, effective, no bloat
-   - **Date**: Phase 3
+2. **Revopoint Inspire Scanner Acquired** (2025-12-22)
+   - **Reasoning**: Good balance of price, quality, and format support
+   - **Model**: Revopoint Inspire (0.2mm accuracy, 0.3mm point spacing)
+   - **Software**: Revo Scan 5
+   - **Formats**: PLY, OBJ, STL, FBX, GLTF, 3MF, ASC
+   - **Result**: System designed for PLY/OBJ/STL from Revopoint Inspire
+   - **Status**: ✅ Acquired, ready for first test scans
 
-3. **Two-Point Measurement** (Chosen over multi-point or automatic detection)
-   - **Reasoning**: Simple to understand, accurate enough
-   - **Trade-off**: Can't measure complex shapes
-   - **Result**: Good for rectangular extensions
-   - **Date**: Phase 1
+3. **"Wild" Movement Envelope** (2025-12-19)
+   - **Reasoning**: User does dance, needs extreme ease at stress points
+   - **Result**: Configurable movement envelope with "wild" preset (extra ease)
+   - **Values**: 80mm shoulder, 100mm crotch, 80mm knee ease
 
-4. **Fixed Canvas Size** (Chosen over fully responsive canvas)
-   - **Reasoning**: Simpler implementation, good enough for desktop
-   - **Trade-off**: May not be optimal for all image sizes
-   - **Result**: Works well, room for improvement
-   - **Date**: Phase 1
+4. **Shaped Patterns over Rectangles** (2025-12-19)
+   - **Reasoning**: v2 only made rectangles, useless for real garment modification
+   - **Result**: Tapered extensions, diamond gussets, football crotch gussets
+   - **Trade-off**: More complex pattern generation code
 
-### Design Decisions
-1. **Purple Gradient Theme** (Chosen brand identity)
-   - **Reasoning**: Unique, creative, fashion-forward
-   - **Result**: Distinctive look and feel
-   - **Date**: Initial development
+5. **Blender Integration Allowed** (2025-12-19)
+   - **Reasoning**: User is "full nerd mode", comfortable with complex tooling
+   - **Result**: Seams-to-Sewing-Pattern addon can be used for advanced UV unwrap
+   - **Trade-off**: Adds external dependency for power users
 
-2. **Step-by-Step Layout** (Chosen over wizard/tabs)
-   - **Reasoning**: Clear workflow, all steps visible
-   - **Result**: Easy to follow, minimal confusion
-   - **Date**: Initial development
+### v2.0 Architecture Decisions
 
-3. **Inline Instructions** (Chosen over modal/tooltip)
-   - **Reasoning**: Always visible, no need to search for help
-   - **Result**: Reduced user errors
-   - **Date**: Phase 7
+1. **Python Backend** (2025-12-13)
+   - **Reasoning**: OpenCV requires Python for ArUco and CV
+   - **Result**: Flask server on localhost:5050
 
-### Technical Decisions
-1. **ES6+ JavaScript** (Chosen over ES5)
-   - **Reasoning**: Modern syntax, better readability
-   - **Trade-off**: Requires modern browser
-   - **Result**: Clean, maintainable code
-   - **Date**: Initial development
+2. **ArUco Markers** (2025-12-14)
+   - **Reasoning**: More precise than letter paper, automatic detection
+   - **Result**: Printable calibration card
 
-2. **CSS Grid Layout** (Chosen over Flexbox only)
-   - **Reasoning**: Better for two-column layout
-   - **Result**: Responsive, clean structure
-   - **Date**: Initial development
+3. **Edge Detection** (2025-12-14)
+   - **Reasoning**: Works without training data, runs on CPU
+   - **Result**: Canny edge detection + contour analysis
 
-3. **Template Literals for SVG** (Chosen over DOM manipulation)
-   - **Reasoning**: More readable, easier to modify
-   - **Result**: Maintainable SVG generation
-   - **Date**: Phase 1
-
-## Lessons Learned
-
-### What Worked Well
-1. **Simplicity First**: Starting with vanilla JavaScript prevented over-engineering
-2. **Single File**: Easy to share, deploy, and understand
-3. **Visual Feedback**: Canvas visualization made measurement intuitive
-4. **Profile System**: localStorage provided persistence without complexity
-5. **Clear Workflow**: Numbered steps guided users effectively
-6. **Zero Dependencies**: No maintenance burden from outdated packages
-
-### What Could Be Improved
-1. **Mobile Support**: Touch interactions need more attention
-2. **Testing**: Automated tests would prevent regressions
-3. **Code Comments**: More inline documentation would help future maintainers
-4. **Accessibility**: ARIA labels and keyboard navigation need work
-5. **Error Handling**: Some edge cases could be handled more gracefully
-
-### Technical Insights
-1. **Canvas Scaling**: Understanding canvas coordinate systems vs. display size was tricky
-2. **Unit Conversion**: Maintaining precision during conversions required careful rounding
-3. **SVG Generation**: Template literals are powerful for generating complex SVG
-4. **localStorage Limits**: JSON serialization works well for small datasets
-5. **FileReader API**: Asynchronous image loading needs proper event handling
-
-### User Experience Insights
-1. **Instructions Matter**: Upfront explanation reduced confusion significantly
-2. **Visual Feedback**: Seeing measurement points helped users verify accuracy
-3. **Status Messages**: Color-coded feedback improved confidence
-4. **Profile Saving**: Users appreciate not re-entering data
-5. **Unit Toggle**: Critical for international users
-
-### Future Considerations
-1. **Scalability**: Current architecture works for current scope, but major feature adds may need refactoring
-2. **Framework Consideration**: If adding 10+ more features, consider React/Vue
-3. **Testing Strategy**: Before major refactor, add comprehensive tests
-4. **Community Input**: User feedback will guide future priorities
-5. **Mobile-First**: Next version should prioritize mobile experience
-
-## Metrics & Performance
-
-### Development Time
-- **Phase 1-9**: Original development (timeline not tracked)
-- **Phase 10**: Memory Bank setup - 30 minutes (2025-11-30)
-
-### File Sizes
-- **index.html**: ~30KB (all code)
-- **claude.md**: ~4KB (docs)
-- **memory-bank/**: ~50KB (context docs)
-- **Total Project**: ~84KB
-
-### Performance Targets
-- ✅ Load time: < 2 seconds (Achieved: < 1s)
-- ✅ Measurement response: Instant (Achieved: < 50ms)
-- ✅ Pattern generation: < 1 second (Achieved: < 100ms)
-- ✅ Download success rate: Near 100% (No reports of failures)
-
-### Code Quality
-- **Maintainability**: High (clear structure, good naming)
-- **Complexity**: Low (simple patterns, minimal nesting)
-- **Documentation**: Medium (has docs, needs more inline comments)
-- **Test Coverage**: 0% (manual testing only)
+---
 
 ## Version History
 
-### v1.0 - Core Release
-- Canvas measurement system
+### v3.0 - Volumetric (Current)
+- 3D mesh processing (PLY/OBJ/STL)
+- Body landmark detection from mesh
+- Movement envelope for dynamic ease
+- Volumetric fit analysis (compression/gap detection)
+- Shaped pattern generation (not rectangles)
+- API endpoints for full pipeline
+
+### v2.0 - Automated Measurement
+- Python/Flask backend
+- ArUco marker calibration
+- Automatic garment keypoint detection
+- Zero-click measurement workflow
+
+### v1.x - Manual Measurement
+- Canvas measurement interface
 - Basic pattern generation
-- Garment types
-- SVG export
+- Profile management
+- Unit conversion
 
-### v1.1 - Enhanced Export
-- PDF export via print dialog
-- Profile save/load system
-- Improved pattern styling
-
-### v1.2 - Global Support
-- Unit conversion (inches/cm)
-- Image upload capability
-- Enhanced visual feedback
-
-### v1.3 - Current (Documentation)
-- Memory Bank system
-- Complete project documentation
-- Context preservation for AI assistants
-
-### v2.0 - Future (Planned)
-- Mobile-optimized interface
-- Advanced pattern features
-- Automated testing
-- Accessibility improvements
-
-## Success Metrics
-
-### Project Goals Status
-- ✅ **Easy-to-use measurement tool**: Achieved
-- ✅ **Accurate pattern generation**: Achieved
-- ✅ **Multi-format export**: Achieved (SVG + PDF)
-- ✅ **Client-side only**: Achieved
-- ✅ **Profile persistence**: Achieved
-- ✅ **International support**: Achieved (unit conversion)
-- 🔄 **Mobile optimization**: Partial
-- 🔄 **Accessibility**: Needs improvement
-
-### User Impact (Hypothetical Metrics)
-- Time saved: ~15 minutes per pattern (vs. manual drafting)
-- Error reduction: Eliminates manual calculation mistakes
-- Accessibility: Makes pattern drafting available to beginners
-- Cost savings: Free tool vs. paid pattern software
+---
 
 ## Project Status
 
-**Overall Status**: ✅ **Production Ready**
+**Overall Status**: ✅ **v3.0 Backend Complete + Scanner Acquired**
 
-The "Make It Cunt" garment extension pattern generator is feature-complete and fully functional for its intended purpose. All core features are working, the code is stable, and the Memory Bank documentation system is now in place for future development.
+The volumetric garment modification system backend is fully implemented. Revopoint Inspire scanner acquired (2025-12-22).
 
-**Recommended Next Steps**:
-1. User testing with real sewers
-2. Gather feedback on additional garment types needed
-3. Mobile usability improvements
-4. Consider adding automated tests before major changes
-5. Community outreach and adoption
+**Next Steps**:
+1. Install new Python dependencies (`pip install -r requirements.txt`)
+2. Test server starts with all features OK
+3. Do first body + garment scan test with Inspire
+4. Refine workflow based on real scan data
 
-**Maintenance Mode**: The project is in a stable state and can be left as-is or enhanced based on user feedback and feature requests.
+UI update is tabled until backend tested with real scans.
