@@ -2026,7 +2026,7 @@
                     if (entry) {
                         const date = new Date(entry.timestamp);
                         const timeStr = date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
-                        const emotion = emotions.find(e => e.name === entry.emotion);
+                        const emotion = selectableEmotions.find(e => e.feeling === entry.emotion);
                         const bgColor = emotion ? emotion.color : '#f9f9f9';
                         const opacity = 0.3 + (entry.intensity / 5) * 0.5;
 
