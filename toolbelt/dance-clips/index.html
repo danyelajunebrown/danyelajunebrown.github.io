@@ -450,24 +450,26 @@
                 // Create YouTube broadcast
                 const streamKey = await createYouTubeBroadcast();
 
-                // Register with relay
+                // Find supported format BEFORE registering
+                let mimeType = '';
+                ['video/webm;codecs=vp9', 'video/webm;codecs=vp8', 'video/webm', 'video/mp4'].forEach(type => {
+                    if (!mimeType && MediaRecorder.isTypeSupported(type)) mimeType = type;
+                });
+                console.log('Using MIME type:', mimeType);
+
+                // Register with relay (include mime type so server knows format)
                 const http = relay.replace('wss://', 'https://').replace('ws://', 'http://');
                 await fetch(`${http}/start-stream`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ streamKey, clientId: currentClientId })
+                    body: JSON.stringify({ streamKey, clientId: currentClientId, mimeType })
                 });
 
                 // Connect WebSocket
                 streamSocket = new WebSocket(`${relay}?clientId=${currentClientId}`);
 
                 streamSocket.onopen = async () => {
-                    // Find supported format
-                    let mimeType = '';
-                    ['video/webm;codecs=vp9', 'video/webm;codecs=vp8', 'video/webm', 'video/mp4'].forEach(type => {
-                        if (!mimeType && MediaRecorder.isTypeSupported(type)) mimeType = type;
-                    });
-
+                    // mimeType already detected above
                     const options = { videoBitsPerSecond: 2500000 };
                     if (mimeType) options.mimeType = mimeType;
 
