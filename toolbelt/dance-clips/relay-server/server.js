@@ -27,12 +27,23 @@ app.post('/start-stream', (req, res) => {
         return res.status(400).json({ error: 'Stream key required' });
     }
 
-    // Store stream key for this client
-    const streamInfo = activeStreams.get(clientId) || {};
-    streamInfo.streamKey = streamKey;
-    streamInfo.rtmpUrl = `rtmp://a.rtmp.youtube.com/live2/${streamKey}`;
+    // Kill any existing stream for this client
+    const existingStream = activeStreams.get(clientId);
+    if (existingStream && existingStream.ffmpeg) {
+        console.log(`Killing existing FFmpeg for client: ${clientId}`);
+        existingStream.ffmpeg.stdin.end();
+        existingStream.ffmpeg.kill('SIGTERM');
+    }
+
+    // Create fresh stream info
+    const streamInfo = {
+        streamKey: streamKey,
+        rtmpUrl: `rtmp://a.rtmp.youtube.com/live2/${streamKey}`,
+        ffmpeg: null
+    };
     activeStreams.set(clientId, streamInfo);
 
+    console.log(`Stream registered for ${clientId}: ${streamInfo.rtmpUrl}`);
     res.json({ success: true, clientId });
 });
 
@@ -69,16 +80,26 @@ wss.on('connection', (ws, req) => {
 
         // Initialize FFmpeg if not started
         if (!ffmpeg && !streamInfo.ffmpeg) {
-            console.log('Starting FFmpeg for client:', clientId);
+            console.log(`Starting FFmpeg for ${clientId} -> ${streamInfo.rtmpUrl}`);
 
+            // YouTube REQUIRES both video AND audio streams
+            // Since browser sends video-only, we generate silent audio
             ffmpeg = spawn('ffmpeg', [
-                '-i', 'pipe:0',           // Input from stdin (WebM from browser)
+                '-f', 'mp4',              // Force input format (fragmented mp4 from iOS Safari)
+                '-i', 'pipe:0',           // Video input from stdin
+                '-f', 'lavfi',            // Audio filter input
+                '-i', 'anullsrc=r=44100:cl=stereo', // Generate silent stereo audio
                 '-c:v', 'libx264',        // Video codec
                 '-preset', 'veryfast',    // Fast encoding for live
                 '-tune', 'zerolatency',   // Low latency
+                '-g', '60',               // Keyframe every 2 seconds (30fps)
+                '-keyint_min', '60',      // Min keyframe interval
                 '-c:a', 'aac',            // Audio codec
                 '-ar', '44100',           // Audio sample rate
                 '-b:a', '128k',           // Audio bitrate
+                '-map', '0:v:0',          // Use video from first input
+                '-map', '1:a:0',          // Use audio from second input (silent)
+                '-shortest',              // End when video ends
                 '-f', 'flv',              // Output format
                 streamInfo.rtmpUrl        // YouTube RTMP endpoint
             ]);
@@ -113,7 +134,10 @@ wss.on('connection', (ws, req) => {
         const streamInfo = activeStreams.get(clientId);
         if (streamInfo && streamInfo.ffmpeg) {
             streamInfo.ffmpeg.stdin.end();
+            streamInfo.ffmpeg.kill('SIGTERM');
+            streamInfo.ffmpeg = null;
         }
+        activeStreams.delete(clientId);
     });
 
     ws.on('error', (err) => {

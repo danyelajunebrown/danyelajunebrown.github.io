@@ -1993,6 +1993,22 @@
             const displayEndDate = new Date(endDate);
             displayEndDate.setDate(displayEndDate.getDate() - 1);
 
+            // Build date headers with actual dates
+            const days = ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN'];
+            const dayToNumber = { 'SUN': 0, 'MON': 1, 'TUE': 2, 'WED': 3, 'THU': 4, 'FRI': 5, 'SAT': 6 };
+
+            // Calculate actual dates for each day column
+            const dayDates = {};
+            days.forEach(day => {
+                const targetDayNum = dayToNumber[day];
+                const startDayNum = startDate.getDay();
+                let daysToAdd = targetDayNum - startDayNum;
+                if (daysToAdd < 0) daysToAdd += 7;
+                const dayDate = new Date(startDate);
+                dayDate.setDate(startDate.getDate() + daysToAdd);
+                dayDates[day] = dayDate;
+            });
+
             // Build clean PDF-friendly HTML
             let htmlContent = `
                 <div style="text-align: center; margin-bottom: 15px; font-weight: bold; font-size: 18px;">DBT Skills Diary Card</div>
@@ -2002,18 +2018,15 @@
                     <thead>
                         <tr>
                             <th style="border: 1px solid #333; padding: 8px; background: #e8e8e8; width: 8%;"></th>
-                            <th style="border: 1px solid #333; padding: 8px; background: #e8e8e8; width: 13.14%;">MON</th>
-                            <th style="border: 1px solid #333; padding: 8px; background: #e8e8e8; width: 13.14%;">TUE</th>
-                            <th style="border: 1px solid #333; padding: 8px; background: #e8e8e8; width: 13.14%;">WED</th>
-                            <th style="border: 1px solid #333; padding: 8px; background: #e8e8e8; width: 13.14%;">THU</th>
-                            <th style="border: 1px solid #333; padding: 8px; background: #e8e8e8; width: 13.14%;">FRI</th>
-                            <th style="border: 1px solid #333; padding: 8px; background: #e8e8e8; width: 13.14%;">SAT</th>
-                            <th style="border: 1px solid #333; padding: 8px; background: #e8e8e8; width: 13.14%;">SUN</th>
+                            ${days.map(day => {
+                                const date = dayDates[day];
+                                const dateStr = date.toLocaleDateString('en-US', { month: 'numeric', day: 'numeric' });
+                                return `<th style="border: 1px solid #333; padding: 8px; background: #e8e8e8; width: 13.14%;">${day}<br><span style="font-weight: normal; font-size: 10px;">${dateStr}</span></th>`;
+                            }).join('')}
                         </tr>
                     </thead>
                     <tbody>`;
 
-            const days = ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN'];
             const maxEntries = Math.max(3, ...days.map(d => dayGroups[d].length));
 
             // Emotion rows
@@ -2026,15 +2039,15 @@
                     if (entry) {
                         const date = new Date(entry.timestamp);
                         const timeStr = date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
-                        const emotion = selectableEmotions.find(e => e.feeling === entry.emotion);
-                        const bgColor = emotion ? emotion.color : '#f9f9f9';
+                        const bgColor = getEmotionColor(entry.feeling);
                         const opacity = 0.3 + (entry.intensity / 5) * 0.5;
+                        const opacityHex = Math.round(opacity * 255).toString(16).padStart(2, '0');
 
-                        htmlContent += `<td style="border: 1px solid #333; padding: 6px; vertical-align: top; background: ${bgColor}${Math.round(opacity * 255).toString(16).padStart(2, '0')};">
+                        htmlContent += `<td style="border: 1px solid #333; padding: 6px; vertical-align: top; background: ${bgColor}${opacityHex};">
                             <div style="font-weight: bold; color: #667eea; font-size: 10px;">${timeStr}</div>
                             <div style="font-weight: 600; font-size: 11px;">${entry.feeling}</div>
                             <div style="color: #666; font-size: 9px;">Intensity: ${entry.intensity}/5</div>
-                            <div style="color: #495057; font-size: 9px; font-style: italic;">${entry.skill}</div>
+                            <div style="color: #495057; font-size: 9px; font-style: italic;">${entry.dbt_skill || ''}</div>
                         </td>`;
                     } else {
                         htmlContent += `<td style="border: 1px solid #333; padding: 6px; background: #f9f9f9;"></td>`;

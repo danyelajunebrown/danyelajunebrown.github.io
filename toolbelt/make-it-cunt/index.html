@@ -3,109 +3,3313 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Garment Extension Pattern Generator</title>
+  <title>Make It Cunt - Garment Fit Intelligence System</title>
   <style>
-    body { font-family: sans-serif; margin: 0; padding: 1em; background: #f4f4f4; }
-    h1 { font-size: 1.5em; }
-    canvas { border: 1px solid #ccc; width: 100%; height: 300px; }
-    #svgOutput { border: 1px solid #ccc; margin-top: 1em; width: 100%; height: 300px; }
-    button, select, input { margin: 0.5em 0; padding: 0.5em; font-size: 1em; }
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      padding: 2rem;
+    }
+
+    .container {
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+
+    header {
+      background: white;
+      padding: 2rem;
+      border-radius: 12px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+      margin-bottom: 2rem;
+    }
+
+    h1 {
+      font-size: 2.5rem;
+      color: #667eea;
+      margin-bottom: 0.5rem;
+    }
+
+    .tagline {
+      color: #666;
+      font-size: 1.1rem;
+    }
+
+    .tabs {
+      display: flex;
+      gap: 1rem;
+      margin-bottom: 2rem;
+      flex-wrap: wrap;
+    }
+
+    .tab-button {
+      background: white;
+      border: none;
+      padding: 1rem 2rem;
+      border-radius: 8px;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+
+    .tab-button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(0,0,0,0.15);
+    }
+
+    .tab-button.active {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+    }
+
+    .tab-content {
+      display: none;
+    }
+
+    .tab-content.active {
+      display: block;
+    }
+
+    .card {
+      background: white;
+      padding: 2rem;
+      border-radius: 12px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+      margin-bottom: 2rem;
+    }
+
+    .card h2 {
+      color: #667eea;
+      margin-bottom: 1rem;
+      font-size: 1.8rem;
+    }
+
+    .card h3 {
+      color: #764ba2;
+      margin: 1.5rem 0 1rem 0;
+      font-size: 1.3rem;
+    }
+
+    .instruction-box {
+      background: #fff9e6;
+      border-left: 4px solid #ffc107;
+      padding: 1rem;
+      margin-bottom: 1.5rem;
+      border-radius: 4px;
+    }
+
+    .instruction-box strong {
+      color: #f57c00;
+    }
+
+    .form-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 1.5rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+    }
+
+    label {
+      font-weight: 600;
+      color: #333;
+      margin-bottom: 0.5rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .help-icon {
+      display: inline-block;
+      width: 18px;
+      height: 18px;
+      background: #667eea;
+      color: white;
+      border-radius: 50%;
+      text-align: center;
+      font-size: 12px;
+      line-height: 18px;
+      cursor: help;
+      font-weight: bold;
+    }
+
+    input[type="text"],
+    input[type="number"],
+    select,
+    textarea {
+      padding: 0.75rem;
+      border: 2px solid #e0e0e0;
+      border-radius: 6px;
+      font-size: 1rem;
+      transition: border-color 0.3s;
+    }
+
+    input:focus,
+    select:focus,
+    textarea:focus {
+      outline: none;
+      border-color: #667eea;
+    }
+
+    input[type="number"] {
+      width: 100%;
+    }
+
+    .unit-input {
+      display: flex;
+      gap: 0.5rem;
+      align-items: center;
+    }
+
+    .unit-input input {
+      flex: 1;
+    }
+
+    .unit-input span {
+      color: #666;
+      font-weight: 600;
+    }
+
+    button {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      border: none;
+      padding: 1rem 2rem;
+      border-radius: 6px;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s;
+      box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+    }
+
+    button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+    }
+
+    button:active {
+      transform: translateY(0);
+    }
+
+    button.secondary {
+      background: #6c757d;
+      box-shadow: 0 4px 12px rgba(108, 117, 125, 0.3);
+    }
+
+    button.danger {
+      background: #dc3545;
+      box-shadow: 0 4px 12px rgba(220, 53, 69, 0.3);
+    }
+
+    .status {
+      padding: 1rem;
+      border-radius: 6px;
+      margin: 1rem 0;
+      font-weight: 500;
+    }
+
+    .status.success {
+      background: #d4edda;
+      color: #155724;
+      border: 1px solid #c3e6cb;
+    }
+
+    .status.warning {
+      background: #fff3cd;
+      color: #856404;
+      border: 1px solid #ffeeba;
+    }
+
+    .status.info {
+      background: #d1ecf1;
+      color: #0c5460;
+      border: 1px solid #bee5eb;
+    }
+
+    .status.error {
+      background: #f8d7da;
+      color: #721c24;
+      border: 1px solid #f5c6cb;
+    }
+
+    .button-group {
+      display: flex;
+      gap: 1rem;
+      flex-wrap: wrap;
+      margin-top: 1.5rem;
+    }
+
+    .profile-list {
+      display: grid;
+      gap: 1rem;
+      margin-top: 1rem;
+    }
+
+    .profile-item {
+      background: #f8f9fa;
+      padding: 1rem;
+      border-radius: 6px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border: 2px solid #e0e0e0;
+    }
+
+    .profile-item:hover {
+      border-color: #667eea;
+    }
+
+    .profile-info {
+      flex: 1;
+    }
+
+    .profile-name {
+      font-weight: 600;
+      color: #333;
+      font-size: 1.1rem;
+    }
+
+    .profile-date {
+      color: #666;
+      font-size: 0.9rem;
+    }
+
+    .profile-actions {
+      display: flex;
+      gap: 0.5rem;
+    }
+
+    .btn-small {
+      padding: 0.5rem 1rem;
+      font-size: 0.9rem;
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 3rem;
+      color: #666;
+    }
+
+    .empty-state svg {
+      width: 100px;
+      height: 100px;
+      margin-bottom: 1rem;
+      opacity: 0.5;
+    }
+
+    .measurement-diagram {
+      background: #f8f9fa;
+      padding: 2rem;
+      border-radius: 8px;
+      margin: 1.5rem 0;
+      text-align: center;
+    }
+
+    .measurement-diagram img {
+      max-width: 100%;
+      height: auto;
+    }
+
+    @media (max-width: 768px) {
+      body {
+        padding: 1rem;
+      }
+
+      h1 {
+        font-size: 2rem;
+      }
+
+      .form-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .button-group {
+        flex-direction: column;
+      }
+
+      button {
+        width: 100%;
+      }
+    }
   </style>
 </head>
 <body>
-  <h1>Garment Extension Pattern Generator</h1>
+  <div class="container">
+    <header>
+      <h1>Make It Cunt</h1>
+      <p class="tagline">Garment Fit Intelligence System for Trans Bodies</p>
+    </header>
 
-  <label for="garmentType">Garment Type:</label>
-  <select id="garmentType">
-    <option value="pants">Pants</option>
-    <option value="shirt">Shirt</option>
-  </select><br/>
+    <!-- Tabs Navigation -->
+    <div class="tabs">
+      <button class="tab-button active" onclick="switchTab('photo')">Photo Measure</button>
+      <button class="tab-button" onclick="switchTab('scans')">3D Scans</button>
+      <button class="tab-button" onclick="switchTab('body')">Body Profile</button>
+      <button class="tab-button" onclick="switchTab('garments')">Garments</button>
+      <button class="tab-button" onclick="switchTab('analysis')">Fit Analysis</button>
+      <button class="tab-button" onclick="switchTab('patterns')">Patterns</button>
+      <button class="tab-button" onclick="switchTab('feedback')">Feedback</button>
+    </div>
 
-  <label for="desiredLength">Desired Length (inches):</label>
-  <input type="number" id="desiredLength" value="32" /><br/>
+    <!-- Photo Measure Tab -->
+    <div id="tab-photo" class="tab-content active">
+      <!-- Backend Status Banner -->
+      <div id="backendStatus" style="display: none; padding: 0.75rem 1rem; border-radius: 6px; margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem;">
+        <span id="backendStatusIcon"></span>
+        <span id="backendStatusText"></span>
+      </div>
 
-  <button onclick="startMeasurement()">Start Measurement</button>
-  <p id="status">Tap two points on the garment to measure.</p>
+      <div class="card">
+        <h2>Photo Measurement</h2>
 
-  <canvas id="measureCanvas" width="400" height="300"></canvas>
+        <!-- ArUco Calibration Card Download -->
+        <div id="arucoSection" style="background: linear-gradient(135deg, #e7f3ff 0%, #f0e7ff 100%); border: 2px solid #667eea; padding: 1.5rem; border-radius: 8px; margin-bottom: 1.5rem;">
+          <h3 style="color: #667eea; margin-bottom: 0.5rem;">NEW: ArUco Auto-Calibration</h3>
+          <p style="color: #666; margin-bottom: 1rem;">Print this calibration card once. Place it next to your garment when taking photos for automatic, precise scale detection.</p>
+          <div style="display: flex; gap: 1rem; flex-wrap: wrap; align-items: center;">
+            <a href="http://localhost:5050/api/calibration-card" download="aruco-calibration-card.svg"
+               style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 0.75rem 1.5rem; border-radius: 6px; text-decoration: none; font-weight: 600; display: inline-block;"
+               onclick="downloadArucoCard(event)">
+              Download Calibration Card (SVG)
+            </a>
+            <span style="color: #666; font-size: 0.9rem;">Print at 100% scale - markers are 5cm × 5cm</span>
+          </div>
+        </div>
 
-  <h2>Generated Pattern</h2>
-  <div id="svgOutput"></div>
-  <button onclick="downloadSVG()">Download SVG</button>
+        <div class="instruction-box">
+          <strong>How it works:</strong> Take a photo of your garment laid flat with either the ArUco calibration card (recommended) or a letter-size paper as reference. The app will auto-detect the scale and let you measure.
+        </div>
+
+        <div id="photoStatus"></div>
+
+        <h3>Step 1: Upload Photo</h3>
+        <p style="color: #666; margin-bottom: 1rem;">Lay your garment flat with calibration card (or letter paper) visible. Take a photo from directly above.</p>
+
+        <div style="display: flex; gap: 1rem; flex-wrap: wrap; margin-bottom: 1.5rem;">
+          <label class="upload-btn" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 1rem 2rem; border-radius: 6px; cursor: pointer; font-weight: 600;">
+            Upload Photo
+            <input type="file" id="photoUpload" accept="image/*" style="display: none;" onchange="handlePhotoUpload(event)">
+          </label>
+          <button type="button" onclick="useCamera()" class="secondary">Use Camera</button>
+        </div>
+
+        <div id="cameraContainer" style="display: none; margin-bottom: 1.5rem;">
+          <video id="cameraVideo" style="max-width: 100%; border-radius: 8px; background: #000;"></video>
+          <div style="margin-top: 1rem;">
+            <button type="button" onclick="capturePhoto()">Capture Photo</button>
+            <button type="button" class="secondary" onclick="closeCamera()">Cancel</button>
+          </div>
+        </div>
+
+        <div id="measurementCanvas" style="display: none;">
+          <h3 id="measureStep">Step 2: Mark Reference Paper Corners</h3>
+          <p id="measureInstructions" style="color: #666; margin-bottom: 1rem;">Click the 4 corners of the letter paper in order: top-left, top-right, bottom-right, bottom-left.</p>
+
+          <div style="position: relative; display: inline-block; max-width: 100%; overflow: auto;">
+            <canvas id="photoCanvas" style="border: 2px solid #667eea; border-radius: 8px; cursor: crosshair; max-width: 100%;"></canvas>
+          </div>
+
+          <div id="calibrationInfo" style="display: none; background: #d4edda; border: 1px solid #c3e6cb; padding: 1rem; border-radius: 6px; margin-top: 1rem;">
+            <strong style="color: #155724;">Reference calibrated!</strong>
+            <span id="scaleInfo"></span>
+          </div>
+
+          <!-- Auto-Detect Garment Button -->
+          <div id="autoDetectSection" style="display: none; margin-top: 1rem;">
+            <button type="button" onclick="autoDetectGarment()" style="background: linear-gradient(135deg, #28a745 0%, #20c997 100%);">
+              Auto-Detect Garment Measurements
+            </button>
+            <span style="color: #666; font-size: 0.9rem; margin-left: 1rem;">Automatically find inseam, waist, rise, etc.</span>
+          </div>
+
+          <!-- Auto-Detection Results -->
+          <div id="autoDetectResults" style="display: none; margin-top: 1.5rem; background: #e7f3ff; border: 2px solid #667eea; padding: 1.5rem; border-radius: 8px;">
+            <h3 style="color: #667eea; margin-bottom: 1rem;">Auto-Detected Measurements</h3>
+            <div id="autoDetectMeasurements"></div>
+            <div class="button-group" style="margin-top: 1rem;">
+              <button type="button" onclick="useAutoDetectedMeasurements()">Use These Measurements</button>
+              <button type="button" class="secondary" onclick="hideAutoDetectResults()">Measure Manually Instead</button>
+            </div>
+          </div>
+
+          <div id="measurementResults" style="display: none; margin-top: 1.5rem;">
+            <h3>Measurements</h3>
+            <div id="measurementsList" style="background: #f8f9fa; padding: 1rem; border-radius: 6px;"></div>
+          </div>
+
+          <div class="button-group" style="margin-top: 1.5rem;">
+            <button type="button" onclick="resetMeasurement()">Start Over</button>
+            <button type="button" class="secondary" onclick="undoLastPoint()">Undo Last Point</button>
+            <button type="button" id="saveMeasurementsBtn" style="display: none;" onclick="saveMeasurementsToGarment()">Save to Garment →</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Quick Measure for Known Issues -->
+      <div class="card">
+        <h2>Quick Fit Check</h2>
+        <p style="color: #666; margin-bottom: 1rem;">Don't have your garment laid out? Describe what's wrong and we'll estimate what you need.</p>
+
+        <div class="form-grid">
+          <div class="form-group">
+            <label>What's the problem?</label>
+            <select id="quickIssue" onchange="updateQuickIssue()">
+              <option value="">Select an issue...</option>
+              <option value="inseam_short">Pants too short (show ankle/calf)</option>
+              <option value="rise_short">Rise too short (uncomfortable crotch)</option>
+              <option value="sleeves_short">Sleeves too short</option>
+            </select>
+          </div>
+
+          <div class="form-group" id="quickDetailGroup" style="display: none;">
+            <label id="quickDetailLabel">Where do they hit?</label>
+            <select id="quickDetail" onchange="updateQuickDetail()">
+            </select>
+          </div>
+        </div>
+
+        <div id="quickEstimate" style="display: none; background: #e7f3ff; border: 1px solid #b3d9ff; padding: 1rem; border-radius: 6px; margin-top: 1rem;">
+        </div>
+      </div>
+    </div>
+
+    <!-- 3D Scans Tab -->
+    <div id="tab-scans" class="tab-content">
+      <div class="card">
+        <h2>3D Scanner Integration</h2>
+        <p>Upload 3D scans from your Revopoint Inspire scanner for volumetric fit analysis.</p>
+
+        <div id="scanBackendStatus" style="padding: 1rem; border-radius: 8px; margin-bottom: 1.5rem; display: flex; align-items: center; gap: 0.5rem;">
+          <span id="scanBackendIcon"></span>
+          <span id="scanBackendText"></span>
+        </div>
+
+        <div class="instruction-box">
+          <strong>Quick Workflow:</strong>
+          <ol style="margin: 0.5rem 0 0 1.5rem;">
+            <li>In <strong>Revo Scan 5</strong>: Scan your body or garment</li>
+            <li>Export as PLY to: <code style="background: #fff; padding: 2px 6px; border-radius: 3px;">~/Desktop/MakeItCunt-Scans/body/</code> or <code style="background: #fff; padding: 2px 6px; border-radius: 3px;">garment/</code></li>
+            <li>Click <strong>"Check Scan Folder"</strong> below to auto-load</li>
+          </ol>
+        </div>
+
+        <h3>Scan Folder (Auto-Detect)</h3>
+        <div style="display: flex; gap: 1rem; align-items: center; margin-bottom: 1rem;">
+          <button onclick="checkScanFolder()" style="font-size: 1rem;">Check Scan Folder</button>
+          <button onclick="openScanFolder()" style="background: #6c757d; font-size: 0.9rem;">Open Folder</button>
+          <span id="scanFolderPath" style="color: #666; font-size: 0.9rem;"></span>
+        </div>
+
+        <div id="scanFolderContents" style="display: none; background: #f8f9fa; padding: 1rem; border-radius: 8px; margin-bottom: 1.5rem;">
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
+            <div>
+              <h4 style="margin-bottom: 0.5rem; color: #667eea;">Body Scans</h4>
+              <div id="bodyScansInFolder" style="max-height: 200px; overflow-y: auto;"></div>
+            </div>
+            <div>
+              <h4 style="margin-bottom: 0.5rem; color: #764ba2;">Garment Scans</h4>
+              <div id="garmentScansInFolder" style="max-height: 200px; overflow-y: auto;"></div>
+            </div>
+          </div>
+        </div>
+
+        <hr style="border: none; border-top: 1px solid #dee2e6; margin: 1.5rem 0;">
+
+        <h3>Or Upload Manually</h3>
+        <h4>Body Scan</h4>
+        <div class="form-grid">
+          <div class="form-group">
+            <label>Body Scan File (PLY/OBJ/STL)</label>
+            <input type="file" id="bodyScanFile" accept=".ply,.obj,.stl" onchange="previewScanFile('body')">
+          </div>
+          <div class="form-group">
+            <label>Movement Profile</label>
+            <select id="movementProfile">
+              <option value="standard">Standard (everyday wear)</option>
+              <option value="fitted">Fitted (tailored look)</option>
+              <option value="wild" selected>Wild (dance/performance)</option>
+            </select>
+          </div>
+        </div>
+        <div id="bodyScanPreview" class="scan-preview" style="display: none; background: #f5f5f5; padding: 1rem; border-radius: 8px; margin-bottom: 1rem;">
+          <strong>File:</strong> <span id="bodyScanName"></span><br>
+          <strong>Size:</strong> <span id="bodyScanSize"></span>
+        </div>
+        <button onclick="uploadBodyMesh()" id="uploadBodyBtn" disabled style="opacity: 0.5;">Upload Body Scan</button>
+        <div id="bodyScanStatus" style="margin-top: 1rem;"></div>
+
+        <h3>Upload Garment Scan</h3>
+        <div class="form-grid">
+          <div class="form-group">
+            <label>Garment Scan File (PLY/OBJ/STL)</label>
+            <input type="file" id="garmentScanFile" accept=".ply,.obj,.stl" onchange="previewScanFile('garment')">
+          </div>
+          <div class="form-group">
+            <label>Garment Type (optional - auto-detected)</label>
+            <select id="garmentTypeHint">
+              <option value="">Auto-detect</option>
+              <option value="pants">Pants</option>
+              <option value="shirt">Shirt</option>
+              <option value="dress">Dress</option>
+              <option value="skirt">Skirt</option>
+              <option value="jacket">Jacket</option>
+            </select>
+          </div>
+        </div>
+        <div id="garmentScanPreview" class="scan-preview" style="display: none; background: #f5f5f5; padding: 1rem; border-radius: 8px; margin-bottom: 1rem;">
+          <strong>File:</strong> <span id="garmentScanName"></span><br>
+          <strong>Size:</strong> <span id="garmentScanSize"></span>
+        </div>
+        <button onclick="uploadGarmentMesh()" id="uploadGarmentBtn" disabled style="opacity: 0.5;">Upload Garment Scan</button>
+        <div id="garmentScanStatus" style="margin-top: 1rem;"></div>
+
+        <h3>Loaded Scans</h3>
+        <div id="loadedScansStatus" style="background: #f5f5f5; padding: 1rem; border-radius: 8px; margin-bottom: 1.5rem;">
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+            <div>
+              <strong>Body Scan:</strong> <span id="bodyMeshLoaded" style="color: #dc3545;">Not loaded</span>
+            </div>
+            <div>
+              <strong>Garment Scan:</strong> <span id="garmentMeshLoaded" style="color: #dc3545;">Not loaded</span>
+            </div>
+          </div>
+        </div>
+
+        <h3>Run Full Analysis</h3>
+        <p style="margin-bottom: 1rem;">Once both scans are loaded, run the full volumetric fit analysis and pattern generation pipeline.</p>
+        <button onclick="runFullWorkflow()" id="runWorkflowBtn" class="primary-action" disabled style="opacity: 0.5; font-size: 1.1rem; padding: 1.2rem 2.5rem;">
+          Analyze Fit & Generate Patterns
+        </button>
+        <div id="workflowStatus" style="margin-top: 1rem;"></div>
+
+        <div id="analysisResults" style="display: none; margin-top: 2rem;">
+          <h3>Fit Analysis Results</h3>
+          <div id="fitScoreDisplay" style="text-align: center; padding: 1.5rem; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border-radius: 12px; margin-bottom: 1.5rem;">
+            <div style="font-size: 3rem; font-weight: bold;" id="fitScoreValue">--</div>
+            <div style="font-size: 1.1rem;">Overall Fit Score</div>
+          </div>
+          <div id="fitIssuesList"></div>
+          <div id="modificationsRecommended" style="margin-top: 1.5rem;"></div>
+        </div>
+
+        <div id="patternResults" style="display: none; margin-top: 2rem;">
+          <h3>Generated Patterns</h3>
+          <div id="patternList"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Body Profile Tab -->
+    <div id="tab-body" class="tab-content">
+      <div class="card">
+        <h2>Body Measurements</h2>
+        <div class="instruction-box">
+          <strong>📏 How to measure:</strong> Use a flexible measuring tape. Wear fitted clothing or underwear. Stand naturally. Record all measurements in inches. For circumferences, measure at the widest/specified point and make sure tape is parallel to the floor.
+        </div>
+
+        <div id="bodyStatus"></div>
+
+        <form id="bodyForm" onsubmit="saveBodyProfile(event)">
+          <h3>Lower Body Measurements (for Pants/Leggings)</h3>
+          <div class="form-grid">
+            <div class="form-group">
+              <label>
+                Profile Name
+                <span class="help-icon" title="Give your body profile a name (e.g., 'My Measurements Dec 2025')">?</span>
+              </label>
+              <input type="text" id="bodyProfileName" placeholder="e.g., My Measurements" required>
+            </div>
+
+            <div class="form-group">
+              <label>
+                Natural Waist Circumference
+                <span class="help-icon" title="Measure around your natural waist (narrowest point, usually at belly button level)">?</span>
+              </label>
+              <div class="unit-input">
+                <input type="number" id="waist" step="0.25" min="20" max="60" placeholder="e.g., 32" required>
+                <span>inches</span>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label>
+                Hip Circumference
+                <span class="help-icon" title="Measure around the fullest part of your hips and butt">?</span>
+              </label>
+              <div class="unit-input">
+                <input type="number" id="hips" step="0.25" min="25" max="70" placeholder="e.g., 40" required>
+                <span>inches</span>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label>
+                Front Rise
+                <span class="help-icon" title="Sit down. Measure from natural waist at front, down between legs to chair">?</span>
+              </label>
+              <div class="unit-input">
+                <input type="number" id="frontRise" step="0.25" min="8" max="20" placeholder="e.g., 12" required>
+                <span>inches</span>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label>
+                Back Rise
+                <span class="help-icon" title="Sit down. Measure from natural waist at back, down between legs to chair">?</span>
+              </label>
+              <div class="unit-input">
+                <input type="number" id="backRise" step="0.25" min="8" max="24" placeholder="e.g., 15" required>
+                <span>inches</span>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label>
+                Inseam Length
+                <span class="help-icon" title="From crotch seam down inside leg to ankle bone">?</span>
+              </label>
+              <div class="unit-input">
+                <input type="number" id="inseam" step="0.25" min="20" max="45" placeholder="e.g., 34" required>
+                <span>inches</span>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label>
+                Outseam Length
+                <span class="help-icon" title="From natural waist down outside of leg to ankle bone">?</span>
+              </label>
+              <div class="unit-input">
+                <input type="number" id="outseam" step="0.25" min="30" max="55" placeholder="e.g., 42" required>
+                <span>inches</span>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label>
+                Thigh Circumference
+                <span class="help-icon" title="Measure around the fullest part of your thigh (typically 2-3 inches below crotch)">?</span>
+              </label>
+              <div class="unit-input">
+                <input type="number" id="thigh" step="0.25" min="15" max="40" placeholder="e.g., 24" required>
+                <span>inches</span>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label>
+                Knee Circumference
+                <span class="help-icon" title="Measure around knee with leg slightly bent">?</span>
+              </label>
+              <div class="unit-input">
+                <input type="number" id="knee" step="0.25" min="10" max="30" placeholder="e.g., 15" required>
+                <span>inches</span>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label>
+                Ankle Circumference
+                <span class="help-icon" title="Measure around ankle at narrowest point above ankle bone">?</span>
+              </label>
+              <div class="unit-input">
+                <input type="number" id="ankle" step="0.25" min="6" max="18" placeholder="e.g., 9" required>
+                <span>inches</span>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label>
+                Calf Circumference
+                <span class="help-icon" title="Measure around the fullest part of your calf">?</span>
+              </label>
+              <div class="unit-input">
+                <input type="number" id="calf" step="0.25" min="10" max="25" placeholder="e.g., 15" required>
+                <span>inches</span>
+              </div>
+            </div>
+          </div>
+
+          <h3>Upper Body Reference (for context)</h3>
+          <div class="form-grid">
+            <div class="form-group">
+              <label>
+                Shoulder Width
+                <span class="help-icon" title="Measure from shoulder point to shoulder point across back">?</span>
+              </label>
+              <div class="unit-input">
+                <input type="number" id="shoulders" step="0.25" min="12" max="26" placeholder="e.g., 18">
+                <span>inches</span>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label>
+                Torso Length
+                <span class="help-icon" title="From base of neck to natural waist (front)">?</span>
+              </label>
+              <div class="unit-input">
+                <input type="number" id="torso" step="0.25" min="12" max="28" placeholder="e.g., 17">
+                <span>inches</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="button-group">
+            <button type="submit">Save Body Profile</button>
+            <button type="button" class="secondary" onclick="clearBodyForm()">Clear Form</button>
+          </div>
+        </form>
+      </div>
+
+      <!-- Saved Profiles -->
+      <div class="card">
+        <h2>Saved Body Profiles</h2>
+        <div id="bodyProfilesList"></div>
+      </div>
+    </div>
+
+    <!-- Garments Tab -->
+    <div id="tab-garments" class="tab-content">
+      <div class="card">
+        <h2>Add Garment</h2>
+        <div class="instruction-box">
+          <strong>📐 How to measure garments:</strong> Lay garment flat on a table. Measure seam to seam. For circumferences, measure flat width and double it. All measurements in inches. Test fabric stretch by pulling a 10" section and measuring how far it stretches.
+        </div>
+
+        <div id="garmentStatus"></div>
+
+        <form id="garmentForm" onsubmit="saveGarment(event)">
+          <h3>Garment Information</h3>
+          <div class="form-grid">
+            <div class="form-group">
+              <label>
+                Garment Name
+                <span class="help-icon" title="Give this garment a name (e.g., 'Black Skinny Jeans', 'Navy Leggings')">?</span>
+              </label>
+              <input type="text" id="garmentName" placeholder="e.g., Black Skinny Jeans" required>
+            </div>
+
+            <div class="form-group">
+              <label>
+                Fabric Stretch %
+                <span class="help-icon" title="Pull 10 inches of fabric. If it stretches to 12 inches, that's 20% stretch. Enter 0 for non-stretch">?</span>
+              </label>
+              <div class="unit-input">
+                <input type="number" id="fabricStretch" step="1" min="0" max="100" placeholder="e.g., 15" required>
+                <span>%</span>
+              </div>
+            </div>
+          </div>
+
+          <h3>Flat Measurements (Lay Garment Flat)</h3>
+          <div class="form-grid">
+            <div class="form-group">
+              <label>
+                Waist (flat, doubled)
+                <span class="help-icon" title="Measure across waistband flat, then multiply by 2">?</span>
+              </label>
+              <div class="unit-input">
+                <input type="number" id="garmentWaist" step="0.25" min="20" max="60" placeholder="e.g., 32" required>
+                <span>inches</span>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label>
+                Hip (flat, doubled)
+                <span class="help-icon" title="Measure across fullest part of hip area flat, then multiply by 2">?</span>
+              </label>
+              <div class="unit-input">
+                <input type="number" id="garmentHips" step="0.25" min="25" max="70" placeholder="e.g., 38" required>
+                <span>inches</span>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label>
+                Front Rise
+                <span class="help-icon" title="From waistband to crotch seam, front side">?</span>
+              </label>
+              <div class="unit-input">
+                <input type="number" id="garmentFrontRise" step="0.25" min="8" max="20" placeholder="e.g., 11" required>
+                <span>inches</span>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label>
+                Back Rise
+                <span class="help-icon" title="From waistband to crotch seam, back side">?</span>
+              </label>
+              <div class="unit-input">
+                <input type="number" id="garmentBackRise" step="0.25" min="8" max="24" placeholder="e.g., 14" required>
+                <span>inches</span>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label>
+                Inseam
+                <span class="help-icon" title="From crotch seam to hem, inside leg">?</span>
+              </label>
+              <div class="unit-input">
+                <input type="number" id="garmentInseam" step="0.25" min="20" max="45" placeholder="e.g., 31" required>
+                <span>inches</span>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label>
+                Outseam
+                <span class="help-icon" title="From waistband to hem, outside leg">?</span>
+              </label>
+              <div class="unit-input">
+                <input type="number" id="garmentOutseam" step="0.25" min="30" max="55" placeholder="e.g., 40" required>
+                <span>inches</span>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label>
+                Thigh (flat, doubled)
+                <span class="help-icon" title="Measure across thigh area flat, then multiply by 2">?</span>
+              </label>
+              <div class="unit-input">
+                <input type="number" id="garmentThigh" step="0.25" min="15" max="40" placeholder="e.g., 22" required>
+                <span>inches</span>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label>
+                Knee (flat, doubled)
+                <span class="help-icon" title="Measure across knee area flat, then multiply by 2">?</span>
+              </label>
+              <div class="unit-input">
+                <input type="number" id="garmentKnee" step="0.25" min="10" max="30" placeholder="e.g., 14" required>
+                <span>inches</span>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label>
+                Calf (flat, doubled)
+                <span class="help-icon" title="Measure across calf area flat, then multiply by 2">?</span>
+              </label>
+              <div class="unit-input">
+                <input type="number" id="garmentCalf" step="0.25" min="10" max="25" placeholder="e.g., 14" required>
+                <span>inches</span>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label>
+                Ankle/Hem (flat, doubled)
+                <span class="help-icon" title="Measure across hem opening flat, then multiply by 2">?</span>
+              </label>
+              <div class="unit-input">
+                <input type="number" id="garmentAnkle" step="0.25" min="6" max="18" placeholder="e.g., 8" required>
+                <span>inches</span>
+              </div>
+            </div>
+          </div>
+
+          <h3>Where Does This Garment NOT Fit?</h3>
+          <p style="color: #666; margin-bottom: 1rem;">Check all that apply. Be specific about fit issues you experience when wearing this garment.</p>
+          
+          <div style="display: grid; gap: 0.75rem; margin-bottom: 1.5rem;">
+            <label style="display: flex; align-items: center; gap: 0.5rem; font-weight: normal; cursor: pointer;">
+              <input type="checkbox" id="fitIssue_inseamShort" value="inseamShort">
+              <span>Inseam too short (pants drag on shoes when sitting, or show ankle when standing)</span>
+            </label>
+            
+            <label style="display: flex; align-items: center; gap: 0.5rem; font-weight: normal; cursor: pointer;">
+              <input type="checkbox" id="fitIssue_riseShort" value="riseShort">
+              <span>Rise too short (rides up at crotch, uncomfortable when sitting)</span>
+            </label>
+            
+            <label style="display: flex; align-items: center; gap: 0.5rem; font-weight: normal; cursor: pointer;">
+              <input type="checkbox" id="fitIssue_waistTight" value="waistTight">
+              <span>Waist too tight (digs in, leaves marks, hard to breathe)</span>
+            </label>
+            
+            <label style="display: flex; align-items: center; gap: 0.5rem; font-weight: normal; cursor: pointer;">
+              <input type="checkbox" id="fitIssue_hipsTight" value="hipsTight">
+              <span>Hips too tight (fabric pulls, seams strain, hard to pull up)</span>
+            </label>
+            
+            <label style="display: flex; align-items: center; gap: 0.5rem; font-weight: normal; cursor: pointer;">
+              <input type="checkbox" id="fitIssue_thighsTight" value="thighsTight">
+              <span>Thighs too tight (restricts movement, fabric strains)</span>
+            </label>
+            
+            <label style="display: flex; align-items: center; gap: 0.5rem; font-weight: normal; cursor: pointer;">
+              <input type="checkbox" id="fitIssue_calvesTight" value="calvesTight">
+              <span>Calves too tight (hard to pull up, restricts circulation)</span>
+            </label>
+            
+            <label style="display: flex; align-items: center; gap: 0.5rem; font-weight: normal; cursor: pointer;">
+              <input type="checkbox" id="fitIssue_tooLong" value="tooLong">
+              <span>Too long (drags on floor, needs hemming)</span>
+            </label>
+            
+            <label style="display: flex; align-items: center; gap: 0.5rem; font-weight: normal; cursor: pointer;">
+              <input type="checkbox" id="fitIssue_gapWaist" value="gapWaist">
+              <span>Waist gaps (loose at waist but tight at hips)</span>
+            </label>
+          </div>
+
+          <div class="button-group">
+            <button type="submit">Save Garment</button>
+            <button type="button" class="secondary" onclick="clearGarmentForm()">Clear Form</button>
+          </div>
+        </form>
+      </div>
+
+      <!-- Saved Garments -->
+      <div class="card">
+        <h2>Your Garment Library</h2>
+        <div id="garmentsList"></div>
+      </div>
+    </div>
+
+    <!-- Fit Analysis Tab -->
+    <div id="tab-analysis" class="tab-content">
+      <div class="card">
+        <h2>Fit Analysis</h2>
+        <p>Compare your body measurements to garment measurements to identify fit issues.</p>
+        
+        <div id="analysisStatus"></div>
+
+        <div class="form-grid">
+          <div class="form-group">
+            <label>Select Body Profile</label>
+            <select id="analysisBodyProfile" onchange="runFitAnalysis()">
+              <option value="">Choose a body profile...</option>
+            </select>
+          </div>
+          
+          <div class="form-group">
+            <label>Select Garment</label>
+            <select id="analysisGarment" onchange="runFitAnalysis()">
+              <option value="">Choose a garment...</option>
+            </select>
+          </div>
+        </div>
+
+        <div id="analysisContent"></div>
+      </div>
+    </div>
+
+    <!-- Patterns Tab -->
+    <div id="tab-patterns" class="tab-content">
+      <div class="card">
+        <h2>Pattern Generation</h2>
+        <p>Generate custom modification patterns based on fit analysis.</p>
+        <div id="patternsStatus"></div>
+        <div id="patternsContent"></div>
+      </div>
+    </div>
+
+    <!-- Feedback Tab -->
+    <div id="tab-feedback" class="tab-content">
+      <div class="card">
+        <h2>Construction Feedback</h2>
+        <p>Record results after constructing modifications to improve future recommendations.</p>
+        
+        <div id="feedbackStatus"></div>
+        
+        <div class="form-grid" style="margin-top: 1.5rem;">
+          <div class="form-group">
+            <label>Select Pattern/Modification</label>
+            <select id="feedbackPattern">
+              <option value="">Choose a pattern...</option>
+            </select>
+          </div>
+        </div>
+        
+        <div id="feedbackFormContainer"></div>
+        <div id="feedbackList"></div>
+      </div>
+    </div>
+  </div>
 
   <script>
-    const canvas = document.getElementById('measureCanvas');
-    const ctx = canvas.getContext('2d');
-    const status = document.getElementById('status');
-    const svgOutput = document.getElementById('svgOutput');
-    let points = [];
+    // Application State
+    const state = {
+      currentTab: 'photo',
+      bodyProfiles: [],
+      garments: [],
+      analyses: [],
+      patterns: [],
+      feedback: []
+    };
 
-    function startMeasurement() {
-      points = [];
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      status.textContent = "Tap two points on the garment to measure.";
+    // Photo Measurement State
+    const photoState = {
+      image: null,
+      canvas: null,
+      ctx: null,
+      mode: 'calibration', // 'calibration' or 'measure'
+      referenceCorners: [], // 4 corners of the reference paper
+      measurementPoints: [], // pairs of points for measurements
+      currentMeasurementStart: null,
+      scale: null, // pixels per inch
+      measurements: [], // saved measurements with labels
+      cameraStream: null
+    };
+
+    // Reference paper size (letter = 8.5 x 11 inches)
+    const REFERENCE_WIDTH = 8.5;
+    const REFERENCE_HEIGHT = 11;
+
+    // Backend configuration
+    const BACKEND_URL = 'http://localhost:5050';
+    let backendAvailable = false;
+
+    // Check backend health on load
+    async function checkBackendHealth() {
+      const statusDiv = document.getElementById('backendStatus');
+      const iconSpan = document.getElementById('backendStatusIcon');
+      const textSpan = document.getElementById('backendStatusText');
+
+      try {
+        const response = await fetch(`${BACKEND_URL}/api/health`, {
+          method: 'GET',
+          mode: 'cors'
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          backendAvailable = true;
+          statusDiv.style.display = 'flex';
+          statusDiv.style.background = '#d4edda';
+          statusDiv.style.border = '1px solid #c3e6cb';
+          iconSpan.textContent = '✓';
+          iconSpan.style.color = '#155724';
+          textSpan.textContent = 'Backend connected - ArUco auto-calibration available';
+          textSpan.style.color = '#155724';
+
+          // Show ArUco section
+          document.getElementById('arucoSection').style.display = 'block';
+        }
+      } catch (err) {
+        backendAvailable = false;
+        statusDiv.style.display = 'flex';
+        statusDiv.style.background = '#fff3cd';
+        statusDiv.style.border = '1px solid #ffeeba';
+        iconSpan.textContent = '⚠';
+        iconSpan.style.color = '#856404';
+        textSpan.innerHTML = 'Backend not running. <a href="#" onclick="showBackendInstructions()" style="color: #856404;">Start it</a> for auto-calibration, or use manual mode below.';
+        textSpan.style.color = '#856404';
+
+        // Hide ArUco download (won't work without backend)
+        document.getElementById('arucoSection').style.display = 'none';
+      }
     }
 
-    canvas.addEventListener('click', (e) => {
-      if (points.length >= 2) return;
-      const rect = canvas.getBoundingClientRect();
-      const x = e.clientX - rect.left;
-      const y = e.clientY - rect.top;
-      points.push({ x, y });
-      ctx.fillStyle = 'red';
-      ctx.beginPath();
-      ctx.arc(x, y, 5, 0, 2 * Math.PI);
-      ctx.fill();
+    function showBackendInstructions() {
+      alert('To start the backend server:\n\n1. Open Terminal\n2. cd to: make-it-cunt/server\n3. Run: source venv/bin/activate\n4. Run: python app.py\n\nThen refresh this page.');
+    }
 
-      if (points.length === 2) {
-        const dx = points[1].x - points[0].x;
-        const dy = points[1].y - points[0].y;
-        const pxDistance = Math.sqrt(dx * dx + dy * dy);
-        const desired = parseFloat(document.getElementById('desiredLength').value);
-        const scale = desired / pxDistance;
+    // Download ArUco card (with fallback to local file)
+    function downloadArucoCard(event) {
+      if (!backendAvailable) {
+        event.preventDefault();
+        // Try to use local file
+        const link = document.createElement('a');
+        link.href = 'assets/aruco-card.svg';
+        link.download = 'aruco-calibration-card.svg';
+        link.click();
+      }
+      // If backend is available, the default link behavior works
+    }
 
-        ctx.strokeStyle = 'blue';
+    // Try ArUco calibration first, fall back to manual
+    async function tryArucoCalibration(imageBlob) {
+      if (!backendAvailable) {
+        return null; // Will use manual calibration
+      }
+
+      try {
+        const formData = new FormData();
+        formData.append('image', imageBlob, 'photo.jpg');
+
+        const response = await fetch(`${BACKEND_URL}/api/calibrate`, {
+          method: 'POST',
+          body: formData
+        });
+
+        const result = await response.json();
+
+        if (result.success) {
+          return {
+            scale: result.scale_ppcm / 2.54, // Convert to pixels per inch for compatibility
+            ppcm: result.scale_ppcm,
+            ppi: result.scale_ppi,
+            confidence: result.confidence,
+            markersDetected: result.markers_detected
+          };
+        }
+      } catch (err) {
+        console.log('ArUco calibration failed, using manual mode:', err);
+      }
+
+      return null;
+    }
+
+    // ============================================
+    // 3D SCAN FUNCTIONS (v3.0)
+    // ============================================
+
+    // State for 3D scans
+    const scanState = {
+      bodyMeshLoaded: false,
+      garmentMeshLoaded: false,
+      bodyMeshInfo: null,
+      garmentMeshInfo: null
+    };
+
+    // Check 3D scan feature availability
+    async function check3DScanBackend() {
+      const statusDiv = document.getElementById('scanBackendStatus');
+      const iconSpan = document.getElementById('scanBackendIcon');
+      const textSpan = document.getElementById('scanBackendText');
+
+      try {
+        const response = await fetch(`${BACKEND_URL}/api/health`, {
+          method: 'GET',
+          mode: 'cors'
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+
+          if (data.features.mesh_processing && data.features.fit_analysis && data.features.pattern_generation) {
+            statusDiv.style.background = '#d4edda';
+            statusDiv.style.border = '1px solid #c3e6cb';
+            iconSpan.textContent = '✓';
+            iconSpan.style.color = '#155724';
+            textSpan.textContent = 'Backend ready - Full 3D volumetric analysis available';
+            textSpan.style.color = '#155724';
+            return true;
+          } else {
+            const missing = [];
+            if (!data.features.mesh_processing) missing.push('mesh processing');
+            if (!data.features.fit_analysis) missing.push('fit analysis');
+            if (!data.features.pattern_generation) missing.push('pattern generation');
+
+            statusDiv.style.background = '#fff3cd';
+            statusDiv.style.border = '1px solid #ffeeba';
+            iconSpan.textContent = '⚠';
+            iconSpan.style.color = '#856404';
+            textSpan.textContent = `Missing features: ${missing.join(', ')}`;
+            textSpan.style.color = '#856404';
+            return false;
+          }
+        }
+      } catch (err) {
+        statusDiv.style.background = '#f8d7da';
+        statusDiv.style.border = '1px solid #f5c6cb';
+        iconSpan.textContent = '✗';
+        iconSpan.style.color = '#721c24';
+        textSpan.innerHTML = 'Backend not running. <a href="#" onclick="showBackendInstructions()" style="color: #721c24;">Start it</a> for 3D scan features.';
+        textSpan.style.color = '#721c24';
+        return false;
+      }
+      return false;
+    }
+
+    // Preview scan file before upload
+    function previewScanFile(type) {
+      const fileInput = document.getElementById(`${type}ScanFile`);
+      const previewDiv = document.getElementById(`${type}ScanPreview`);
+      const nameSpan = document.getElementById(`${type}ScanName`);
+      const sizeSpan = document.getElementById(`${type}ScanSize`);
+      const uploadBtn = document.getElementById(`upload${type.charAt(0).toUpperCase() + type.slice(1)}Btn`);
+
+      const file = fileInput.files[0];
+      if (file) {
+        previewDiv.style.display = 'block';
+        nameSpan.textContent = file.name;
+        sizeSpan.textContent = (file.size / 1024 / 1024).toFixed(2) + ' MB';
+        uploadBtn.disabled = false;
+        uploadBtn.style.opacity = '1';
+      } else {
+        previewDiv.style.display = 'none';
+        uploadBtn.disabled = true;
+        uploadBtn.style.opacity = '0.5';
+      }
+    }
+
+    // Upload body mesh
+    async function uploadBodyMesh() {
+      const fileInput = document.getElementById('bodyScanFile');
+      const statusDiv = document.getElementById('bodyScanStatus');
+      const movementProfile = document.getElementById('movementProfile').value;
+
+      if (!fileInput.files[0]) {
+        showStatus('bodyScanStatus', 'Please select a file first.', 'error');
+        return;
+      }
+
+      showStatus('bodyScanStatus', 'Uploading body scan...', 'info');
+
+      const formData = new FormData();
+      formData.append('file', fileInput.files[0]);
+      formData.append('movement_profile', movementProfile);
+
+      try {
+        const response = await fetch(`${BACKEND_URL}/api/mesh/upload/body`, {
+          method: 'POST',
+          body: formData
+        });
+
+        const result = await response.json();
+
+        if (result.success) {
+          scanState.bodyMeshLoaded = true;
+          scanState.bodyMeshInfo = result;
+
+          const landmarkCount = result.landmarks ? Object.keys(result.landmarks).length : 0;
+          showStatus('bodyScanStatus',
+            `Body scan uploaded successfully! Detected ${landmarkCount} landmarks. Dimensions: ${result.dimensions.width.toFixed(0)}×${result.dimensions.height.toFixed(0)}×${result.dimensions.depth.toFixed(0)} mm`,
+            'success'
+          );
+
+          updateLoadedScansStatus();
+        } else {
+          showStatus('bodyScanStatus', `Upload failed: ${result.error}`, 'error');
+        }
+      } catch (err) {
+        showStatus('bodyScanStatus', `Upload error: ${err.message}`, 'error');
+      }
+    }
+
+    // Upload garment mesh
+    async function uploadGarmentMesh() {
+      const fileInput = document.getElementById('garmentScanFile');
+      const garmentType = document.getElementById('garmentTypeHint').value;
+
+      if (!fileInput.files[0]) {
+        showStatus('garmentScanStatus', 'Please select a file first.', 'error');
+        return;
+      }
+
+      showStatus('garmentScanStatus', 'Uploading garment scan...', 'info');
+
+      const formData = new FormData();
+      formData.append('file', fileInput.files[0]);
+      if (garmentType) {
+        formData.append('garment_type', garmentType);
+      }
+
+      try {
+        const response = await fetch(`${BACKEND_URL}/api/mesh/upload/garment`, {
+          method: 'POST',
+          body: formData
+        });
+
+        const result = await response.json();
+
+        if (result.success) {
+          scanState.garmentMeshLoaded = true;
+          scanState.garmentMeshInfo = result;
+
+          const seamCount = result.seams ? result.seams.length : 0;
+          showStatus('garmentScanStatus',
+            `Garment scan uploaded! Type: ${result.garment_type}, ${seamCount} seams detected. Dimensions: ${result.dimensions.width.toFixed(0)}×${result.dimensions.height.toFixed(0)}×${result.dimensions.depth.toFixed(0)} mm`,
+            'success'
+          );
+
+          updateLoadedScansStatus();
+        } else {
+          showStatus('garmentScanStatus', `Upload failed: ${result.error}`, 'error');
+        }
+      } catch (err) {
+        showStatus('garmentScanStatus', `Upload error: ${err.message}`, 'error');
+      }
+    }
+
+    // Update loaded scans status display
+    function updateLoadedScansStatus() {
+      const bodySpan = document.getElementById('bodyMeshLoaded');
+      const garmentSpan = document.getElementById('garmentMeshLoaded');
+      const workflowBtn = document.getElementById('runWorkflowBtn');
+
+      if (scanState.bodyMeshLoaded) {
+        bodySpan.textContent = 'Loaded ✓';
+        bodySpan.style.color = '#28a745';
+      } else {
+        bodySpan.textContent = 'Not loaded';
+        bodySpan.style.color = '#dc3545';
+      }
+
+      if (scanState.garmentMeshLoaded) {
+        garmentSpan.textContent = 'Loaded ✓';
+        garmentSpan.style.color = '#28a745';
+      } else {
+        garmentSpan.textContent = 'Not loaded';
+        garmentSpan.style.color = '#dc3545';
+      }
+
+      // Enable workflow button when both are loaded
+      if (scanState.bodyMeshLoaded && scanState.garmentMeshLoaded) {
+        workflowBtn.disabled = false;
+        workflowBtn.style.opacity = '1';
+      } else {
+        workflowBtn.disabled = true;
+        workflowBtn.style.opacity = '0.5';
+      }
+    }
+
+    // Run full workflow: analyze and generate patterns
+    async function runFullWorkflow() {
+      if (!scanState.bodyMeshLoaded || !scanState.garmentMeshLoaded) {
+        showStatus('workflowStatus', 'Please upload both body and garment scans first.', 'error');
+        return;
+      }
+
+      showStatus('workflowStatus', 'Running volumetric fit analysis... This may take a moment.', 'info');
+      document.getElementById('analysisResults').style.display = 'none';
+      document.getElementById('patternResults').style.display = 'none';
+
+      try {
+        const response = await fetch(`${BACKEND_URL}/api/workflow/analyze-and-generate`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({})
+        });
+
+        const result = await response.json();
+
+        if (result.success) {
+          showStatus('workflowStatus', 'Analysis complete!', 'success');
+          displayFitAnalysisResults(result.fit_analysis);
+          displayPatternResults(result.patterns);
+        } else {
+          showStatus('workflowStatus', `Analysis failed: ${result.error}`, 'error');
+        }
+      } catch (err) {
+        showStatus('workflowStatus', `Error: ${err.message}`, 'error');
+      }
+    }
+
+    // Display fit analysis results
+    function displayFitAnalysisResults(analysis) {
+      document.getElementById('analysisResults').style.display = 'block';
+
+      // Display fit score
+      const score = analysis.overall_score || 0;
+      document.getElementById('fitScoreValue').textContent = Math.round(score);
+
+      // Color based on score
+      const scoreDisplay = document.getElementById('fitScoreDisplay');
+      if (score >= 80) {
+        scoreDisplay.style.background = 'linear-gradient(135deg, #28a745 0%, #20c997 100%)';
+      } else if (score >= 60) {
+        scoreDisplay.style.background = 'linear-gradient(135deg, #ffc107 0%, #fd7e14 100%)';
+      } else {
+        scoreDisplay.style.background = 'linear-gradient(135deg, #dc3545 0%, #e83e8c 100%)';
+      }
+
+      // Display fit issues
+      const issuesList = document.getElementById('fitIssuesList');
+      if (analysis.issues && analysis.issues.length > 0) {
+        let html = '<h4 style="margin-bottom: 1rem;">Fit Issues Detected:</h4><div style="display: grid; gap: 0.5rem;">';
+        analysis.issues.forEach(issue => {
+          const severityColor = issue.severity === 'critical' ? '#dc3545' :
+                               issue.severity === 'severe' ? '#fd7e14' :
+                               issue.severity === 'moderate' ? '#ffc107' : '#28a745';
+          html += `
+            <div style="background: #f8f9fa; padding: 0.75rem; border-radius: 6px; border-left: 4px solid ${severityColor};">
+              <strong style="color: ${severityColor};">${issue.zone}</strong> - ${issue.type}
+              <div style="color: #666; font-size: 0.9rem;">${issue.description}</div>
+            </div>
+          `;
+        });
+        html += '</div>';
+        issuesList.innerHTML = html;
+      } else {
+        issuesList.innerHTML = '<p style="color: #28a745;">No significant fit issues detected.</p>';
+      }
+
+      // Display recommended modifications
+      const modsDiv = document.getElementById('modificationsRecommended');
+      if (analysis.modifications && analysis.modifications.length > 0) {
+        let html = '<h4 style="margin-bottom: 1rem;">Recommended Modifications:</h4><ul style="margin-left: 1.5rem;">';
+        analysis.modifications.forEach(mod => {
+          html += `<li style="margin-bottom: 0.5rem;"><strong>${mod.type}</strong>: ${mod.description}</li>`;
+        });
+        html += '</ul>';
+        modsDiv.innerHTML = html;
+      } else {
+        modsDiv.innerHTML = '';
+      }
+    }
+
+    // Display pattern generation results
+    function displayPatternResults(patterns) {
+      document.getElementById('patternResults').style.display = 'block';
+      const patternList = document.getElementById('patternList');
+
+      if (patterns && patterns.pieces && patterns.pieces.length > 0) {
+        let html = '<div style="display: grid; gap: 1rem;">';
+        patterns.pieces.forEach((piece, index) => {
+          html += `
+            <div style="background: #f8f9fa; padding: 1rem; border-radius: 8px; border: 1px solid #dee2e6;">
+              <div style="display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                  <strong style="font-size: 1.1rem;">${piece.name}</strong>
+                  <div style="color: #666; font-size: 0.9rem;">
+                    ${piece.type} • ${piece.dimensions ? `${piece.dimensions.width.toFixed(1)} × ${piece.dimensions.height.toFixed(1)} mm` : ''}
+                  </div>
+                </div>
+                <button onclick="downloadPatternPiece(${index})" style="font-size: 0.9rem; padding: 0.5rem 1rem;">
+                  Download SVG
+                </button>
+              </div>
+              ${piece.svg_data ? `
+                <div style="margin-top: 1rem; background: white; padding: 1rem; border-radius: 4px; text-align: center;">
+                  <img src="data:image/svg+xml;base64,${btoa(piece.svg_data)}" alt="${piece.name}" style="max-width: 100%; max-height: 200px;">
+                </div>
+              ` : ''}
+            </div>
+          `;
+        });
+        html += '</div>';
+        patternList.innerHTML = html;
+
+        // Store patterns for download
+        window.generatedPatterns = patterns.pieces;
+      } else {
+        patternList.innerHTML = '<p style="color: #666;">No pattern pieces generated. The garment may already fit well!</p>';
+      }
+    }
+
+    // Download individual pattern piece
+    function downloadPatternPiece(index) {
+      if (!window.generatedPatterns || !window.generatedPatterns[index]) {
+        alert('Pattern not available');
+        return;
+      }
+
+      const piece = window.generatedPatterns[index];
+      const blob = new Blob([piece.svg_data], { type: 'image/svg+xml' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `${piece.name.replace(/\s+/g, '-').toLowerCase()}.svg`;
+      link.click();
+      URL.revokeObjectURL(url);
+    }
+
+    // Initialize 3D scan tab
+    function init3DScanTab() {
+      check3DScanBackend();
+      updateLoadedScansStatus();
+      checkScanFolder(); // Auto-check folder on tab load
+    }
+
+    // Check scan folder for available scans
+    async function checkScanFolder() {
+      try {
+        const response = await fetch(`${BACKEND_URL}/api/scans/folder`);
+        const result = await response.json();
+
+        if (result.success) {
+          document.getElementById('scanFolderPath').textContent = result.folder;
+          document.getElementById('scanFolderContents').style.display = 'block';
+
+          renderScanList('body', result.body_scans);
+          renderScanList('garment', result.garment_scans);
+        }
+      } catch (err) {
+        console.log('Could not check scan folder:', err);
+        document.getElementById('scanFolderContents').style.display = 'none';
+      }
+    }
+
+    // Render list of scans in folder
+    function renderScanList(type, scans) {
+      const container = document.getElementById(`${type}ScansInFolder`);
+
+      if (!scans || scans.length === 0) {
+        container.innerHTML = '<p style="color: #999; font-size: 0.9rem;">No scans found. Export from Revo Scan 5 to this folder.</p>';
+        return;
+      }
+
+      let html = '';
+      scans.forEach(scan => {
+        const sizeMB = (scan.size / 1024 / 1024).toFixed(2);
+        const date = new Date(scan.modified * 1000).toLocaleString();
+        html += `
+          <div style="background: white; padding: 0.5rem; border-radius: 4px; margin-bottom: 0.5rem; display: flex; justify-content: space-between; align-items: center;">
+            <div>
+              <div style="font-weight: 600; font-size: 0.9rem;">${scan.name}</div>
+              <div style="font-size: 0.8rem; color: #666;">${sizeMB} MB • ${date}</div>
+            </div>
+            <button onclick="loadScanFromFolder('${type}', '${scan.name}')" style="font-size: 0.8rem; padding: 0.4rem 0.8rem;">
+              Load
+            </button>
+          </div>
+        `;
+      });
+      container.innerHTML = html;
+    }
+
+    // Load scan from folder
+    async function loadScanFromFolder(type, filename) {
+      const statusId = type === 'body' ? 'bodyScanStatus' : 'garmentScanStatus';
+      showStatus(statusId, `Loading ${filename}...`, 'info');
+
+      try {
+        const movementProfile = document.getElementById('movementProfile').value;
+        const garmentType = document.getElementById('garmentTypeHint').value;
+
+        const response = await fetch(`${BACKEND_URL}/api/scans/load/${type}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            filename: filename,
+            movement_profile: movementProfile,
+            garment_type: garmentType || null
+          })
+        });
+
+        const result = await response.json();
+
+        if (result.success) {
+          if (type === 'body') {
+            scanState.bodyMeshLoaded = true;
+            scanState.bodyMeshInfo = result;
+            const landmarkCount = result.landmarks ? Object.keys(result.landmarks).length : 0;
+            showStatus(statusId,
+              `Body loaded: ${landmarkCount} landmarks, ${result.dimensions.height.toFixed(0)}mm tall`,
+              'success'
+            );
+          } else {
+            scanState.garmentMeshLoaded = true;
+            scanState.garmentMeshInfo = result;
+            showStatus(statusId,
+              `Garment loaded: ${result.garment_type}, ${result.dimensions.height.toFixed(0)}mm length`,
+              'success'
+            );
+          }
+          updateLoadedScansStatus();
+        } else {
+          showStatus(statusId, `Failed to load: ${result.error}`, 'error');
+        }
+      } catch (err) {
+        showStatus(statusId, `Error: ${err.message}`, 'error');
+      }
+    }
+
+    // Open scan folder in Finder
+    function openScanFolder() {
+      // This won't work from browser, but we can show the path
+      alert('Open this folder in Finder:\n\n~/Desktop/MakeItCunt-Scans/\n\nExport your Revo Scan 5 scans to:\n• body/ for body scans\n• garment/ for garment scans');
+    }
+
+    // ============================================
+    // END 3D SCAN FUNCTIONS
+    // ============================================
+
+    // Store auto-detected measurements
+    let autoDetectedMeasurements = null;
+    let autoDetectedKeypoints = null;
+
+    // Auto-detect garment measurements
+    async function autoDetectGarment() {
+      if (!backendAvailable || !photoState.image) {
+        showStatus('photoStatus', 'Backend not available or no image loaded.', 'error');
+        return;
+      }
+
+      showStatus('photoStatus', 'Detecting garment keypoints...', 'info');
+
+      try {
+        // Convert current image to blob
+        const tempCanvas = document.createElement('canvas');
+        tempCanvas.width = photoState.image.width;
+        tempCanvas.height = photoState.image.height;
+        tempCanvas.getContext('2d').drawImage(photoState.image, 0, 0);
+
+        const blob = await new Promise(resolve => tempCanvas.toBlob(resolve, 'image/jpeg', 0.9));
+
+        const formData = new FormData();
+        formData.append('image', blob, 'garment.jpg');
+        formData.append('garment_type', 'pants');
+
+        // Include scale if we have it
+        if (photoState.scale) {
+          const scalePpcm = photoState.scale / photoState.displayScale / 2.54;
+          formData.append('scale_ppcm', scalePpcm.toString());
+        }
+
+        const response = await fetch(`${BACKEND_URL}/api/measure/garment`, {
+          method: 'POST',
+          body: formData
+        });
+
+        const result = await response.json();
+
+        if (result.success) {
+          autoDetectedMeasurements = result.measurements;
+          autoDetectedKeypoints = result.keypoints;
+
+          // Draw keypoints on canvas
+          drawAutoDetectedKeypoints(result.keypoints);
+
+          // Show results
+          displayAutoDetectedMeasurements(result.measurements, result.garment_type);
+
+          showStatus('photoStatus', `Detected ${result.keypoints.length} keypoints! Review measurements below.`, 'success');
+        } else {
+          showStatus('photoStatus', result.error || 'Failed to detect garment.', 'error');
+        }
+      } catch (err) {
+        console.error('Auto-detection error:', err);
+        showStatus('photoStatus', 'Auto-detection failed. Try manual measurement.', 'error');
+      }
+    }
+
+    // Draw auto-detected keypoints on canvas
+    function drawAutoDetectedKeypoints(keypoints) {
+      redrawCanvas(); // Start fresh
+
+      const ctx = photoState.ctx;
+      const scale = photoState.displayScale;
+
+      // Color map for different keypoint types
+      const colors = {
+        'waist': '#3498db',    // Blue
+        'crotch': '#e74c3c',   // Red
+        'hem': '#f39c12',      // Orange
+        'inseam': '#9b59b6',   // Purple
+        'outseam': '#1abc9c',  // Teal
+      };
+
+      keypoints.forEach(kp => {
+        // Scale keypoint position
+        const x = kp.x * scale;
+        const y = kp.y * scale;
+
+        // Determine color
+        let color = '#27ae60'; // Default green
+        for (const [key, c] of Object.entries(colors)) {
+          if (kp.name.includes(key)) {
+            color = c;
+            break;
+          }
+        }
+
+        // Draw point
         ctx.beginPath();
-        ctx.moveTo(points[0].x, points[0].y);
-        ctx.lineTo(points[1].x, points[1].y);
+        ctx.arc(x, y, 10, 0, Math.PI * 2);
+        ctx.fillStyle = color;
+        ctx.fill();
+        ctx.strokeStyle = '#fff';
+        ctx.lineWidth = 2;
         ctx.stroke();
 
-        const extensionInches = desired - (pxDistance * scale);
-        status.textContent = `Measured length: ${(pxDistance * scale).toFixed(2)} in. Extension needed: ${extensionInches.toFixed(2)} in.`;
+        // Draw label
+        ctx.fillStyle = '#fff';
+        ctx.fillRect(x + 12, y - 10, ctx.measureText(kp.name).width + 10, 20);
+        ctx.fillStyle = color;
+        ctx.font = 'bold 12px sans-serif';
+        ctx.fillText(kp.name, x + 17, y + 4);
+      });
 
-        generatePattern(extensionInches);
+      // Draw lines connecting relevant keypoints
+      const kpMap = {};
+      keypoints.forEach(kp => kpMap[kp.name] = { x: kp.x * scale, y: kp.y * scale });
+
+      // Draw inseam line
+      if (kpMap['crotch_point'] && kpMap['left_hem']) {
+        drawMeasurementLine(ctx, kpMap['crotch_point'], kpMap['left_hem'], '#9b59b6', 'Inseam');
       }
-    });
 
-    function generatePattern(extensionLength) {
-      const garmentType = document.getElementById('garmentType').value;
-      const width = garmentType === 'pants' ? 8 : 10; // inches
-      const seamAllowance = 0.5; // inches
+      // Draw waist line
+      if (kpMap['waist_left'] && kpMap['waist_right']) {
+        drawMeasurementLine(ctx, kpMap['waist_left'], kpMap['waist_right'], '#3498db', 'Waist');
+      }
 
-      const totalWidth = width + seamAllowance * 2;
-      const totalHeight = extensionLength + seamAllowance * 2;
-
-      const svg = `
-        <svg xmlns="http://www.w3.org/2000/svg" width="${totalWidth * 10}" height="${totalHeight * 10}" viewBox="0 0 ${totalWidth * 10} ${totalHeight * 10}">
-          <rect x="0" y="0" width="${totalWidth * 10}" height="${totalHeight * 10}" fill="none" stroke="black" stroke-width="2"/>
-          <text x="10" y="20" font-size="14" fill="black">Extension: ${extensionLength.toFixed(2)} in</text>
-          <text x="10" y="40" font-size="12" fill="gray">Includes 0.5" seam allowance</text>
-        </svg>
-      `;
-      svgOutput.innerHTML = svg;
+      // Draw rise line
+      if (kpMap['waist_center'] && kpMap['crotch_point']) {
+        drawMeasurementLine(ctx, kpMap['waist_center'], kpMap['crotch_point'], '#e74c3c', 'Rise');
+      }
     }
 
-    function downloadSVG() {
-      const svg = svgOutput.querySelector('svg');
-      if (!svg) return;
-      const blob = new Blob([svg.outerHTML], { type: 'image/svg+xml' });
+    // Draw a measurement line with label
+    function drawMeasurementLine(ctx, p1, p2, color, label) {
+      ctx.beginPath();
+      ctx.moveTo(p1.x, p1.y);
+      ctx.lineTo(p2.x, p2.y);
+      ctx.strokeStyle = color;
+      ctx.lineWidth = 3;
+      ctx.setLineDash([10, 5]);
+      ctx.stroke();
+      ctx.setLineDash([]);
+    }
+
+    // Display auto-detected measurements
+    function displayAutoDetectedMeasurements(measurements, garmentType) {
+      const container = document.getElementById('autoDetectMeasurements');
+
+      let html = `<p style="color: #666; margin-bottom: 1rem;">Detected garment type: <strong>${garmentType}</strong></p>`;
+      html += '<table style="width: 100%; border-collapse: collapse;">';
+      html += '<tr style="border-bottom: 2px solid #667eea;"><th style="text-align: left; padding: 0.5rem;">Measurement</th><th style="text-align: right; padding: 0.5rem;">Value</th></tr>';
+
+      const measurementLabels = {
+        'waist_flat': 'Waist (flat)',
+        'waist_circumference': 'Waist (circumference)',
+        'inseam': 'Inseam',
+        'outseam': 'Outseam',
+        'rise': 'Rise'
+      };
+
+      for (const [key, value] of Object.entries(measurements)) {
+        const label = measurementLabels[key] || key;
+        const unit = photoState.scale ? ' cm' : ' px';
+        html += `<tr style="border-bottom: 1px solid #e0e0e0;">
+          <td style="padding: 0.5rem;">${label}</td>
+          <td style="text-align: right; padding: 0.5rem; font-weight: bold; color: #667eea;">${value.toFixed(1)}${unit}</td>
+        </tr>`;
+      }
+
+      html += '</table>';
+
+      if (!photoState.scale) {
+        html += '<p style="color: #f39c12; font-size: 0.9rem; margin-top: 1rem;">Note: Values in pixels. Calibrate with ArUco card for real measurements.</p>';
+      }
+
+      container.innerHTML = html;
+      document.getElementById('autoDetectResults').style.display = 'block';
+    }
+
+    // Use auto-detected measurements
+    function useAutoDetectedMeasurements() {
+      if (!autoDetectedMeasurements) return;
+
+      // Store for later use
+      photoState.measurements = [];
+
+      for (const [key, value] of Object.entries(autoDetectedMeasurements)) {
+        photoState.measurements.push({
+          label: key,
+          inches: value / 2.54, // Convert cm to inches
+          pixels: value * (photoState.scale || 1)
+        });
+      }
+
+      updateMeasurementsList();
+      document.getElementById('measurementResults').style.display = 'block';
+      document.getElementById('saveMeasurementsBtn').style.display = 'inline-block';
+
+      showStatus('photoStatus', 'Measurements saved! Click "Save to Garment" to continue.', 'success');
+    }
+
+    // Hide auto-detect results and use manual mode
+    function hideAutoDetectResults() {
+      document.getElementById('autoDetectResults').style.display = 'none';
+      autoDetectedMeasurements = null;
+      autoDetectedKeypoints = null;
+      redrawCanvas();
+      showStatus('photoStatus', 'Click two points to measure manually.', 'info');
+    }
+
+    // Show auto-detect button after calibration
+    function showAutoDetectButton() {
+      if (backendAvailable) {
+        document.getElementById('autoDetectSection').style.display = 'block';
+      }
+    }
+
+    // Photo Upload Handler
+    function handlePhotoUpload(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        loadImageToCanvas(e.target.result);
+      };
+      reader.readAsDataURL(file);
+    }
+
+    // Camera Functions
+    async function useCamera() {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: 'environment', width: { ideal: 1920 }, height: { ideal: 1080 } }
+        });
+        photoState.cameraStream = stream;
+
+        const video = document.getElementById('cameraVideo');
+        video.srcObject = stream;
+        video.play();
+
+        document.getElementById('cameraContainer').style.display = 'block';
+      } catch (err) {
+        showStatus('photoStatus', 'Camera access denied. Please upload a photo instead.', 'error');
+      }
+    }
+
+    function capturePhoto() {
+      const video = document.getElementById('cameraVideo');
+      const tempCanvas = document.createElement('canvas');
+      tempCanvas.width = video.videoWidth;
+      tempCanvas.height = video.videoHeight;
+      const tempCtx = tempCanvas.getContext('2d');
+      tempCtx.drawImage(video, 0, 0);
+
+      loadImageToCanvas(tempCanvas.toDataURL('image/jpeg'));
+      closeCamera();
+    }
+
+    function closeCamera() {
+      if (photoState.cameraStream) {
+        photoState.cameraStream.getTracks().forEach(track => track.stop());
+        photoState.cameraStream = null;
+      }
+      document.getElementById('cameraContainer').style.display = 'none';
+    }
+
+    // Load image to canvas
+    async function loadImageToCanvas(imageSrc) {
+      const img = new Image();
+      img.onload = async function() {
+        photoState.image = img;
+
+        const canvas = document.getElementById('photoCanvas');
+        photoState.canvas = canvas;
+        photoState.ctx = canvas.getContext('2d');
+
+        // Scale image to fit reasonably on screen (max 1200px wide)
+        const maxWidth = Math.min(1200, window.innerWidth - 100);
+        const scale = img.width > maxWidth ? maxWidth / img.width : 1;
+
+        canvas.width = img.width * scale;
+        canvas.height = img.height * scale;
+
+        photoState.displayScale = scale;
+
+        // Draw image
+        photoState.ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+
+        // Reset state
+        photoState.mode = 'calibration';
+        photoState.referenceCorners = [];
+        photoState.measurementPoints = [];
+        photoState.currentMeasurementStart = null;
+        photoState.scale = null;
+        photoState.measurements = [];
+
+        // Show canvas
+        document.getElementById('measurementCanvas').style.display = 'block';
+        document.getElementById('calibrationInfo').style.display = 'none';
+        document.getElementById('measurementResults').style.display = 'none';
+        document.getElementById('saveMeasurementsBtn').style.display = 'none';
+
+        // Try ArUco auto-calibration first
+        if (backendAvailable) {
+          showStatus('photoStatus', 'Checking for ArUco markers...', 'info');
+
+          // Convert image to blob for upload
+          const tempCanvas = document.createElement('canvas');
+          tempCanvas.width = img.width;
+          tempCanvas.height = img.height;
+          tempCanvas.getContext('2d').drawImage(img, 0, 0);
+
+          tempCanvas.toBlob(async (blob) => {
+            const arucoResult = await tryArucoCalibration(blob);
+
+            if (arucoResult) {
+              // ArUco calibration successful!
+              photoState.scale = arucoResult.ppi * photoState.displayScale;
+              photoState.mode = 'measure';
+
+              const scaleInfo = document.getElementById('scaleInfo');
+              scaleInfo.innerHTML = ` Scale: ${arucoResult.ppi.toFixed(1)} pixels/inch (${arucoResult.markersDetected} markers detected, ${Math.round(arucoResult.confidence * 100)}% confidence)`;
+
+              document.getElementById('calibrationInfo').style.display = 'block';
+              document.getElementById('calibrationInfo').style.background = '#d4edda';
+              document.getElementById('calibrationInfo').querySelector('strong').textContent = 'ArUco auto-calibrated!';
+
+              // Show auto-detect button
+              showAutoDetectButton();
+
+              updateInstructions();
+              showStatus('photoStatus', 'ArUco markers detected! Use Auto-Detect or click two points to measure.', 'success');
+            } else {
+              // Fall back to manual calibration
+              updateInstructions();
+              showStatus('photoStatus', 'No ArUco markers found. Mark the letter paper corners manually.', 'info');
+            }
+          }, 'image/jpeg', 0.9);
+        } else {
+          // No backend - use manual calibration
+          updateInstructions();
+          showStatus('photoStatus', 'Photo loaded! Mark the reference paper corners.', 'success');
+        }
+
+        // Add click handler
+        canvas.onclick = handleCanvasClick;
+      };
+      img.src = imageSrc;
+    }
+
+    // Handle canvas clicks
+    function handleCanvasClick(event) {
+      const canvas = photoState.canvas;
+      const rect = canvas.getBoundingClientRect();
+      const scaleX = canvas.width / rect.width;
+      const scaleY = canvas.height / rect.height;
+
+      const x = (event.clientX - rect.left) * scaleX;
+      const y = (event.clientY - rect.top) * scaleY;
+
+      if (photoState.mode === 'calibration') {
+        // Adding reference corners
+        photoState.referenceCorners.push({ x, y });
+        redrawCanvas();
+
+        if (photoState.referenceCorners.length === 4) {
+          calibrateScale();
+        } else {
+          updateInstructions();
+        }
+      } else if (photoState.mode === 'measure') {
+        // Adding measurement points
+        if (!photoState.currentMeasurementStart) {
+          photoState.currentMeasurementStart = { x, y };
+          redrawCanvas();
+          updateInstructions();
+        } else {
+          // Complete measurement
+          const start = photoState.currentMeasurementStart;
+          const end = { x, y };
+
+          const pixelDistance = Math.sqrt(
+            Math.pow(end.x - start.x, 2) + Math.pow(end.y - start.y, 2)
+          );
+          const inches = pixelDistance / photoState.scale;
+
+          // Prompt for label
+          const label = prompt('Label this measurement (e.g., "inseam", "waist flat"):', `Measurement ${photoState.measurements.length + 1}`);
+
+          if (label) {
+            photoState.measurements.push({
+              start,
+              end,
+              pixels: pixelDistance,
+              inches: inches,
+              label: label
+            });
+
+            photoState.measurementPoints.push({ start, end, label, inches });
+          }
+
+          photoState.currentMeasurementStart = null;
+          redrawCanvas();
+          updateMeasurementsList();
+          updateInstructions();
+        }
+      }
+    }
+
+    // Calibrate scale from reference paper
+    function calibrateScale() {
+      const corners = photoState.referenceCorners;
+
+      // Calculate average width and height in pixels
+      // Width: top edge (0-1) and bottom edge (3-2)
+      const topWidth = Math.sqrt(
+        Math.pow(corners[1].x - corners[0].x, 2) +
+        Math.pow(corners[1].y - corners[0].y, 2)
+      );
+      const bottomWidth = Math.sqrt(
+        Math.pow(corners[2].x - corners[3].x, 2) +
+        Math.pow(corners[2].y - corners[3].y, 2)
+      );
+      const avgWidth = (topWidth + bottomWidth) / 2;
+
+      // Height: left edge (0-3) and right edge (1-2)
+      const leftHeight = Math.sqrt(
+        Math.pow(corners[3].x - corners[0].x, 2) +
+        Math.pow(corners[3].y - corners[0].y, 2)
+      );
+      const rightHeight = Math.sqrt(
+        Math.pow(corners[2].x - corners[1].x, 2) +
+        Math.pow(corners[2].y - corners[1].y, 2)
+      );
+      const avgHeight = (leftHeight + rightHeight) / 2;
+
+      // Calculate pixels per inch from both dimensions
+      const ppiFromWidth = avgWidth / REFERENCE_WIDTH;
+      const ppiFromHeight = avgHeight / REFERENCE_HEIGHT;
+
+      // Average them (should be close if photo taken from above)
+      photoState.scale = (ppiFromWidth + ppiFromHeight) / 2;
+
+      // Show calibration info
+      const scaleInfo = document.getElementById('scaleInfo');
+      scaleInfo.textContent = ` Scale: ${photoState.scale.toFixed(1)} pixels/inch. Now click any two points to measure.`;
+
+      document.getElementById('calibrationInfo').style.display = 'block';
+
+      // Switch to measurement mode
+      photoState.mode = 'measure';
+
+      // Show auto-detect button
+      showAutoDetectButton();
+
+      updateInstructions();
+      redrawCanvas();
+
+      showStatus('photoStatus', 'Calibration complete! Use Auto-Detect or click two points to measure.', 'success');
+    }
+
+    // Update instructions based on current state
+    function updateInstructions() {
+      const stepEl = document.getElementById('measureStep');
+      const instrEl = document.getElementById('measureInstructions');
+
+      if (photoState.mode === 'calibration') {
+        const cornerNum = photoState.referenceCorners.length + 1;
+        const cornerNames = ['top-left', 'top-right', 'bottom-right', 'bottom-left'];
+        stepEl.textContent = 'Step 2: Mark Reference Paper Corners';
+
+        if (cornerNum <= 4) {
+          instrEl.textContent = `Click corner ${cornerNum} of 4: ${cornerNames[cornerNum - 1]} corner of the letter paper.`;
+        }
+      } else if (photoState.mode === 'measure') {
+        stepEl.textContent = 'Step 3: Measure Your Garment';
+
+        if (!photoState.currentMeasurementStart) {
+          instrEl.textContent = 'Click the START point of what you want to measure (e.g., top of inseam).';
+        } else {
+          instrEl.textContent = 'Now click the END point (e.g., bottom of hem).';
+        }
+      }
+    }
+
+    // Redraw canvas with all points and lines
+    function redrawCanvas() {
+      const ctx = photoState.ctx;
+      const canvas = photoState.canvas;
+
+      // Clear and redraw image
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.drawImage(photoState.image, 0, 0, canvas.width, canvas.height);
+
+      // Draw reference corners and outline
+      if (photoState.referenceCorners.length > 0) {
+        ctx.fillStyle = '#00ff00';
+        ctx.strokeStyle = '#00ff00';
+        ctx.lineWidth = 2;
+
+        photoState.referenceCorners.forEach((corner, i) => {
+          // Draw corner point
+          ctx.beginPath();
+          ctx.arc(corner.x, corner.y, 8, 0, Math.PI * 2);
+          ctx.fill();
+
+          // Draw corner number
+          ctx.fillStyle = '#000';
+          ctx.font = 'bold 14px sans-serif';
+          ctx.fillText((i + 1).toString(), corner.x - 4, corner.y + 4);
+          ctx.fillStyle = '#00ff00';
+        });
+
+        // Draw lines between corners
+        if (photoState.referenceCorners.length > 1) {
+          ctx.beginPath();
+          ctx.moveTo(photoState.referenceCorners[0].x, photoState.referenceCorners[0].y);
+          for (let i = 1; i < photoState.referenceCorners.length; i++) {
+            ctx.lineTo(photoState.referenceCorners[i].x, photoState.referenceCorners[i].y);
+          }
+          if (photoState.referenceCorners.length === 4) {
+            ctx.closePath();
+          }
+          ctx.stroke();
+        }
+      }
+
+      // Draw completed measurements
+      photoState.measurementPoints.forEach((m, i) => {
+        // Line
+        ctx.strokeStyle = '#667eea';
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.moveTo(m.start.x, m.start.y);
+        ctx.lineTo(m.end.x, m.end.y);
+        ctx.stroke();
+
+        // Points
+        ctx.fillStyle = '#667eea';
+        ctx.beginPath();
+        ctx.arc(m.start.x, m.start.y, 6, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.beginPath();
+        ctx.arc(m.end.x, m.end.y, 6, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Label
+        const midX = (m.start.x + m.end.x) / 2;
+        const midY = (m.start.y + m.end.y) / 2;
+        ctx.fillStyle = '#fff';
+        ctx.fillRect(midX - 40, midY - 12, 80, 24);
+        ctx.fillStyle = '#667eea';
+        ctx.font = 'bold 14px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText(`${m.inches.toFixed(2)}"`, midX, midY + 5);
+        ctx.textAlign = 'left';
+      });
+
+      // Draw current measurement start point
+      if (photoState.currentMeasurementStart) {
+        ctx.fillStyle = '#ff6b6b';
+        ctx.beginPath();
+        ctx.arc(photoState.currentMeasurementStart.x, photoState.currentMeasurementStart.y, 8, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+
+    // Update measurements list display
+    function updateMeasurementsList() {
+      const container = document.getElementById('measurementsList');
+
+      if (photoState.measurements.length === 0) {
+        document.getElementById('measurementResults').style.display = 'none';
+        document.getElementById('saveMeasurementsBtn').style.display = 'none';
+        return;
+      }
+
+      document.getElementById('measurementResults').style.display = 'block';
+      document.getElementById('saveMeasurementsBtn').style.display = 'inline-block';
+
+      let html = '<table style="width: 100%; border-collapse: collapse;">';
+      html += '<tr style="border-bottom: 2px solid #667eea;"><th style="text-align: left; padding: 0.5rem;">Label</th><th style="text-align: right; padding: 0.5rem;">Measurement</th></tr>';
+
+      photoState.measurements.forEach((m, i) => {
+        html += `<tr style="border-bottom: 1px solid #e0e0e0;">
+          <td style="padding: 0.5rem;">${m.label}</td>
+          <td style="text-align: right; padding: 0.5rem; font-weight: bold; color: #667eea;">${m.inches.toFixed(2)}"</td>
+        </tr>`;
+      });
+
+      html += '</table>';
+      container.innerHTML = html;
+    }
+
+    // Reset measurement
+    function resetMeasurement() {
+      photoState.mode = 'calibration';
+      photoState.referenceCorners = [];
+      photoState.measurementPoints = [];
+      photoState.currentMeasurementStart = null;
+      photoState.scale = null;
+      photoState.measurements = [];
+
+      document.getElementById('calibrationInfo').style.display = 'none';
+      document.getElementById('measurementResults').style.display = 'none';
+      document.getElementById('saveMeasurementsBtn').style.display = 'none';
+
+      if (photoState.image) {
+        redrawCanvas();
+      }
+      updateInstructions();
+    }
+
+    // Undo last point
+    function undoLastPoint() {
+      if (photoState.mode === 'calibration' && photoState.referenceCorners.length > 0) {
+        photoState.referenceCorners.pop();
+        redrawCanvas();
+        updateInstructions();
+      } else if (photoState.mode === 'measure') {
+        if (photoState.currentMeasurementStart) {
+          photoState.currentMeasurementStart = null;
+          redrawCanvas();
+          updateInstructions();
+        } else if (photoState.measurementPoints.length > 0) {
+          photoState.measurementPoints.pop();
+          photoState.measurements.pop();
+          redrawCanvas();
+          updateMeasurementsList();
+        }
+      }
+    }
+
+    // Save measurements to garment form
+    function saveMeasurementsToGarment() {
+      // Store measurements for transfer
+      sessionStorage.setItem('photoMeasurements', JSON.stringify(photoState.measurements));
+
+      // Switch to garments tab
+      document.querySelector('[onclick*="garments"]').click();
+
+      showStatus('garmentStatus', 'Photo measurements available! The values below have been suggested based on your measurements.', 'info');
+
+      // Try to auto-fill matching fields
+      photoState.measurements.forEach(m => {
+        const label = m.label.toLowerCase();
+        const value = m.inches;
+
+        // Map common labels to form fields
+        if (label.includes('inseam')) {
+          document.getElementById('garmentInseam').value = value.toFixed(2);
+        } else if (label.includes('outseam')) {
+          document.getElementById('garmentOutseam').value = value.toFixed(2);
+        } else if (label.includes('waist')) {
+          // Flat measurement needs doubling
+          document.getElementById('garmentWaist').value = (value * 2).toFixed(2);
+        } else if (label.includes('hip')) {
+          document.getElementById('garmentHips').value = (value * 2).toFixed(2);
+        } else if (label.includes('thigh')) {
+          document.getElementById('garmentThigh').value = (value * 2).toFixed(2);
+        } else if (label.includes('knee')) {
+          document.getElementById('garmentKnee').value = (value * 2).toFixed(2);
+        } else if (label.includes('calf')) {
+          document.getElementById('garmentCalf').value = (value * 2).toFixed(2);
+        } else if (label.includes('ankle') || label.includes('hem')) {
+          document.getElementById('garmentAnkle').value = (value * 2).toFixed(2);
+        } else if (label.includes('front rise')) {
+          document.getElementById('garmentFrontRise').value = value.toFixed(2);
+        } else if (label.includes('back rise')) {
+          document.getElementById('garmentBackRise').value = value.toFixed(2);
+        }
+      });
+    }
+
+    // Quick Estimate Functions
+    let lastQuickIssue = '';
+
+    function updateQuickIssue() {
+      const issue = document.getElementById('quickIssue').value;
+      const detailGroup = document.getElementById('quickDetailGroup');
+      const detailSelect = document.getElementById('quickDetail');
+      const estimateDiv = document.getElementById('quickEstimate');
+
+      if (!issue) {
+        detailGroup.style.display = 'none';
+        estimateDiv.style.display = 'none';
+        lastQuickIssue = '';
+        return;
+      }
+
+      // Only rebuild dropdown if issue changed
+      if (issue !== lastQuickIssue) {
+        lastQuickIssue = issue;
+        detailGroup.style.display = 'block';
+
+        if (issue === 'inseam_short') {
+          document.getElementById('quickDetailLabel').textContent = 'Where do the pants hit?';
+          detailSelect.innerHTML = `
+            <option value="">Select...</option>
+            <option value="mid_calf">Mid-calf</option>
+            <option value="below_knee">Just below knee</option>
+            <option value="upper_calf">Upper calf</option>
+            <option value="ankle_bone">At ankle bone (just slightly short)</option>
+          `;
+        } else if (issue === 'rise_short') {
+          document.getElementById('quickDetailLabel').textContent = 'How bad is it?';
+          detailSelect.innerHTML = `
+            <option value="">Select...</option>
+            <option value="mild">Mild - slightly uncomfortable sitting</option>
+            <option value="moderate">Moderate - constant wedgie feeling</option>
+            <option value="severe">Severe - can barely sit down</option>
+          `;
+        } else if (issue === 'sleeves_short') {
+          document.getElementById('quickDetailLabel').textContent = 'Where do sleeves hit?';
+          detailSelect.innerHTML = `
+            <option value="">Select...</option>
+            <option value="forearm">Mid-forearm</option>
+            <option value="wrist_high">2-3 inches above wrist</option>
+            <option value="wrist_slight">Just above wrist (slightly short)</option>
+          `;
+        }
+
+        estimateDiv.style.display = 'none';
+      }
+    }
+
+    function updateQuickDetail() {
+      const issue = document.getElementById('quickIssue').value;
+      const detail = document.getElementById('quickDetail').value;
+      const estimateDiv = document.getElementById('quickEstimate');
+
+      if (!detail) {
+        estimateDiv.style.display = 'none';
+        return;
+      }
+
+      // Calculate estimate
+      let estimate = calculateQuickEstimate(issue, detail);
+
+      estimateDiv.style.display = 'block';
+      estimateDiv.innerHTML = estimate;
+    }
+
+    function calculateQuickEstimate(issue, detail) {
+      let extensionNeeded = 0;
+      let description = '';
+      let patternWidth = 8; // default leg width
+
+      if (issue === 'inseam_short') {
+        const estimates = {
+          'mid_calf': { inches: 7, desc: 'Mid-calf to ankle is typically 7 inches' },
+          'below_knee': { inches: 12, desc: 'Below knee to ankle is typically 12 inches' },
+          'upper_calf': { inches: 5, desc: 'Upper calf to ankle is typically 5 inches' },
+          'ankle_bone': { inches: 1.5, desc: 'Just above ankle - minor extension needed' }
+        };
+
+        const est = estimates[detail];
+        extensionNeeded = est.inches;
+        description = est.desc;
+
+        return `
+          <h4 style="color: #667eea; margin-bottom: 0.5rem;">Estimated Extension Needed</h4>
+          <p><strong>${extensionNeeded} inches</strong> inseam extension</p>
+          <p style="color: #666; font-size: 0.9rem;">${description}</p>
+
+          <h4 style="color: #667eea; margin-top: 1rem; margin-bottom: 0.5rem;">Pattern to Cut (per leg)</h4>
+          <ul style="margin-left: 1rem; color: #333;">
+            <li>Height: <strong>${(extensionNeeded + 1).toFixed(1)}"</strong> (includes seam allowance)</li>
+            <li>Width: Measure your hem opening, or estimate <strong>~${patternWidth}"</strong></li>
+          </ul>
+
+          <h4 style="color: #667eea; margin-top: 1rem; margin-bottom: 0.5rem;">Quick Instructions</h4>
+          <ol style="margin-left: 1rem; color: #333; font-size: 0.9rem;">
+            <li>Cut 2 fabric strips: ${(extensionNeeded + 1).toFixed(1)}" × hem width</li>
+            <li>Unpick existing hem</li>
+            <li>Sew extension to bottom of pant leg (0.5" seam)</li>
+            <li>Re-hem at new length</li>
+          </ol>
+
+          <button style="margin-top: 1rem;" onclick="generateQuickPattern(${extensionNeeded}, ${patternWidth})">Generate SVG Pattern</button>
+        `;
+      } else if (issue === 'rise_short') {
+        const estimates = {
+          'mild': { inches: 1, desc: 'Small rise extension' },
+          'moderate': { inches: 2, desc: 'Moderate rise extension' },
+          'severe': { inches: 3.5, desc: 'Significant rise extension - consider if pants are salvageable' }
+        };
+
+        const est = estimates[detail];
+        extensionNeeded = est.inches;
+        description = est.desc;
+
+        return `
+          <h4 style="color: #667eea; margin-bottom: 0.5rem;">Estimated Extension Needed</h4>
+          <p><strong>${extensionNeeded} inches</strong> rise extension</p>
+          <p style="color: #666; font-size: 0.9rem;">${description}</p>
+
+          <div style="background: #fff3cd; border: 1px solid #ffc107; padding: 0.75rem; border-radius: 4px; margin-top: 1rem;">
+            <strong>Note:</strong> Rise extensions are more complex - they require modifying the waistband. Consider consulting a tailor for rises over 2".
+          </div>
+        `;
+      } else if (issue === 'sleeves_short') {
+        const estimates = {
+          'forearm': { inches: 5, desc: 'Mid-forearm to wrist is typically 5 inches' },
+          'wrist_high': { inches: 2.5, desc: 'Small extension needed' },
+          'wrist_slight': { inches: 1, desc: 'Minor cuff extension' }
+        };
+
+        const est = estimates[detail];
+        extensionNeeded = est.inches;
+        description = est.desc;
+
+        return `
+          <h4 style="color: #667eea; margin-bottom: 0.5rem;">Estimated Extension Needed</h4>
+          <p><strong>${extensionNeeded} inches</strong> sleeve extension</p>
+          <p style="color: #666; font-size: 0.9rem;">${description}</p>
+
+          <h4 style="color: #667eea; margin-top: 1rem; margin-bottom: 0.5rem;">Pattern to Cut (per sleeve)</h4>
+          <ul style="margin-left: 1rem; color: #333;">
+            <li>Height: <strong>${(extensionNeeded + 1).toFixed(1)}"</strong> (includes seam allowance)</li>
+            <li>Width: Measure cuff opening, typically <strong>~5-6"</strong></li>
+          </ul>
+
+          <button style="margin-top: 1rem;" onclick="generateQuickPattern(${extensionNeeded}, 5.5)">Generate SVG Pattern</button>
+        `;
+      }
+
+      return '';
+    }
+
+    // Generate SVG pattern
+    function generateQuickPattern(extensionInches, widthInches) {
+      const seamAllowance = 0.5;
+      const totalHeight = extensionInches + (seamAllowance * 2);
+      const totalWidth = widthInches + (seamAllowance * 2);
+
+      // Create SVG at 96 DPI (standard screen DPI, 1 inch = 96 pixels)
+      const dpi = 96;
+      const svgWidth = totalWidth * dpi;
+      const svgHeight = totalHeight * dpi;
+
+      const svg = `<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="${svgWidth}" height="${svgHeight}" viewBox="0 0 ${svgWidth} ${svgHeight}">
+  <!-- Pattern piece: ${extensionInches}" extension -->
+  <rect x="${seamAllowance * dpi}" y="${seamAllowance * dpi}"
+        width="${widthInches * dpi}" height="${extensionInches * dpi}"
+        fill="none" stroke="#000" stroke-width="2"/>
+
+  <!-- Seam allowance outline -->
+  <rect x="0" y="0" width="${svgWidth}" height="${svgHeight}"
+        fill="none" stroke="#999" stroke-width="1" stroke-dasharray="5,5"/>
+
+  <!-- Labels -->
+  <text x="${svgWidth/2}" y="20" text-anchor="middle" font-family="Arial" font-size="14" fill="#666">
+    Seam allowance: ${seamAllowance}"
+  </text>
+  <text x="${svgWidth/2}" y="${svgHeight - 8}" text-anchor="middle" font-family="Arial" font-size="14" fill="#666">
+    Cut 2 pieces
+  </text>
+
+  <!-- Dimensions -->
+  <text x="${svgWidth/2}" y="${svgHeight/2}" text-anchor="middle" font-family="Arial" font-size="18" fill="#333">
+    ${widthInches}" × ${extensionInches}"
+  </text>
+  <text x="${svgWidth/2}" y="${svgHeight/2 + 20}" text-anchor="middle" font-family="Arial" font-size="12" fill="#666">
+    (${totalWidth}" × ${totalHeight}" with seam allowance)
+  </text>
+</svg>`;
+
+      // Create download
+      const blob = new Blob([svg], { type: 'image/svg+xml' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = 'garment-extension-pattern.svg';
+      a.download = `extension-pattern-${extensionInches}in.svg`;
       a.click();
       URL.revokeObjectURL(url);
+
+      showStatus('photoStatus', `Pattern downloaded! Print at 100% scale (${dpi} DPI).`, 'success');
     }
+
+    // Initialize app
+    function init() {
+      loadFromStorage();
+      renderBodyProfiles();
+      renderGarments();
+
+      // Check backend health for ArUco support
+      checkBackendHealth();
+    }
+
+    // Tab Switching
+    function switchTab(tabName) {
+      // Update buttons
+      document.querySelectorAll('.tab-button').forEach(btn => {
+        btn.classList.remove('active');
+      });
+      event.target.classList.add('active');
+
+      // Update content
+      document.querySelectorAll('.tab-content').forEach(content => {
+        content.classList.remove('active');
+      });
+      document.getElementById(`tab-${tabName}`).classList.add('active');
+
+      state.currentTab = tabName;
+    }
+
+    // Body Profile Functions
+    function saveBodyProfile(event) {
+      event.preventDefault();
+      
+      const profile = {
+        id: Date.now(),
+        name: document.getElementById('bodyProfileName').value,
+        date: new Date().toISOString(),
+        measurements: {
+          waist: parseFloat(document.getElementById('waist').value),
+          hips: parseFloat(document.getElementById('hips').value),
+          frontRise: parseFloat(document.getElementById('frontRise').value),
+          backRise: parseFloat(document.getElementById('backRise').value),
+          inseam: parseFloat(document.getElementById('inseam').value),
+          outseam: parseFloat(document.getElementById('outseam').value),
+          thigh: parseFloat(document.getElementById('thigh').value),
+          knee: parseFloat(document.getElementById('knee').value),
+          ankle: parseFloat(document.getElementById('ankle').value),
+          calf: parseFloat(document.getElementById('calf').value),
+          shoulders: parseFloat(document.getElementById('shoulders').value) || null,
+          torso: parseFloat(document.getElementById('torso').value) || null
+        }
+      };
+
+      state.bodyProfiles.push(profile);
+      saveToStorage();
+      renderBodyProfiles();
+      showStatus('bodyStatus', 'Body profile saved successfully!', 'success');
+      
+      // Clear form
+      document.getElementById('bodyForm').reset();
+    }
+
+    function clearBodyForm() {
+      document.getElementById('bodyForm').reset();
+      showStatus('bodyStatus', 'Form cleared.', 'info');
+    }
+
+    function loadBodyProfile(id) {
+      const profile = state.bodyProfiles.find(p => p.id === id);
+      if (!profile) return;
+
+      document.getElementById('bodyProfileName').value = profile.name;
+      Object.keys(profile.measurements).forEach(key => {
+        const input = document.getElementById(key);
+        if (input && profile.measurements[key]) {
+          input.value = profile.measurements[key];
+        }
+      });
+
+      showStatus('bodyStatus', `Loaded profile: ${profile.name}`, 'info');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function deleteBodyProfile(id) {
+      if (!confirm('Are you sure you want to delete this body profile?')) return;
+      
+      state.bodyProfiles = state.bodyProfiles.filter(p => p.id !== id);
+      saveToStorage();
+      renderBodyProfiles();
+      showStatus('bodyStatus', 'Body profile deleted.', 'info');
+    }
+
+    function renderBodyProfiles() {
+      const container = document.getElementById('bodyProfilesList');
+      
+      if (state.bodyProfiles.length === 0) {
+        container.innerHTML = '<div class="empty-state"><p>No body profiles saved yet. Create your first profile above!</p></div>';
+        return;
+      }
+
+      container.innerHTML = '<div class="profile-list">' + 
+        state.bodyProfiles.map(profile => `
+          <div class="profile-item">
+            <div class="profile-info">
+              <div class="profile-name">${profile.name}</div>
+              <div class="profile-date">Saved: ${new Date(profile.date).toLocaleDateString()}</div>
+            </div>
+            <div class="profile-actions">
+              <button class="btn-small" onclick="loadBodyProfile(${profile.id})">Load</button>
+              <button class="btn-small danger" onclick="deleteBodyProfile(${profile.id})">Delete</button>
+            </div>
+          </div>
+        `).join('') +
+        '</div>';
+    }
+
+    // Garment Functions
+    function saveGarment(event) {
+      event.preventDefault();
+      
+      // Get all fit issues that are checked
+      const fitIssues = [];
+      const fitIssueCheckboxes = document.querySelectorAll('[id^="fitIssue_"]');
+      fitIssueCheckboxes.forEach(checkbox => {
+        if (checkbox.checked) {
+          fitIssues.push({
+            id: checkbox.value,
+            label: checkbox.nextElementSibling.textContent
+          });
+        }
+      });
+
+      const garment = {
+        id: Date.now(),
+        name: document.getElementById('garmentName').value,
+        date: new Date().toISOString(),
+        fabricStretch: parseFloat(document.getElementById('fabricStretch').value),
+        measurements: {
+          waist: parseFloat(document.getElementById('garmentWaist').value),
+          hips: parseFloat(document.getElementById('garmentHips').value),
+          frontRise: parseFloat(document.getElementById('garmentFrontRise').value),
+          backRise: parseFloat(document.getElementById('garmentBackRise').value),
+          inseam: parseFloat(document.getElementById('garmentInseam').value),
+          outseam: parseFloat(document.getElementById('garmentOutseam').value),
+          thigh: parseFloat(document.getElementById('garmentThigh').value),
+          knee: parseFloat(document.getElementById('garmentKnee').value),
+          calf: parseFloat(document.getElementById('garmentCalf').value),
+          ankle: parseFloat(document.getElementById('garmentAnkle').value)
+        },
+        fitIssues: fitIssues
+      };
+
+      state.garments.push(garment);
+      saveToStorage();
+      renderGarments();
+      showStatus('garmentStatus', 'Garment saved successfully!', 'success');
+      
+      // Clear form
+      document.getElementById('garmentForm').reset();
+    }
+
+    function clearGarmentForm() {
+      document.getElementById('garmentForm').reset();
+      showStatus('garmentStatus', 'Form cleared.', 'info');
+    }
+
+    function loadGarment(id) {
+      const garment = state.garments.find(g => g.id === id);
+      if (!garment) return;
+
+      // Switch to garments tab
+      switchTab('garments');
+      
+      // Populate form
+      document.getElementById('garmentName').value = garment.name;
+      document.getElementById('fabricStretch').value = garment.fabricStretch;
+      
+      // Populate measurements
+      Object.keys(garment.measurements).forEach(key => {
+        const input = document.getElementById('garment' + key.charAt(0).toUpperCase() + key.slice(1));
+        if (input && garment.measurements[key]) {
+          input.value = garment.measurements[key];
+        }
+      });
+
+      // Populate fit issues
+      const fitIssueCheckboxes = document.querySelectorAll('[id^="fitIssue_"]');
+      fitIssueCheckboxes.forEach(checkbox => {
+        checkbox.checked = false;
+      });
+      garment.fitIssues.forEach(issue => {
+        const checkbox = document.getElementById('fitIssue_' + issue.id);
+        if (checkbox) {
+          checkbox.checked = true;
+        }
+      });
+
+      showStatus('garmentStatus', `Loaded garment: ${garment.name}`, 'info');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function deleteGarment(id) {
+      if (!confirm('Are you sure you want to delete this garment?')) return;
+      
+      state.garments = state.garments.filter(g => g.id !== id);
+      saveToStorage();
+      renderGarments();
+      showStatus('garmentStatus', 'Garment deleted.', 'info');
+    }
+
+    function renderGarments() {
+      const container = document.getElementById('garmentsList');
+      
+      if (state.garments.length === 0) {
+        container.innerHTML = '<div class="empty-state"><p>No garments saved yet. Add your first garment above!</p></div>';
+        return;
+      }
+
+      container.innerHTML = '<div class="profile-list">' + 
+        state.garments.map(garment => {
+          const fitIssuesSummary = garment.fitIssues.length > 0 
+            ? `${garment.fitIssues.length} fit issue(s)` 
+            : 'No fit issues reported';
+          
+          const stretchType = garment.fabricStretch === 0 ? 'Non-stretch' : `${garment.fabricStretch}% stretch`;
+          
+          return `
+            <div class="profile-item">
+              <div class="profile-info">
+                <div class="profile-name">${garment.name}</div>
+                <div class="profile-date">
+                  ${stretchType} • ${fitIssuesSummary} • Saved: ${new Date(garment.date).toLocaleDateString()}
+                </div>
+              </div>
+              <div class="profile-actions">
+                <button class="btn-small" onclick="loadGarment(${garment.id})">Load</button>
+                <button class="btn-small danger" onclick="deleteGarment(${garment.id})">Delete</button>
+              </div>
+            </div>
+          `;
+        }).join('') +
+        '</div>';
+    }
+
+    // Storage Functions
+    function saveToStorage() {
+      localStorage.setItem('makeItCunt_data', JSON.stringify(state));
+    }
+
+    function loadFromStorage() {
+      const stored = localStorage.getItem('makeItCunt_data');
+      if (stored) {
+        const data = JSON.parse(stored);
+        Object.assign(state, data);
+      }
+    }
+
+    // Status Messages
+    function showStatus(elementId, message, type = 'info') {
+      const element = document.getElementById(elementId);
+      element.innerHTML = `<div class="status ${type}">${message}</div>`;
+      
+      // Auto-hide success/info messages after 5 seconds
+      if (type === 'success' || type === 'info') {
+        setTimeout(() => {
+          element.innerHTML = '';
+        }, 5000);
+      }
+    }
+
+    // Fit Analysis Functions
+    function populateAnalysisSelectors() {
+      const bodySelect = document.getElementById('analysisBodyProfile');
+      const garmentSelect = document.getElementById('analysisGarment');
+      
+      // Populate body profiles
+      bodySelect.innerHTML = '<option value="">Choose a body profile...</option>' +
+        state.bodyProfiles.map(p => `<option value="${p.id}">${p.name}</option>`).join('');
+      
+      // Populate garments
+      garmentSelect.innerHTML = '<option value="">Choose a garment...</option>' +
+        state.garments.map(g => `<option value="${g.id}">${g.name}</option>`).join('');
+    }
+
+    function runFitAnalysis() {
+      const bodyId = parseInt(document.getElementById('analysisBodyProfile').value);
+      const garmentId = parseInt(document.getElementById('analysisGarment').value);
+      
+      if (!bodyId || !garmentId) {
+        document.getElementById('analysisContent').innerHTML = '<div class="empty-state"><p>Please select both a body profile and garment.</p></div>';
+        return;
+      }
+      
+      const body = state.bodyProfiles.find(p => p.id === bodyId);
+      const garment = state.garments.find(g => g.id === garmentId);
+      
+      if (!body || !garment) {
+        showStatus('analysisStatus', 'Error: Could not find selected profile or garment.', 'error');
+        return;
+      }
+      
+      // Perform fit analysis
+      const analysis = analyzeFit(body, garment);
+      
+      // Save analysis
+      analysis.id = Date.now();
+      analysis.bodyId = bodyId;
+      analysis.garmentId = garmentId;
+      analysis.date = new Date().toISOString();
+      
+      state.analyses.push(analysis);
+      saveToStorage();
+      
+      // Display results
+      renderAnalysisResults(analysis, body, garment);
+    }
+
+    function analyzeFit(body, garment) {
+      const issues = [];
+      const recommendations = [];
+      
+      // Calculate stretch capacity
+      const stretchFactor = 1 + (garment.fabricStretch / 100);
+      
+      // Ease standards (non-stretch needs more ease)
+      const minEase = garment.fabricStretch > 0 ? -2 : 2; // Stretch can be negative ease
+      
+      // Analyze each measurement
+      const measurements = ['waist', 'hips', 'frontRise', 'backRise', 'inseam', 'thigh', 'knee', 'calf', 'ankle'];
+      
+      measurements.forEach(key => {
+        const bodyMeasure = body.measurements[key];
+        let garmentMeasure = garment.measurements[key];
+        
+        // Apply stretch
+        if (['waist', 'hips', 'thigh', 'knee', 'calf', 'ankle'].includes(key)) {
+          garmentMeasure = garmentMeasure * stretchFactor;
+        }
+        
+        const difference = garmentMeasure - bodyMeasure;
+        
+        // Assess fit
+        if (['waist', 'hips', 'thigh', 'knee', 'calf', 'ankle'].includes(key)) {
+          // Circumference measurements
+          if (difference < minEase) {
+            const severity = difference < (minEase - 2) ? 'critical' : 'moderate';
+            issues.push({
+              measurement: key,
+              type: 'tooTight',
+              severity: severity,
+              difference: Math.abs(difference),
+              body: bodyMeasure,
+              garment: garmentMeasure,
+              description: `${key.charAt(0).toUpperCase() + key.slice(1)} is ${Math.abs(difference).toFixed(2)}" too tight`
+            });
+            
+            if (key === 'hips') {
+              recommendations.push({
+                type: 'hipGusset',
+                measurement: key,
+                amount: Math.abs(difference) + 2, // Add ease
+                priority: severity
+              });
+            } else if (key === 'thigh') {
+              recommendations.push({
+                type: 'thighGusset',
+                measurement: key,
+                amount: Math.abs(difference) + 2,
+                priority: severity
+              });
+            }
+          }
+        } else {
+          // Length measurements
+          if (key === 'inseam' && difference < -1) {
+            issues.push({
+              measurement: key,
+              type: 'tooShort',
+              severity: 'critical',
+              difference: Math.abs(difference),
+              body: bodyMeasure,
+              garment: garmentMeasure,
+              description: `Inseam is ${Math.abs(difference).toFixed(2)}" too short`
+            });
+            
+            recommendations.push({
+              type: 'inseamExtension',
+              measurement: key,
+              amount: Math.abs(difference) + 0.5, // Add buffer
+              priority: 'critical'
+            });
+          }
+          
+          if ((key === 'frontRise' || key === 'backRise') && difference < -0.5) {
+            issues.push({
+              measurement: key,
+              type: 'tooShort',
+              severity: 'critical',
+              difference: Math.abs(difference),
+              body: bodyMeasure,
+              garment: garmentMeasure,
+              description: `${key === 'frontRise' ? 'Front' : 'Back'} rise is ${Math.abs(difference).toFixed(2)}" too short`
+            });
+            
+            recommendations.push({
+              type: key === 'frontRise' ? 'frontRiseExtension' : 'backRiseExtension',
+              measurement: key,
+              amount: Math.abs(difference) + 0.5,
+              priority: 'critical'
+            });
+          }
+        }
+      });
+      
+      return {
+        issues: issues,
+        recommendations: recommendations,
+        summary: issues.length === 0 ? 'This garment fits well!' : `Found ${issues.length} fit issue(s)`
+      };
+    }
+
+    function renderAnalysisResults(analysis, body, garment) {
+      const container = document.getElementById('analysisContent');
+      
+      let html = `
+        <div style="margin-top: 1.5rem;">
+          <h3>Analysis Results</h3>
+          <div style="background: ${analysis.issues.length === 0 ? '#d4edda' : '#fff3cd'}; 
+                      border: 1px solid ${analysis.issues.length === 0 ? '#c3e6cb' : '#ffeeba'}; 
+                      padding: 1rem; border-radius: 6px; margin: 1rem 0;">
+            <strong>${analysis.summary}</strong>
+          </div>
+      `;
+      
+      if (analysis.issues.length > 0) {
+        html += '<h4 style="color: #dc3545; margin-top: 1.5rem;">Fit Issues Detected</h4>';
+        html += '<div style="display: grid; gap: 1rem; margin-top: 1rem;">';
+        
+        analysis.issues.forEach(issue => {
+          const color = issue.severity === 'critical' ? '#dc3545' : '#f57c00';
+          html += `
+            <div style="background: #f8f9fa; padding: 1rem; border-left: 4px solid ${color}; border-radius: 4px;">
+              <strong style="color: ${color};">${issue.description}</strong><br>
+              <span style="color: #666; font-size: 0.9rem;">
+                Body: ${issue.body.toFixed(2)}" • Garment: ${issue.garment.toFixed(2)}" • 
+                Gap: ${issue.difference.toFixed(2)}"
+              </span>
+            </div>
+          `;
+        });
+        
+        html += '</div>';
+        
+        // Recommendations
+        html += '<h4 style="color: #667eea; margin-top: 1.5rem;">Recommended Modifications</h4>';
+        html += '<div style="display: grid; gap: 1rem; margin-top: 1rem;">';
+        
+        analysis.recommendations.forEach(rec => {
+          let recText = '';
+          if (rec.type === 'inseamExtension') {
+            recText = `Add ${rec.amount.toFixed(2)}" to inseam length`;
+          } else if (rec.type === 'frontRiseExtension') {
+            recText = `Add ${rec.amount.toFixed(2)}" to front rise`;
+          } else if (rec.type === 'backRiseExtension') {
+            recText = `Add ${rec.amount.toFixed(2)}" to back rise`;
+          } else if (rec.type === 'hipGusset') {
+            recText = `Add hip gusset (${rec.amount.toFixed(2)}" total width)`;
+          } else if (rec.type === 'thighGusset') {
+            recText = `Add thigh gusset (${rec.amount.toFixed(2)}" total width)`;
+          }
+          
+          html += `
+            <div style="background: #e7f3ff; padding: 1rem; border-left: 4px solid #667eea; border-radius: 4px;">
+              <strong style="color: #667eea;">${recText}</strong><br>
+              <span style="color: #666; font-size: 0.9rem;">Priority: ${rec.priority}</span>
+            </div>
+          `;
+        });
+        
+        html += '</div>';
+        
+        html += `
+          <div style="margin-top: 1.5rem;">
+            <button onclick="generatePatterns(${analysis.id})">Generate Patterns →</button>
+          </div>
+        `;
+      }
+      
+      html += '</div>';
+      container.innerHTML = html;
+      
+      showStatus('analysisStatus', 'Fit analysis complete!', 'success');
+    }
+
+    // Pattern Generation Functions (Phase 4)
+    function generatePatterns(analysisId) {
+      const analysis = state.analyses.find(a => a.id === analysisId);
+      if (!analysis) {
+        showStatus('patternsStatus', 'Error: Analysis not found.', 'error');
+        return;
+      }
+
+      const patterns = [];
+      
+      analysis.recommendations.forEach(rec => {
+        const pattern = {
+          id: Date.now() + Math.random(),
+          analysisId: analysisId,
+          type: rec.type,
+          amount: rec.amount,
+          measurement: rec.measurement,
+          priority: rec.priority,
+          date: new Date().toISOString(),
+          instructions: generateInstructions(rec)
+        };
+        patterns.push(pattern);
+      });
+
+      state.patterns = state.patterns.concat(patterns);
+      saveToStorage();
+      
+      // Switch to patterns tab and display
+      switchTab('patterns');
+      renderPatterns(patterns);
+      showStatus('patternsStatus', `Generated ${patterns.length} modification pattern(s)!`, 'success');
+    }
+
+    function generateInstructions(recommendation) {
+      const { type, amount } = recommendation;
+      
+      if (type === 'inseamExtension') {
+        return {
+          title: 'Inseam Extension',
+          steps: [
+            `Cut fabric strip ${amount.toFixed(2)}" wide by full leg width`,
+            'Unpick hem of pants',
+            'Insert extension strip between leg and hem',
+            'Sew with 5/8" seam allowance',
+            'Press seams open',
+            'Re-hem at new length'
+          ],
+          materials: [
+            'Matching fabric',
+            'Thread',
+            'Seam ripper'
+          ],
+          notes: `Add ${amount.toFixed(2)}" to inseam. Consider tapering if original leg has taper.`
+        };
+      } else if (type === 'frontRiseExtension' || type === 'backRiseExtension') {
+        const side = type === 'frontRiseExtension' ? 'front' : 'back';
+        return {
+          title: `${side.charAt(0).toUpperCase() + side.slice(1)} Rise Extension`,
+          steps: [
+            `Unpick waistband on ${side} from side seam to side seam`,
+            `Cut extension piece: ${amount.toFixed(2)}" height by waistband width`,
+            'Insert extension between waistband and pants body',
+            'Sew with 5/8" seam allowance',
+            'Press seams toward waistband',
+            'Topstitch waistband closed'
+          ],
+          materials: [
+            'Matching fabric',
+            'Thread',
+            'Interfacing (if waistband is interfaced)'
+          ],
+          notes: `Adds ${amount.toFixed(2)}" to ${side} rise only. May need to adjust curve of crotch seam.`
+        };
+      } else if (type === 'hipGusset' || type === 'thighGusset') {
+        const location = type === 'hipGusset' ? 'hip' : 'thigh';
+        return {
+          title: `${location.charAt(0).toUpperCase() + location.slice(1)} Gusset Insert`,
+          steps: [
+            `Unpick inseam from crotch down ${location === 'hip' ? '8' : '12'}" on both legs`,
+            `Cut diamond-shaped gusset: ${amount.toFixed(2)}" wide at widest point, tapering to points`,
+            'Pin gusset into opened inseam',
+            'Sew gusset to each leg with 5/8" seam allowance',
+            'Press seams open',
+            'Reinforce at stress points with bar tacks'
+          ],
+          materials: [
+            'Matching fabric (with similar stretch if applicable)',
+            'Thread',
+            'Seam ripper'
+          ],
+          notes: `Adds ${amount.toFixed(2)}" total width at ${location}. Use stretch fabric if original garment has stretch.`
+        };
+      }
+      
+      return {
+        title: 'Custom Modification',
+        steps: ['Follow standard garment alteration techniques'],
+        materials: ['Matching fabric', 'Thread'],
+        notes: 'Consult a sewing reference for detailed instructions.'
+      };
+    }
+
+    function renderPatterns(patterns) {
+      const container = document.getElementById('patternsContent');
+      
+      if (patterns.length === 0) {
+        container.innerHTML = '<div class="empty-state"><p>No patterns generated yet. Complete fit analysis first!</p></div>';
+        return;
+      }
+
+      let html = '<div style="margin-top: 1.5rem;">';
+      
+      patterns.forEach(pattern => {
+        const inst = pattern.instructions;
+        html += `
+          <div style="background: white; border: 2px solid #667eea; padding: 1.5rem; border-radius: 8px; margin-bottom: 1.5rem;">
+            <h3 style="color: #667eea; margin-bottom: 1rem;">${inst.title}</h3>
+            <p style="color: #666; margin-bottom: 1rem;"><strong>Amount:</strong> ${pattern.amount.toFixed(2)}"</p>
+            
+            <h4 style="color: #764ba2; margin-top: 1rem;">Materials Needed:</h4>
+            <ul style="margin-left: 1.5rem; color: #333;">
+              ${inst.materials.map(m => `<li>${m}</li>`).join('')}
+            </ul>
+            
+            <h4 style="color: #764ba2; margin-top: 1rem;">Instructions:</h4>
+            <ol style="margin-left: 1.5rem; color: #333;">
+              ${inst.steps.map(s => `<li style="margin-bottom: 0.5rem;">${s}</li>`).join('')}
+            </ol>
+            
+            <div style="background: #fff9e6; border-left: 4px solid #ffc107; padding: 1rem; margin-top: 1rem; border-radius: 4px;">
+              <strong style="color: #f57c00;">📝 Note:</strong> ${inst.notes}
+            </div>
+            
+            <div style="margin-top: 1rem;">
+              <button class="btn-small" onclick="recordFeedbackFor(${pattern.id})">Record Construction Result →</button>
+            </div>
+          </div>
+        `;
+      });
+      
+      html += '</div>';
+      container.innerHTML = html;
+    }
+
+    // Feedback Functions (Phase 5)
+    function recordFeedbackFor(patternId) {
+      switchTab('feedback');
+      populateFeedbackSelector();
+      
+      setTimeout(() => {
+        const select = document.getElementById('feedbackPattern');
+        select.value = patternId;
+        showFeedbackForm();
+      }, 100);
+    }
+
+    function populateFeedbackSelector() {
+      const select = document.getElementById('feedbackPattern');
+      
+      if (state.patterns.length === 0) {
+        select.innerHTML = '<option value="">No patterns available - generate some first!</option>';
+        return;
+      }
+      
+      select.innerHTML = '<option value="">Choose a pattern...</option>' +
+        state.patterns.map(p => {
+          const inst = p.instructions;
+          return `<option value="${p.id}">${inst.title} (${p.amount.toFixed(2)}")</option>`;
+        }).join('');
+      
+      select.onchange = showFeedbackForm;
+    }
+
+    function showFeedbackForm() {
+      const patternId = parseFloat(document.getElementById('feedbackPattern').value);
+      if (!patternId) {
+        document.getElementById('feedbackFormContainer').innerHTML = '';
+        return;
+      }
+
+      const pattern = state.patterns.find(p => p.id === patternId);
+      if (!pattern) return;
+
+      const formHtml = `
+        <div style="background: #f8f9fa; padding: 1.5rem; border-radius: 8px; margin-top: 1.5rem;">
+          <h3 style="color: #667eea;">Construction Feedback</h3>
+          <p style="color: #666; margin-bottom: 1rem;">Pattern: ${pattern.instructions.title}</p>
+          
+          <div class="form-group" style="margin-bottom: 1rem;">
+            <label>Did the modification work?</label>
+            <select id="feedbackSuccess" required>
+              <option value="">Choose...</option>
+              <option value="yes">Yes - Perfect fit!</option>
+              <option value="partial">Partial - Better but still needs work</option>
+              <option value="no">No - Didn't help</option>
+            </select>
+          </div>
+          
+          <div class="form-group" style="margin-bottom: 1rem;">
+            <label>What happened?</label>
+            <textarea id="feedbackNotes" rows="4" placeholder="Describe the results, any challenges, or adjustments you made..."></textarea>
+          </div>
+          
+          <div class="form-group" style="margin-bottom: 1rem;">
+            <label>Would you use this modification again?</label>
+            <select id="feedbackRecommend" required>
+              <option value="">Choose...</option>
+              <option value="yes">Yes</option>
+              <option value="maybe">Maybe with adjustments</option>
+              <option value="no">No</option>
+            </select>
+          </div>
+          
+          <button onclick="submitFeedback(${patternId})">Submit Feedback</button>
+        </div>
+      `;
+      
+      document.getElementById('feedbackFormContainer').innerHTML = formHtml;
+    }
+
+    function submitFeedback(patternId) {
+      const success = document.getElementById('feedbackSuccess').value;
+      const notes = document.getElementById('feedbackNotes').value;
+      const recommend = document.getElementById('feedbackRecommend').value;
+      
+      if (!success || !recommend) {
+        showStatus('feedbackStatus', 'Please fill out all required fields.', 'warning');
+        return;
+      }
+
+      const feedback = {
+        id: Date.now(),
+        patternId: patternId,
+        date: new Date().toISOString(),
+        success: success,
+        notes: notes,
+        recommend: recommend
+      };
+
+      state.feedback.push(feedback);
+      saveToStorage();
+      
+      showStatus('feedbackStatus', 'Feedback recorded! Thank you!', 'success');
+      document.getElementById('feedbackFormContainer').innerHTML = '';
+      document.getElementById('feedbackPattern').value = '';
+      renderFeedbackList();
+    }
+
+    function renderFeedbackList() {
+      const container = document.getElementById('feedbackList');
+      
+      if (state.feedback.length === 0) {
+        container.innerHTML = '<div class="empty-state"><p>No feedback recorded yet.</p></div>';
+        return;
+      }
+
+      let html = '<h3 style="margin-top: 2rem; color: #667eea;">Your Feedback History</h3>';
+      html += '<div class="profile-list" style="margin-top: 1rem;">';
+      
+      state.feedback.forEach(fb => {
+        const pattern = state.patterns.find(p => p.id === fb.patternId);
+        const patternName = pattern ? pattern.instructions.title : 'Unknown Pattern';
+        
+        const successColor = fb.success === 'yes' ? '#28a745' : fb.success === 'partial' ? '#ffc107' : '#dc3545';
+        const successText = fb.success === 'yes' ? 'Success' : fb.success === 'partial' ? 'Partial Success' : 'Did Not Work';
+        
+        html += `
+          <div class="profile-item">
+            <div class="profile-info">
+              <div class="profile-name">${patternName}</div>
+              <div class="profile-date" style="color: ${successColor}; font-weight: 600;">
+                ${successText} • ${new Date(fb.date).toLocaleDateString()}
+              </div>
+              ${fb.notes ? `<div style="color: #666; font-size: 0.9rem; margin-top: 0.5rem;">${fb.notes}</div>` : ''}
+            </div>
+          </div>
+        `;
+      });
+      
+      html += '</div>';
+      container.innerHTML = html;
+    }
+
+    // Initialize on page load
+    document.addEventListener('DOMContentLoaded', () => {
+      init();
+      init3DScanTab(); // Initialize 3D scan features
+
+      // Initialize 3D scan tab when clicked
+      const scansTab = document.querySelector('[onclick*="scans"]');
+      if (scansTab) {
+        scansTab.addEventListener('click', init3DScanTab);
+      }
+
+      // Populate analysis selectors when tab is shown
+      const analysisTab = document.querySelector('[onclick*="analysis"]');
+      if (analysisTab) {
+        analysisTab.addEventListener('click', populateAnalysisSelectors);
+      }
+      
+      // Populate feedback selector when tab is shown
+      const feedbackTab = document.querySelector('[onclick*="feedback"]');
+      if (feedbackTab) {
+        feedbackTab.addEventListener('click', () => {
+          populateFeedbackSelector();
+          renderFeedbackList();
+        });
+      }
+    });
   </script>
 </body>
 </html>

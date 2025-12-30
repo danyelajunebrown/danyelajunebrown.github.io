@@ -1,0 +1,83 @@
+# Make It Cunt v3.0 - Volumetric Garment Modification System
+# Python Backend Dependencies
+
+# ============================================
+# CORE - Required for all features
+# ============================================
+
+# Web server
+flask>=3.0.0
+flask-cors>=4.0.0
+
+# Numerical computing
+numpy>=1.24.0
+scipy>=1.11.0
+
+# ============================================
+# MESH PROCESSING - For 3D scan import
+# ============================================
+
+# Primary mesh library (lightweight, flexible)
+trimesh>=4.0.0
+
+# MeshLab Python bindings (advanced cleaning)
+pymeshlab>=2023.12
+
+# Point cloud and mesh processing
+open3d>=0.17.0
+
+# STL file handling
+numpy-stl>=3.0.0
+
+# ============================================
+# PATTERN GENERATION - For SVG output
+# ============================================
+
+# SVG generation
+svgwrite>=1.4.0
+
+# ============================================
+# IMAGE/CV - For existing photo features
+# ============================================
+
+# Includes ArUco module for calibration
+opencv-contrib-python>=4.8.0
+
+# Image processing
+pillow>=10.0.0
+
+# ============================================
+# OPTIONAL - Advanced features
+# ============================================
+
+# Body pose estimation (Phase 3 - photo-based body measurement)
+# mediapipe>=0.10.0
+
+# Deep learning for garment keypoints
+# torch>=2.0.0
+# torchvision>=0.15.0
+
+# ============================================
+# UTILITIES
+# ============================================
+
+python-dotenv>=1.0.0
+
+# ============================================
+# INSTALLATION NOTES
+# ============================================
+#
+# Basic install (most features):
+#   pip install -r requirements.txt
+#
+# If you get errors with open3d on macOS:
+#   pip install open3d --no-cache-dir
+#
+# If pymeshlab fails to install:
+#   - It requires Python 3.8-3.11 (not 3.12+)
+#   - On macOS, may need: brew install mesa
+#
+# For Revopoint scanner support:
+#   - Scanner exports PLY/OBJ/STL - all supported by trimesh
+#   - No additional dependencies needed
+#
