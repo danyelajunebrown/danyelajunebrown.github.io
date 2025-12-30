@@ -821,7 +821,7 @@
                             <option value="current">Last 7 Days (Current)</option>
                         </select>
                     </div>
-                    <button class="share-btn" id="shareBtn">Generate Diary Card</button>
+                    <button class="share-btn" id="shareBtn">Open Diary Card PDF</button>
                 </div>
             </div>
         </div>
@@ -859,7 +859,7 @@
             <div class="modal-buttons" style="margin-top: 20px;">
                 <button class="modal-btn secondary" id="closeReportBtn">Close</button>
                 <button class="modal-btn primary" id="copyBtn">Copy Text</button>
-                <button class="modal-btn primary" id="pdfBtn">Download PDF</button>
+                <button class="modal-btn primary" id="pdfBtn">Open PDF</button>
             </div>
         </div>
     </div>
@@ -1261,11 +1261,11 @@
             document.getElementById('backToFeeling').addEventListener('click', () => showStep(1));
             intensitySlider.addEventListener('input', updateIntensityDisplay);
             form.addEventListener('submit', handleSubmit);
-            shareBtn.addEventListener('click', generateCurrentWeekReport);
+            shareBtn.addEventListener('click', openDiaryCardPDF);
             document.getElementById('cancelBtn').addEventListener('click', hideDateModal);
             document.getElementById('closeReportBtn').addEventListener('click', hideReportModal);
             document.getElementById('copyBtn').addEventListener('click', copyReport);
-            document.getElementById('pdfBtn').addEventListener('click', downloadDiaryCardPDF);
+            document.getElementById('pdfBtn').addEventListener('click', openDiaryCardPDF);
             
             window.addEventListener('click', (e) => {
                 if (e.target === dateModal) hideDateModal();
@@ -1860,14 +1860,11 @@
             }
         }
 
-        async function downloadDiaryCardPDF() {
-            const pdfBtn = document.getElementById('pdfBtn');
-            const reportText = document.getElementById('reportText');
-
-            const originalText = pdfBtn.textContent;
-            pdfBtn.textContent = 'Generating...';
-            pdfBtn.disabled = true;
-            reportText.classList.add('pdf-generating');
+        async function openDiaryCardPDF() {
+            const shareBtn = document.getElementById('shareBtn');
+            const originalText = shareBtn.textContent;
+            shareBtn.textContent = 'Generating PDF...';
+            shareBtn.disabled = true;
 
             try {
                 // Check if libraries are loaded
@@ -1878,67 +1875,188 @@
                     throw new Error('jsPDF library not loaded');
                 }
 
-                const canvas = await html2canvas(reportText, {
+                // Build the diary card HTML
+                const htmlContent = await buildDiaryCardHTML();
+
+                // Create an offscreen container for rendering
+                const offscreenContainer = document.createElement('div');
+                offscreenContainer.style.cssText = 'position: absolute; left: -9999px; top: 0; width: 1100px; background: white; padding: 20px; font-family: Arial, sans-serif;';
+                offscreenContainer.innerHTML = htmlContent;
+                document.body.appendChild(offscreenContainer);
+
+                const canvas = await html2canvas(offscreenContainer, {
                     scale: 2,
                     useCORS: true,
                     logging: false,
                     backgroundColor: '#ffffff',
-                    allowTaint: true
+                    allowTaint: true,
+                    width: 1100
                 });
+
+                // Remove offscreen container
+                document.body.removeChild(offscreenContainer);
 
                 const { jsPDF } = window.jspdf;
 
-                const imgWidth = 210;
-                const imgHeight = (canvas.height * imgWidth) / canvas.width;
-
-                // Use landscape if content is wider than tall, otherwise portrait
-                const orientation = imgHeight > 297 ? 'portrait' : 'landscape';
-                const pageHeight = orientation === 'portrait' ? 297 : 210;
-                const pageWidth = orientation === 'portrait' ? 210 : 297;
-
+                // Always use landscape for diary card (7 days wide)
                 const pdf = new jsPDF({
-                    orientation: orientation,
+                    orientation: 'landscape',
                     unit: 'mm',
                     format: 'a4'
                 });
 
+                const pageWidth = 297;
+                const pageHeight = 210;
+                const margin = 5;
+                const availableWidth = pageWidth - (margin * 2);
+
                 const imgData = canvas.toDataURL('image/png', 1.0);
 
                 // Scale to fit page width while maintaining aspect ratio
-                const scaledWidth = pageWidth;
+                const scaledWidth = availableWidth;
                 const scaledHeight = (canvas.height * scaledWidth) / canvas.width;
 
-                pdf.addImage(imgData, 'PNG', 0, 0, scaledWidth, scaledHeight);
+                pdf.addImage(imgData, 'PNG', margin, margin, scaledWidth, scaledHeight);
 
-                const today = new Date();
-                const filename = `DBT_Diary_Card_${today.getFullYear()}-${(today.getMonth()+1).toString().padStart(2,'0')}-${today.getDate().toString().padStart(2,'0')}.pdf`;
-
-                // Use blob-based download for better browser compatibility
+                // Open PDF in new tab
                 const pdfBlob = pdf.output('blob');
                 const blobUrl = URL.createObjectURL(pdfBlob);
+                window.open(blobUrl, '_blank');
 
-                const downloadLink = document.createElement('a');
-                downloadLink.href = blobUrl;
-                downloadLink.download = filename;
-                downloadLink.style.display = 'none';
-                document.body.appendChild(downloadLink);
-                downloadLink.click();
-
-                // Cleanup after a short delay
+                // Cleanup blob URL after a delay
                 setTimeout(() => {
-                    document.body.removeChild(downloadLink);
                     URL.revokeObjectURL(blobUrl);
-                }, 100);
+                }, 10000);
 
-                showSuccess('PDF downloaded successfully!');
             } catch (error) {
                 console.error('Error generating PDF:', error);
                 showError('Error generating PDF: ' + error.message);
             } finally {
-                pdfBtn.textContent = originalText;
-                pdfBtn.disabled = false;
-                reportText.classList.remove('pdf-generating');
+                shareBtn.textContent = originalText;
+                shareBtn.disabled = false;
             }
+        }
+
+        async function buildDiaryCardHTML() {
+            const weekSelector = document.getElementById('weekSelector');
+            const selectedWeek = weekSelector.value;
+
+            let startDate, endDate;
+
+            if (selectedWeek === 'current') {
+                const today = new Date();
+                startDate = new Date(today);
+                startDate.setDate(today.getDate() - 6);
+                startDate.setHours(0, 0, 0, 0);
+                endDate = new Date(today);
+                endDate.setDate(today.getDate() + 1);
+                endDate.setHours(0, 0, 0, 0);
+            } else {
+                startDate = new Date(selectedWeek);
+                startDate.setHours(0, 0, 0, 0);
+                endDate = new Date(startDate);
+                endDate.setDate(startDate.getDate() + 7);
+                endDate.setHours(0, 0, 0, 0);
+            }
+
+            const { data, error } = await supabaseClient
+                .from('diary_entries')
+                .select('*')
+                .eq('user_id', currentUser.id)
+                .gte('timestamp', startDate.toISOString())
+                .lt('timestamp', endDate.toISOString())
+                .order('timestamp', { ascending: true });
+
+            if (error) throw error;
+
+            const filteredReports = data || [];
+
+            const dayGroups = {
+                'MON': [], 'TUE': [], 'WED': [], 'THU': [], 'FRI': [], 'SAT': [], 'SUN': []
+            };
+
+            filteredReports.forEach((report) => {
+                const date = new Date(report.timestamp);
+                const dayNames = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
+                const dayName = dayNames[date.getDay()];
+                dayGroups[dayName].push(report);
+            });
+
+            Object.keys(dayGroups).forEach(day => {
+                dayGroups[day].sort((a, b) => {
+                    const timeA = new Date(a.timestamp);
+                    const timeB = new Date(b.timestamp);
+                    return timeA - timeB;
+                });
+            });
+
+            const displayEndDate = new Date(endDate);
+            displayEndDate.setDate(displayEndDate.getDate() - 1);
+
+            // Build clean PDF-friendly HTML
+            let htmlContent = `
+                <div style="text-align: center; margin-bottom: 15px; font-weight: bold; font-size: 18px;">DBT Skills Diary Card</div>
+                <div style="text-align: center; margin-bottom: 15px; font-size: 14px;">Week: ${startDate.toLocaleDateString()} - ${displayEndDate.toLocaleDateString()}</div>
+
+                <table style="width: 100%; border-collapse: collapse; font-size: 11px;">
+                    <thead>
+                        <tr>
+                            <th style="border: 1px solid #333; padding: 8px; background: #e8e8e8; width: 8%;"></th>
+                            <th style="border: 1px solid #333; padding: 8px; background: #e8e8e8; width: 13.14%;">MON</th>
+                            <th style="border: 1px solid #333; padding: 8px; background: #e8e8e8; width: 13.14%;">TUE</th>
+                            <th style="border: 1px solid #333; padding: 8px; background: #e8e8e8; width: 13.14%;">WED</th>
+                            <th style="border: 1px solid #333; padding: 8px; background: #e8e8e8; width: 13.14%;">THU</th>
+                            <th style="border: 1px solid #333; padding: 8px; background: #e8e8e8; width: 13.14%;">FRI</th>
+                            <th style="border: 1px solid #333; padding: 8px; background: #e8e8e8; width: 13.14%;">SAT</th>
+                            <th style="border: 1px solid #333; padding: 8px; background: #e8e8e8; width: 13.14%;">SUN</th>
+                        </tr>
+                    </thead>
+                    <tbody>`;
+
+            const days = ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN'];
+            const maxEntries = Math.max(3, ...days.map(d => dayGroups[d].length));
+
+            // Emotion rows
+            for (let row = 0; row < maxEntries; row++) {
+                htmlContent += `<tr>`;
+                htmlContent += `<td style="border: 1px solid #333; padding: 4px; background: #f0f0f0; font-weight: bold; font-size: 10px;">${row === 0 ? 'EMOTIONS' : ''}</td>`;
+
+                days.forEach(day => {
+                    const entry = dayGroups[day][row];
+                    if (entry) {
+                        const date = new Date(entry.timestamp);
+                        const timeStr = date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
+                        const emotion = emotions.find(e => e.name === entry.emotion);
+                        const bgColor = emotion ? emotion.color : '#f9f9f9';
+                        const opacity = 0.3 + (entry.intensity / 5) * 0.5;
+
+                        htmlContent += `<td style="border: 1px solid #333; padding: 6px; vertical-align: top; background: ${bgColor}${Math.round(opacity * 255).toString(16).padStart(2, '0')};">
+                            <div style="font-weight: bold; color: #667eea; font-size: 10px;">${timeStr}</div>
+                            <div style="font-weight: 600; font-size: 11px;">${entry.feeling}</div>
+                            <div style="color: #666; font-size: 9px;">Intensity: ${entry.intensity}/5</div>
+                            <div style="color: #495057; font-size: 9px; font-style: italic;">${entry.skill}</div>
+                        </td>`;
+                    } else {
+                        htmlContent += `<td style="border: 1px solid #333; padding: 6px; background: #f9f9f9;"></td>`;
+                    }
+                });
+                htmlContent += `</tr>`;
+            }
+
+            // Tracking rows
+            const trackingRows = ['ENERGY', 'SLEEP', 'EATING', 'EXERCISE'];
+            trackingRows.forEach(label => {
+                htmlContent += `<tr>`;
+                htmlContent += `<td style="border: 1px solid #333; padding: 8px; background: #f0f0f0; font-weight: bold; font-size: 10px;">${label}</td>`;
+                for (let i = 0; i < 7; i++) {
+                    htmlContent += `<td style="border: 1px solid #333; padding: 8px; height: 30px;"></td>`;
+                }
+                htmlContent += `</tr>`;
+            });
+
+            htmlContent += `</tbody></table>`;
+
+            return htmlContent;
         }
 
         function copyReport() {
