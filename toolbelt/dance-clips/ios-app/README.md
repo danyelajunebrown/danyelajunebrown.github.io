@@ -1,36 +1,36 @@
 # DanceClips iOS App (Native)
 
-This folder will contain the native iOS implementation that can capture **system audio** (music from Spotify/Apple Music/etc.) while recording/streaming.
+Native iOS app that captures video WITH background music - something impossible in Safari.
 
-## Phase 0/1 Benchmark (Tonight)
-Goal: a minimal SwiftUI app that runs on your iPhone and toggles **full-screen red/green**.
+**See [DanceClips/README.md](DanceClips/README.md) for full setup instructions.**
 
-### Prereqs
-- macOS + Xcode
-- iPhone connected via USB (or WiFi debugging)
-- Apple ID signed into Xcode (Xcode Settings → Accounts)
+## Quick Start
 
-### Create the Xcode project
-We’ll generate a **SwiftUI iOS App** project named `DanceClipsNative` into `ios-app/DanceClipsNative`.
+```bash
+# Install XcodeGen if you don't have it
+brew install xcodegen
 
-### Run on device
-1. Open `ios-app/DanceClipsNative/DanceClipsNative.xcodeproj`
-2. Select your iPhone as the run target
-3. Signing & Capabilities:
-   - Team: your Apple ID team
-   - Bundle Identifier: something unique like `io.danyelica.danceclips.native`
-4. Press Run
+# Generate Xcode project
+cd DanceClips
+xcodegen generate
 
-### Expected behavior
-- App launches
-- Screen is solid red
-- Tap anywhere → screen turns green
-- Tap again → red
+# Open in Xcode
+open DanceClips.xcodeproj
+```
 
-### Debugging checklist
-- If you get “Developer Mode required”: enable on iPhone (Settings → Privacy & Security → Developer Mode)
-- If signing fails: set **Team** and ensure bundle id is unique
-- If install fails: trust your computer + keep phone unlocked
+Then: connect iPhone → select as target → Run (Cmd+R)
 
-## Next benchmark (Phase 2)
-Add CoreMotion-based “set down (still) → start” and “picked up → stop”.
+## Why Native?
+
+Safari's WebKit pauses background music when microphone is requested. This is a browser policy we cannot override.
+
+Native iOS apps can configure their own audio session:
+
+```swift
+try audioSession.setCategory(
+    .playAndRecord,
+    options: [.mixWithOthers]  // ← THE KEY
+)
+```
+
+This is how TikTok and Instagram work.

@@ -1,0 +1,27 @@
+name: DanceClips
+options:
+  bundleIdPrefix: io.danyelica
+  deploymentTarget:
+    iOS: "16.0"
+  xcodeVersion: "15.0"
+
+targets:
+  DanceClips:
+    type: application
+    platform: iOS
+    sources:
+      - DanceClips
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: io.danyelica.danceclips
+        INFOPLIST_FILE: DanceClips/Info.plist
+        MARKETING_VERSION: "1.0"
+        CURRENT_PROJECT_VERSION: "1"
+        DEVELOPMENT_TEAM: ""  # Add your team ID
+        CODE_SIGN_STYLE: Automatic
+        SWIFT_VERSION: "5.9"
+        TARGETED_DEVICE_FAMILY: "1"  # iPhone only
+    info:
+      path: DanceClips/Info.plist
+      properties:
+        UILaunchScreen: {}

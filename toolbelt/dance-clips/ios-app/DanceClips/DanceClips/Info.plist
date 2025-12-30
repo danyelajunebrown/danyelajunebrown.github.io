@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <!-- Camera permission -->
+    <key>NSCameraUsageDescription</key>
+    <string>DanceClips needs camera access to record your dance videos for streaming.</string>
+
+    <!-- Microphone permission - THIS IS KEY for capturing background music -->
+    <key>NSMicrophoneUsageDescription</key>
+    <string>DanceClips needs microphone access to capture audio including background music playing on your device.</string>
+
+    <!-- Motion permission for detecting when phone is set down -->
+    <key>NSMotionUsageDescription</key>
+    <string>DanceClips uses motion detection to automatically start recording when you set your phone down and stop when you pick it up.</string>
+
+    <!-- Background audio - allows music to keep playing -->
+    <key>UIBackgroundModes</key>
+    <array>
+        <string>audio</string>
+    </array>
+
+    <!-- App Transport Security - allow connection to relay server -->
+    <key>NSAppTransportSecurity</key>
+    <dict>
+        <key>NSAllowsArbitraryLoads</key>
+        <false/>
+        <key>NSExceptionDomains</key>
+        <dict>
+            <key>danyelica.fish</key>
+            <dict>
+                <key>NSExceptionAllowsInsecureHTTPLoads</key>
+                <false/>
+                <key>NSIncludesSubdomains</key>
+                <true/>
+            </dict>
+        </dict>
+    </dict>
+
+    <!-- Supported orientations -->
+    <key>UISupportedInterfaceOrientations</key>
+    <array>
+        <string>UIInterfaceOrientationPortrait</string>
+    </array>
+
+    <!-- Status bar hidden for fullscreen experience -->
+    <key>UIStatusBarHidden</key>
+    <true/>
+    <key>UIViewControllerBasedStatusBarAppearance</key>
+    <false/>
+</dict>
+</plist>
