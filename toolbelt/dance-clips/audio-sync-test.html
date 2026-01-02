@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Audio Sync Test</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, system-ui, sans-serif;
+            background: #1a1a2e;
+            color: white;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container { max-width: 400px; margin: 0 auto; }
+        h1 { font-size: 1.5rem; margin-bottom: 20px; text-align: center; }
+
+        .status-card {
+            background: #16213e;
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 16px;
+        }
+        .status-card h2 {
+            font-size: 0.9rem;
+            color: #888;
+            margin-bottom: 8px;
+        }
+        .status-value {
+            font-size: 1.2rem;
+            font-weight: bold;
+        }
+        .status-value.good { color: #22c55e; }
+        .status-value.bad { color: #ef4444; }
+        .status-value.pending { color: #f59e0b; }
+
+        /* Audio level meter */
+        .meter-container {
+            background: #0f0f23;
+            border-radius: 8px;
+            height: 30px;
+            overflow: hidden;
+            margin-top: 8px;
+        }
+        .meter-bar {
+            height: 100%;
+            background: linear-gradient(90deg, #22c55e, #f59e0b, #ef4444);
+            width: 0%;
+            transition: width 0.05s;
+        }
+
+        /* Video preview */
+        #videoPreview {
+            width: 100%;
+            border-radius: 12px;
+            background: #000;
+            margin-bottom: 16px;
+        }
+
+        /* Buttons */
+        .btn {
+            width: 100%;
+            padding: 16px;
+            border: none;
+            border-radius: 12px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            margin-bottom: 12px;
+            transition: transform 0.1s, opacity 0.2s;
+        }
+        .btn:active { transform: scale(0.98); }
+        .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+        .btn-primary { background: #3b82f6; color: white; }
+        .btn-success { background: #22c55e; color: white; }
+        .btn-danger { background: #ef4444; color: white; }
+        .btn-secondary { background: #374151; color: white; }
+
+        /* Log */
+        .log {
+            background: #0f0f23;
+            border-radius: 12px;
+            padding: 12px;
+            font-family: monospace;
+            font-size: 0.8rem;
+            max-height: 200px;
+            overflow-y: auto;
+            margin-top: 16px;
+        }
+        .log-entry { margin-bottom: 4px; }
+        .log-time { color: #666; }
+        .log-msg { color: #ddd; }
+        .log-warn { color: #f59e0b; }
+        .log-error { color: #ef4444; }
+        .log-success { color: #22c55e; }
+
+        /* Instructions */
+        .instructions {
+            background: #1e3a5f;
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 16px;
+            font-size: 0.9rem;
+            line-height: 1.5;
+        }
+        .instructions ol {
+            margin-left: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Audio + Video Sync Test</h1>
+
+        <div class="instructions">
+            <strong>Test Flow:</strong>
+            <ol>
+                <li>Start audio capture (mic will listen)</li>
+                <li>Play music on your phone</li>
+                <li>Start video capture</li>
+                <li>Record for 10 seconds</li>
+                <li>Download and verify sync</li>
+            </ol>
+        </div>
+
+        <video id="videoPreview" autoplay muted playsinline></video>
+
+        <div class="status-card">
+            <h2>AUDIO LEVEL</h2>
+            <div class="meter-container">
+                <div class="meter-bar" id="audioMeter"></div>
+            </div>
+            <div class="status-value pending" id="audioStatus">Not started</div>
+        </div>
+
+        <div class="status-card">
+            <h2>VIDEO</h2>
+            <div class="status-value pending" id="videoStatus">Not started</div>
+        </div>
+
+        <div class="status-card">
+            <h2>SYNC OFFSET</h2>
+            <div class="status-value" id="syncOffset">--</div>
+        </div>
+
+        <button class="btn btn-primary" id="btnAudio">1. Start Audio Capture</button>
+        <button class="btn btn-secondary" id="btnVideo" disabled>2. Start Video Capture</button>
+        <button class="btn btn-success" id="btnRecord" disabled>3. Record Test (10s)</button>
+        <button class="btn btn-danger" id="btnStop" disabled>Stop & Download</button>
+
+        <div class="log" id="log"></div>
+    </div>
+
+    <script>
+        // State
+        let audioStream = null;
+        let videoStream = null;
+        let audioRecorder = null;
+        let videoRecorder = null;
+        let audioChunks = [];
+        let videoChunks = [];
+        let audioStartTime = null;
+        let videoStartTime = null;
+        let audioContext = null;
+        let analyser = null;
+
+        // Elements
+        const videoPreview = document.getElementById('videoPreview');
+        const audioMeter = document.getElementById('audioMeter');
+        const audioStatus = document.getElementById('audioStatus');
+        const videoStatus = document.getElementById('videoStatus');
+        const syncOffset = document.getElementById('syncOffset');
+        const btnAudio = document.getElementById('btnAudio');
+        const btnVideo = document.getElementById('btnVideo');
+        const btnRecord = document.getElementById('btnRecord');
+        const btnStop = document.getElementById('btnStop');
+        const logEl = document.getElementById('log');
+
+        function log(msg, type = 'msg') {
+            const time = new Date().toLocaleTimeString('en-US', { hour12: false });
+            const entry = document.createElement('div');
+            entry.className = 'log-entry';
+            entry.innerHTML = `<span class="log-time">${time}</span> <span class="log-${type}">${msg}</span>`;
+            logEl.appendChild(entry);
+            logEl.scrollTop = logEl.scrollHeight;
+            console.log(`[${time}] ${msg}`);
+        }
+
+        // Audio level visualization
+        function startAudioMeter() {
+            if (!audioStream || !audioContext) return;
+
+            analyser = audioContext.createAnalyser();
+            analyser.fftSize = 256;
+            const source = audioContext.createMediaStreamSource(audioStream);
+            source.connect(analyser);
+
+            const dataArray = new Uint8Array(analyser.frequencyBinCount);
+
+            function update() {
+                if (!analyser) return;
+                analyser.getByteFrequencyData(dataArray);
+                const avg = dataArray.reduce((a, b) => a + b, 0) / dataArray.length;
+                const percent = Math.min(100, (avg / 128) * 100);
+                audioMeter.style.width = percent + '%';
+                requestAnimationFrame(update);
+            }
+            update();
+        }
+
+        // Step 1: Start audio capture
+        btnAudio.onclick = async () => {
+            try {
+                log('Requesting microphone access...');
+
+                // Request audio with settings optimized for music capture
+                audioStream = await navigator.mediaDevices.getUserMedia({
+                    audio: {
+                        echoCancellation: false,
+                        noiseSuppression: false,
+                        autoGainControl: false,
+                        sampleRate: 48000
+                    }
+                });
+
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                startAudioMeter();
+
+                audioStatus.textContent = 'Listening...';
+                audioStatus.className = 'status-value good';
+                log('Audio capture started - play music now!', 'success');
+
+                btnAudio.disabled = true;
+                btnVideo.disabled = false;
+
+            } catch (err) {
+                log('Audio error: ' + err.message, 'error');
+                audioStatus.textContent = 'Error: ' + err.message;
+                audioStatus.className = 'status-value bad';
+            }
+        };
+
+        // Step 2: Start video capture
+        btnVideo.onclick = async () => {
+            try {
+                log('Requesting camera access...');
+
+                videoStream = await navigator.mediaDevices.getUserMedia({
+                    video: {
+                        facingMode: 'user',
+                        width: { ideal: 1280 },
+                        height: { ideal: 720 }
+                    },
+                    audio: false  // Video only!
+                });
+
+                videoPreview.srcObject = videoStream;
+
+                videoStatus.textContent = 'Camera active';
+                videoStatus.className = 'status-value good';
+                log('Video capture started', 'success');
+
+                btnVideo.disabled = true;
+                btnRecord.disabled = false;
+
+            } catch (err) {
+                log('Video error: ' + err.message, 'error');
+                videoStatus.textContent = 'Error: ' + err.message;
+                videoStatus.className = 'status-value bad';
+            }
+        };
+
+        // Step 3: Start synchronized recording
+        btnRecord.onclick = async () => {
+            audioChunks = [];
+            videoChunks = [];
+
+            // Determine best video format
+            let videoMimeType = '';
+            ['video/webm;codecs=vp9', 'video/webm;codecs=vp8', 'video/webm', 'video/mp4'].forEach(type => {
+                if (!videoMimeType && MediaRecorder.isTypeSupported(type)) videoMimeType = type;
+            });
+
+            // Determine best audio format
+            let audioMimeType = '';
+            ['audio/webm;codecs=opus', 'audio/webm', 'audio/mp4', 'audio/ogg'].forEach(type => {
+                if (!audioMimeType && MediaRecorder.isTypeSupported(type)) audioMimeType = type;
+            });
+
+            log(`Video format: ${videoMimeType}`);
+            log(`Audio format: ${audioMimeType}`);
+
+            // Create recorders
+            videoRecorder = new MediaRecorder(videoStream, {
+                mimeType: videoMimeType,
+                videoBitsPerSecond: 2500000
+            });
+            audioRecorder = new MediaRecorder(audioStream, {
+                mimeType: audioMimeType,
+                audioBitsPerSecond: 128000
+            });
+
+            videoRecorder.ondataavailable = e => {
+                if (e.data.size > 0) videoChunks.push(e.data);
+            };
+            audioRecorder.ondataavailable = e => {
+                if (e.data.size > 0) audioChunks.push(e.data);
+            };
+
+            // Start both with precise timing
+            const now = performance.now();
+
+            // Start audio first (it's already been capturing, just need to record)
+            audioRecorder.start(100);
+            audioStartTime = performance.now();
+
+            // Start video immediately after
+            videoRecorder.start(100);
+            videoStartTime = performance.now();
+
+            const offset = videoStartTime - audioStartTime;
+            syncOffset.textContent = `Video starts ${offset.toFixed(1)}ms after audio`;
+            log(`Recording started! Offset: ${offset.toFixed(1)}ms`, 'success');
+
+            btnRecord.disabled = true;
+            btnStop.disabled = false;
+
+            // Auto-stop after 10 seconds
+            setTimeout(() => {
+                if (videoRecorder.state === 'recording') {
+                    log('Auto-stopping after 10s...');
+                    stopRecording();
+                }
+            }, 10000);
+        };
+
+        // Stop and download
+        btnStop.onclick = stopRecording;
+
+        async function stopRecording() {
+            btnStop.disabled = true;
+
+            // Stop both recorders
+            const stopPromises = [];
+
+            if (videoRecorder && videoRecorder.state === 'recording') {
+                stopPromises.push(new Promise(resolve => {
+                    videoRecorder.onstop = resolve;
+                    videoRecorder.stop();
+                }));
+            }
+
+            if (audioRecorder && audioRecorder.state === 'recording') {
+                stopPromises.push(new Promise(resolve => {
+                    audioRecorder.onstop = resolve;
+                    audioRecorder.stop();
+                }));
+            }
+
+            await Promise.all(stopPromises);
+
+            log('Recording stopped, preparing downloads...');
+
+            // Create download links
+            const timestamp = Date.now();
+
+            if (videoChunks.length > 0) {
+                const videoBlob = new Blob(videoChunks, { type: videoRecorder.mimeType });
+                const videoUrl = URL.createObjectURL(videoBlob);
+                const videoLink = document.createElement('a');
+                videoLink.href = videoUrl;
+                videoLink.download = `video-${timestamp}.webm`;
+                videoLink.click();
+                log(`Video downloaded: ${(videoBlob.size / 1024 / 1024).toFixed(2)}MB`, 'success');
+            }
+
+            if (audioChunks.length > 0) {
+                const audioBlob = new Blob(audioChunks, { type: audioRecorder.mimeType });
+                const audioUrl = URL.createObjectURL(audioBlob);
+                const audioLink = document.createElement('a');
+                audioLink.href = audioUrl;
+                audioLink.download = `audio-${timestamp}.webm`;
+                audioLink.click();
+                log(`Audio downloaded: ${(audioBlob.size / 1024).toFixed(2)}KB`, 'success');
+            }
+
+            // Log sync info for debugging
+            log('---');
+            log(`Audio started at: ${audioStartTime.toFixed(2)}ms`);
+            log(`Video started at: ${videoStartTime.toFixed(2)}ms`);
+            log(`Sync offset: ${(videoStartTime - audioStartTime).toFixed(2)}ms`);
+            log('---');
+            log('Use FFmpeg to merge: ffmpeg -i video.webm -i audio.webm -c:v copy -c:a aac output.mp4', 'warn');
+
+            // Reset for next test
+            btnRecord.disabled = false;
+        }
+
+        // Initialize
+        log('Audio + Video Sync Test Ready');
+        log('Step 1: Start audio capture');
+    </script>
+</body>
+</html>

@@ -1,0 +1,509 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Dance (with Audio)</title>
+    <style>
+        * { margin: 0; padding: 0; }
+        html, body { height: 100%; width: 100%; overflow: hidden; }
+        body {
+            background: #ef4444;
+            transition: background 0.3s ease;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            font-family: -apple-system, system-ui, sans-serif;
+            color: white;
+        }
+        body.live { background: #22c55e; }
+        body.audio-ready { background: #f59e0b; }
+
+        .status {
+            font-size: 1.5rem;
+            font-weight: bold;
+            text-align: center;
+            padding: 20px;
+        }
+        .instructions {
+            font-size: 1rem;
+            opacity: 0.9;
+            max-width: 300px;
+            text-align: center;
+            line-height: 1.5;
+        }
+
+        /* Audio meter */
+        .meter {
+            width: 200px;
+            height: 20px;
+            background: rgba(0,0,0,0.3);
+            border-radius: 10px;
+            overflow: hidden;
+            margin: 20px 0;
+        }
+        .meter-bar {
+            height: 100%;
+            background: white;
+            width: 0%;
+            transition: width 0.05s;
+        }
+
+        .btn {
+            padding: 16px 32px;
+            border: none;
+            border-radius: 30px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            margin: 10px;
+            background: rgba(255,255,255,0.2);
+            color: white;
+            backdrop-filter: blur(10px);
+        }
+        .btn:active { transform: scale(0.95); }
+
+        .hidden { display: none; }
+    </style>
+</head>
+<body>
+    <div class="status" id="status">Tap to Start</div>
+    <div class="meter" id="meterContainer">
+        <div class="meter-bar" id="meter"></div>
+    </div>
+    <div class="instructions" id="instructions">
+        Microphone will capture music playing through speakers
+    </div>
+    <button class="btn" id="btnStart">Start Audio Capture</button>
+    <button class="btn hidden" id="btnGo">Music Playing? Go Live!</button>
+
+    <script>
+        // =====================
+        // CONFIG
+        // =====================
+        const CLIENT_ID = '129984821928-u6iqasj284ffcmkh15on4gsnbbah7pvo.apps.googleusercontent.com';
+        const SCOPES = 'https://www.googleapis.com/auth/youtube';
+        const pathname = window.location.pathname.replace(/live-with-audio\.html$/, '');
+        const REDIRECT_URI = window.location.origin + pathname;
+        const DEFAULT_RELAY = 'wss://dance.danyelica.fish';
+
+        // =====================
+        // STATE
+        // =====================
+        let accessToken = localStorage.getItem('yt_access_token');
+        let audioStream = null;
+        let videoStream = null;
+        let combinedStream = null;
+        let streamSocket = null;
+        let mediaRecorder = null;
+        let isStreaming = false;
+        let currentBroadcastId = null;
+        let currentStreamId = null;
+        let currentStreamKey = null;
+        let currentClientId = null;
+        let wakeLock = null;
+
+        // Audio visualization
+        let audioContext = null;
+        let analyser = null;
+
+        // Elements
+        const statusEl = document.getElementById('status');
+        const instructionsEl = document.getElementById('instructions');
+        const meterEl = document.getElementById('meter');
+        const meterContainer = document.getElementById('meterContainer');
+        const btnStart = document.getElementById('btnStart');
+        const btnGo = document.getElementById('btnGo');
+
+        // =====================
+        // OAUTH (same as main app)
+        // =====================
+        function checkAuthCallback() {
+            const hash = window.location.hash;
+            if (hash.includes('access_token')) {
+                const params = new URLSearchParams(hash.substring(1));
+                accessToken = params.get('access_token');
+                localStorage.setItem('yt_access_token', accessToken);
+                history.replaceState(null, '', window.location.pathname);
+            }
+        }
+
+        function redirectToAuth() {
+            const authUrl = 'https://accounts.google.com/o/oauth2/v2/auth?' +
+                'client_id=' + CLIENT_ID +
+                '&redirect_uri=' + encodeURIComponent(REDIRECT_URI) +
+                '&response_type=token' +
+                '&scope=' + encodeURIComponent(SCOPES) +
+                '&include_granted_scopes=true';
+            window.location.href = authUrl;
+        }
+
+        async function validateToken() {
+            if (!accessToken) return false;
+            try {
+                const response = await fetch('https://www.googleapis.com/youtube/v3/channels?part=snippet&mine=true', {
+                    headers: { 'Authorization': 'Bearer ' + accessToken }
+                });
+                return response.ok;
+            } catch (e) {
+                console.error('Token validation failed:', e);
+            }
+            localStorage.removeItem('yt_access_token');
+            accessToken = null;
+            return false;
+        }
+
+        // =====================
+        // AUDIO VISUALIZATION
+        // =====================
+        function startAudioMeter() {
+            if (!audioStream) return;
+
+            audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            analyser = audioContext.createAnalyser();
+            analyser.fftSize = 256;
+
+            const source = audioContext.createMediaStreamSource(audioStream);
+            source.connect(analyser);
+
+            const dataArray = new Uint8Array(analyser.frequencyBinCount);
+
+            function update() {
+                if (!analyser) return;
+                analyser.getByteFrequencyData(dataArray);
+                const avg = dataArray.reduce((a, b) => a + b, 0) / dataArray.length;
+                const percent = Math.min(100, (avg / 128) * 100);
+                meterEl.style.width = percent + '%';
+                requestAnimationFrame(update);
+            }
+            update();
+        }
+
+        // =====================
+        // WAKE LOCK
+        // =====================
+        async function requestWakeLock() {
+            if ('wakeLock' in navigator) {
+                try {
+                    wakeLock = await navigator.wakeLock.request('screen');
+                    console.log('Wake lock acquired');
+                } catch (err) {
+                    console.error('Wake lock failed:', err);
+                }
+            }
+        }
+
+        async function releaseWakeLock() {
+            if (wakeLock) {
+                await wakeLock.release();
+                wakeLock = null;
+            }
+        }
+
+        // =====================
+        // STEP 1: Start Audio Capture
+        // =====================
+        btnStart.onclick = async () => {
+            try {
+                statusEl.textContent = 'Starting mic...';
+                instructionsEl.textContent = 'Allow microphone access';
+
+                // Start audio capture with settings for music
+                audioStream = await navigator.mediaDevices.getUserMedia({
+                    audio: {
+                        echoCancellation: false,
+                        noiseSuppression: false,
+                        autoGainControl: false
+                    }
+                });
+
+                startAudioMeter();
+
+                // Update UI
+                document.body.classList.add('audio-ready');
+                statusEl.textContent = 'Audio Ready';
+                instructionsEl.innerHTML = '<strong>Now start your music!</strong><br>Watch the meter - it should move when music plays';
+                btnStart.classList.add('hidden');
+                btnGo.classList.remove('hidden');
+
+                console.log('Audio capture started');
+
+            } catch (err) {
+                console.error('Audio error:', err);
+                statusEl.textContent = 'Mic Error';
+                instructionsEl.textContent = err.message;
+            }
+        };
+
+        // =====================
+        // STEP 2: Start Video + Go Live
+        // =====================
+        btnGo.onclick = async () => {
+            try {
+                btnGo.disabled = true;
+                statusEl.textContent = 'Starting camera...';
+                instructionsEl.textContent = 'This may briefly interrupt music - just resume it';
+
+                // Start video (this might pause music on iOS)
+                videoStream = await navigator.mediaDevices.getUserMedia({
+                    video: {
+                        facingMode: 'user',
+                        width: { ideal: 1280 },
+                        height: { ideal: 720 }
+                    },
+                    audio: false
+                });
+
+                console.log('Video started');
+                statusEl.textContent = 'Connecting...';
+                instructionsEl.textContent = 'Make sure music is playing!';
+
+                // Combine video + audio into one stream
+                combinedStream = new MediaStream([
+                    ...videoStream.getVideoTracks(),
+                    ...audioStream.getAudioTracks()
+                ]);
+
+                // Request wake lock
+                await requestWakeLock();
+
+                // Start streaming
+                await startStreaming();
+
+            } catch (err) {
+                console.error('Video/streaming error:', err);
+                statusEl.textContent = 'Error';
+                instructionsEl.textContent = err.message;
+                btnGo.disabled = false;
+            }
+        };
+
+        // =====================
+        // YOUTUBE API
+        // =====================
+        async function createYouTubeBroadcast() {
+            const broadcastResponse = await fetch('https://www.googleapis.com/youtube/v3/liveBroadcasts?part=snippet,status,contentDetails', {
+                method: 'POST',
+                headers: {
+                    'Authorization': 'Bearer ' + accessToken,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    snippet: {
+                        title: 'Dance Session ' + new Date().toLocaleString(),
+                        scheduledStartTime: new Date().toISOString()
+                    },
+                    status: {
+                        privacyStatus: 'unlisted',
+                        selfDeclaredMadeForKids: false
+                    },
+                    contentDetails: {
+                        enableAutoStart: true,
+                        enableAutoStop: true
+                    }
+                })
+            });
+
+            if (!broadcastResponse.ok) {
+                const err = await broadcastResponse.json();
+                throw new Error(err.error?.message || 'Failed to create broadcast');
+            }
+
+            const broadcast = await broadcastResponse.json();
+            currentBroadcastId = broadcast.id;
+
+            const streamResponse = await fetch('https://www.googleapis.com/youtube/v3/liveStreams?part=snippet,cdn', {
+                method: 'POST',
+                headers: {
+                    'Authorization': 'Bearer ' + accessToken,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    snippet: { title: 'Dance Stream ' + Date.now() },
+                    cdn: {
+                        frameRate: '30fps',
+                        ingestionType: 'rtmp',
+                        resolution: '720p'
+                    }
+                })
+            });
+
+            if (!streamResponse.ok) {
+                const err = await streamResponse.json();
+                throw new Error(err.error?.message || 'Failed to create stream');
+            }
+
+            const stream = await streamResponse.json();
+            currentStreamId = stream.id;
+            currentStreamKey = stream.cdn.ingestionInfo.streamName;
+
+            await fetch(`https://www.googleapis.com/youtube/v3/liveBroadcasts/bind?id=${currentBroadcastId}&part=id&streamId=${stream.id}`, {
+                method: 'POST',
+                headers: { 'Authorization': 'Bearer ' + accessToken }
+            });
+
+            await new Promise(resolve => setTimeout(resolve, 2000));
+            return currentStreamKey;
+        }
+
+        async function waitForStreamActive(maxWaitMs = 60000) {
+            const startTime = Date.now();
+            while (Date.now() - startTime < maxWaitMs) {
+                try {
+                    const response = await fetch(`https://www.googleapis.com/youtube/v3/liveStreams?part=status&id=${currentStreamId}`, {
+                        headers: { 'Authorization': 'Bearer ' + accessToken }
+                    });
+                    const data = await response.json();
+                    if (data.items?.[0]?.status?.streamStatus === 'active') {
+                        return true;
+                    }
+                } catch (e) {}
+                await new Promise(resolve => setTimeout(resolve, 2000));
+            }
+            return false;
+        }
+
+        async function transitionToLive() {
+            try {
+                await fetch(`https://www.googleapis.com/youtube/v3/liveBroadcasts/transition?broadcastStatus=live&id=${currentBroadcastId}&part=status`, {
+                    method: 'POST',
+                    headers: { 'Authorization': 'Bearer ' + accessToken }
+                });
+                return true;
+            } catch (e) {
+                console.error('Transition error:', e);
+                return false;
+            }
+        }
+
+        // =====================
+        // STREAMING
+        // =====================
+        async function startStreaming() {
+            const relay = localStorage.getItem('relayUrl') || DEFAULT_RELAY;
+            currentClientId = 'yt_' + Date.now();
+
+            // Create YouTube broadcast
+            statusEl.textContent = 'Creating broadcast...';
+            const streamKey = await createYouTubeBroadcast();
+
+            // Find supported format
+            let mimeType = '';
+            ['video/webm;codecs=vp9,opus', 'video/webm;codecs=vp8,opus', 'video/webm', 'video/mp4'].forEach(type => {
+                if (!mimeType && MediaRecorder.isTypeSupported(type)) mimeType = type;
+            });
+            console.log('Using MIME type:', mimeType);
+
+            // Register with relay - tell it we're sending audio too
+            const http = relay.replace('wss://', 'https://').replace('ws://', 'http://');
+            await fetch(`${http}/start-stream`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    streamKey,
+                    clientId: currentClientId,
+                    mimeType,
+                    hasAudio: true  // Tell server we're sending real audio
+                })
+            });
+
+            // Connect WebSocket
+            statusEl.textContent = 'Connecting...';
+            streamSocket = new WebSocket(`${relay}?clientId=${currentClientId}`);
+
+            streamSocket.onopen = async () => {
+                const options = { videoBitsPerSecond: 2500000, audioBitsPerSecond: 128000 };
+                if (mimeType) options.mimeType = mimeType;
+
+                // Record the COMBINED stream (video + audio)
+                mediaRecorder = new MediaRecorder(combinedStream, options);
+                mediaRecorder.ondataavailable = (e) => {
+                    if (e.data.size > 0 && streamSocket.readyState === WebSocket.OPEN) {
+                        streamSocket.send(e.data);
+                    }
+                };
+                mediaRecorder.start(1000);
+
+                isStreaming = true;
+                statusEl.textContent = 'Streaming...';
+                instructionsEl.textContent = 'Waiting for YouTube...';
+
+                // Wait for stream to be active
+                const isActive = await waitForStreamActive(60000);
+                if (isActive) {
+                    // Try to transition to live
+                    await new Promise(r => setTimeout(r, 5000));
+                    await transitionToLive();
+
+                    document.body.classList.remove('audio-ready');
+                    document.body.classList.add('live');
+                    statusEl.textContent = 'LIVE';
+                    instructionsEl.textContent = 'Broadcasting with audio!';
+                    meterContainer.classList.add('hidden');
+                    btnGo.classList.add('hidden');
+                } else {
+                    statusEl.textContent = 'Connected';
+                    instructionsEl.textContent = 'Stream may take a moment to go live';
+                    document.body.classList.add('live');
+                }
+            };
+
+            streamSocket.onerror = (err) => {
+                console.error('WebSocket error:', err);
+                statusEl.textContent = 'Connection Error';
+            };
+
+            streamSocket.onclose = () => {
+                if (isStreaming) stopStreaming();
+            };
+        }
+
+        async function stopStreaming() {
+            isStreaming = false;
+            document.body.classList.remove('live', 'audio-ready');
+
+            await releaseWakeLock();
+
+            if (mediaRecorder?.state !== 'inactive') {
+                mediaRecorder.stop();
+            }
+            streamSocket?.close();
+
+            // End broadcast
+            if (currentBroadcastId && accessToken) {
+                try {
+                    await fetch(`https://www.googleapis.com/youtube/v3/liveBroadcasts/transition?broadcastStatus=complete&id=${currentBroadcastId}&part=id`, {
+                        method: 'POST',
+                        headers: { 'Authorization': 'Bearer ' + accessToken }
+                    });
+                } catch (e) {}
+            }
+
+            statusEl.textContent = 'Stopped';
+            instructionsEl.textContent = 'Refresh to start again';
+        }
+
+        // =====================
+        // INIT
+        // =====================
+        async function init() {
+            checkAuthCallback();
+
+            const isValid = await validateToken();
+            if (!isValid) {
+                redirectToAuth();
+                return;
+            }
+
+            if (!localStorage.getItem('relayUrl')) {
+                localStorage.setItem('relayUrl', DEFAULT_RELAY);
+            }
+
+            console.log('Ready - tap Start Audio Capture');
+        }
+
+        window.onload = init;
+    </script>
+</body>
+</html>
