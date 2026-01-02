@@ -52,6 +52,9 @@
         let lastMotion = Date.now();
         let isStill = false;
 
+        // Wake lock to prevent screen sleep
+        let wakeLock = null;
+
         // =====================
         // SCREEN COLOR
         // =====================
@@ -438,10 +441,52 @@
         window.waitForBroadcastLive = waitForBroadcastLive;
 
         // =====================
+        // WAKE LOCK (prevents screen sleep)
+        // =====================
+        async function requestWakeLock() {
+            if ('wakeLock' in navigator) {
+                try {
+                    wakeLock = await navigator.wakeLock.request('screen');
+                    console.log('Wake lock acquired - screen will stay on');
+
+                    wakeLock.addEventListener('release', () => {
+                        console.log('Wake lock released');
+                    });
+
+                    return wakeLock;
+                } catch (err) {
+                    console.error('Wake lock failed:', err);
+                }
+            } else {
+                console.warn('Wake Lock API not supported - screen may turn off during streaming');
+            }
+            return null;
+        }
+
+        async function releaseWakeLock() {
+            if (wakeLock) {
+                try {
+                    await wakeLock.release();
+                    wakeLock = null;
+                } catch (e) {}
+            }
+        }
+
+        // Re-acquire wake lock when page becomes visible again
+        document.addEventListener('visibilitychange', async () => {
+            if (document.visibilityState === 'visible' && isStreaming && !wakeLock) {
+                await requestWakeLock();
+            }
+        });
+
+        // =====================
         // STREAMING
         // =====================
         async function startStreaming() {
             if (isStreaming) return;
+
+            // CRITICAL: Request wake lock to keep screen on during streaming
+            await requestWakeLock();
 
             const relay = localStorage.getItem('relayUrl') || DEFAULT_RELAY;
             currentClientId = 'yt_' + Date.now();
@@ -532,6 +577,9 @@
             if (!isStreaming) return;
 
             setLive(false); // RED
+
+            // Release wake lock - screen can sleep now
+            await releaseWakeLock();
 
             if (mediaRecorder && mediaRecorder.state !== 'inactive') {
                 mediaRecorder.stop();
