@@ -1,0 +1,1651 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Camera Timelapse - 2 Month Project</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Courier New', monospace;
+            background: #0a0a0a;
+            color: #e0e0e0;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            padding: 20px 30px;
+            border-bottom: 1px solid #333;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .header h1 {
+            font-size: 1.5rem;
+            font-weight: normal;
+            letter-spacing: 2px;
+        }
+
+        .header a {
+            color: #888;
+            text-decoration: none;
+            font-size: 0.9rem;
+        }
+
+        .header a:hover {
+            color: #fff;
+        }
+
+        .main-container {
+            display: grid;
+            grid-template-columns: 300px 1fr 280px;
+            min-height: calc(100vh - 80px);
+        }
+
+        /* Left Panel - Project Info */
+        .project-panel {
+            background: #111;
+            border-right: 1px solid #333;
+            padding: 20px;
+            overflow-y: auto;
+        }
+
+        .panel-section {
+            margin-bottom: 25px;
+        }
+
+        .panel-section h3 {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #666;
+            margin-bottom: 12px;
+            border-bottom: 1px solid #333;
+            padding-bottom: 8px;
+        }
+
+        .project-stats {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+
+        .stat-box {
+            background: #1a1a1a;
+            padding: 12px;
+            border-radius: 4px;
+            text-align: center;
+        }
+
+        .stat-box .value {
+            font-size: 1.5rem;
+            color: #4ecdc4;
+        }
+
+        .stat-box .label {
+            font-size: 0.7rem;
+            color: #666;
+            text-transform: uppercase;
+            margin-top: 4px;
+        }
+
+        .progress-container {
+            background: #1a1a1a;
+            padding: 15px;
+            border-radius: 4px;
+        }
+
+        .progress-bar {
+            height: 8px;
+            background: #333;
+            border-radius: 4px;
+            overflow: hidden;
+            margin-bottom: 10px;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #4ecdc4, #44a08d);
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+
+        .progress-text {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.75rem;
+            color: #888;
+        }
+
+        .settings-form label {
+            display: block;
+            font-size: 0.75rem;
+            color: #888;
+            margin-bottom: 5px;
+        }
+
+        .settings-form input,
+        .settings-form select {
+            width: 100%;
+            background: #1a1a1a;
+            border: 1px solid #333;
+            color: #e0e0e0;
+            padding: 8px 10px;
+            border-radius: 4px;
+            margin-bottom: 12px;
+            font-family: inherit;
+        }
+
+        .settings-form input:focus,
+        .settings-form select:focus {
+            outline: none;
+            border-color: #4ecdc4;
+        }
+
+        /* Center Panel - Timeline & Preview */
+        .content-panel {
+            background: #0d0d0d;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .preview-container {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #000;
+            position: relative;
+            min-height: 400px;
+        }
+
+        .preview-container img {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+        }
+
+        .preview-placeholder {
+            text-align: center;
+            color: #444;
+        }
+
+        .preview-placeholder svg {
+            width: 80px;
+            height: 80px;
+            margin-bottom: 15px;
+            opacity: 0.3;
+        }
+
+        .preview-controls {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 10px;
+            background: rgba(0,0,0,0.8);
+            padding: 10px 20px;
+            border-radius: 30px;
+        }
+
+        .preview-controls button {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            border: none;
+            background: #333;
+            color: #fff;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+
+        .preview-controls button:hover {
+            background: #4ecdc4;
+        }
+
+        .preview-controls button.active {
+            background: #4ecdc4;
+        }
+
+        .frame-counter {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(0,0,0,0.8);
+            padding: 8px 15px;
+            border-radius: 4px;
+            font-size: 0.85rem;
+        }
+
+        /* Timeline */
+        .timeline-container {
+            background: #111;
+            border-top: 1px solid #333;
+            padding: 20px;
+            max-height: 250px;
+            overflow: hidden;
+        }
+
+        .timeline-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .timeline-header h3 {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #666;
+        }
+
+        .timeline-months {
+            display: flex;
+            gap: 2px;
+            margin-bottom: 10px;
+        }
+
+        .month-block {
+            flex: 1;
+            text-align: center;
+            padding: 5px;
+            background: #1a1a1a;
+            border-radius: 3px;
+            font-size: 0.7rem;
+            color: #666;
+        }
+
+        .month-block.active {
+            background: #2a3a4a;
+            color: #4ecdc4;
+        }
+
+        .timeline-strip {
+            display: flex;
+            gap: 2px;
+            overflow-x: auto;
+            padding-bottom: 10px;
+        }
+
+        .timeline-day {
+            min-width: 20px;
+            height: 60px;
+            background: #1a1a1a;
+            border-radius: 2px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-end;
+            padding: 2px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .timeline-day:hover {
+            background: #2a2a2a;
+        }
+
+        .timeline-day.has-images {
+            background: linear-gradient(to top, #4ecdc4, #1a1a1a);
+        }
+
+        .timeline-day.selected {
+            outline: 2px solid #4ecdc4;
+        }
+
+        .timeline-day .day-num {
+            font-size: 0.6rem;
+            color: #666;
+        }
+
+        .thumbnail-strip {
+            display: flex;
+            gap: 4px;
+            overflow-x: auto;
+            padding: 10px 0;
+        }
+
+        .thumbnail {
+            width: 60px;
+            height: 45px;
+            background: #1a1a1a;
+            border-radius: 3px;
+            overflow: hidden;
+            cursor: pointer;
+            flex-shrink: 0;
+            border: 2px solid transparent;
+            transition: all 0.2s;
+        }
+
+        .thumbnail:hover {
+            border-color: #4ecdc4;
+        }
+
+        .thumbnail.selected {
+            border-color: #4ecdc4;
+        }
+
+        .thumbnail img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        /* Right Panel - Actions & Import */
+        .action-panel {
+            background: #111;
+            border-left: 1px solid #333;
+            padding: 20px;
+            overflow-y: auto;
+        }
+
+        .drop-zone {
+            border: 2px dashed #333;
+            border-radius: 8px;
+            padding: 30px 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-bottom: 20px;
+        }
+
+        .drop-zone:hover,
+        .drop-zone.dragover {
+            border-color: #4ecdc4;
+            background: rgba(78, 205, 196, 0.05);
+        }
+
+        .drop-zone svg {
+            width: 40px;
+            height: 40px;
+            margin-bottom: 10px;
+            opacity: 0.5;
+        }
+
+        .drop-zone p {
+            font-size: 0.85rem;
+            color: #888;
+            margin-bottom: 5px;
+        }
+
+        .drop-zone small {
+            font-size: 0.7rem;
+            color: #555;
+        }
+
+        .action-btn {
+            width: 100%;
+            padding: 12px;
+            border: none;
+            border-radius: 4px;
+            font-family: inherit;
+            font-size: 0.85rem;
+            cursor: pointer;
+            margin-bottom: 10px;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .action-btn.primary {
+            background: linear-gradient(135deg, #4ecdc4, #44a08d);
+            color: #000;
+        }
+
+        .action-btn.primary:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 15px rgba(78, 205, 196, 0.3);
+        }
+
+        .action-btn.secondary {
+            background: #1a1a1a;
+            color: #e0e0e0;
+            border: 1px solid #333;
+        }
+
+        .action-btn.secondary:hover {
+            background: #2a2a2a;
+        }
+
+        .action-btn.danger {
+            background: #2a1a1a;
+            color: #e74c3c;
+            border: 1px solid #3a2a2a;
+        }
+
+        .action-btn.danger:hover {
+            background: #3a2a2a;
+        }
+
+        .action-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .camera-connect {
+            background: #1a1a1a;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+
+        .camera-status {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #e74c3c;
+        }
+
+        .status-dot.connected {
+            background: #4ecdc4;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .export-options {
+            background: #1a1a1a;
+            border-radius: 8px;
+            padding: 15px;
+        }
+
+        .export-options h4 {
+            font-size: 0.75rem;
+            color: #666;
+            margin-bottom: 12px;
+            text-transform: uppercase;
+        }
+
+        .export-options label {
+            display: block;
+            font-size: 0.75rem;
+            color: #888;
+            margin-bottom: 5px;
+        }
+
+        .export-options select,
+        .export-options input {
+            width: 100%;
+            background: #0a0a0a;
+            border: 1px solid #333;
+            color: #e0e0e0;
+            padding: 8px;
+            border-radius: 4px;
+            margin-bottom: 10px;
+            font-family: inherit;
+        }
+
+        /* Modal */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.9);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-overlay.active {
+            display: flex;
+        }
+
+        .modal {
+            background: #111;
+            border-radius: 8px;
+            padding: 30px;
+            max-width: 500px;
+            width: 90%;
+            border: 1px solid #333;
+        }
+
+        .modal h2 {
+            margin-bottom: 20px;
+            font-weight: normal;
+        }
+
+        .modal-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        /* Progress Modal */
+        .processing-status {
+            text-align: center;
+            padding: 20px;
+        }
+
+        .processing-spinner {
+            width: 50px;
+            height: 50px;
+            border: 3px solid #333;
+            border-top-color: #4ecdc4;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Responsive */
+        @media (max-width: 1200px) {
+            .main-container {
+                grid-template-columns: 1fr;
+            }
+
+            .project-panel,
+            .action-panel {
+                display: none;
+            }
+        }
+
+        /* Hidden file input */
+        #fileInput {
+            display: none;
+        }
+
+        /* Toast notifications */
+        .toast {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: #1a1a1a;
+            border: 1px solid #333;
+            padding: 15px 20px;
+            border-radius: 4px;
+            z-index: 1001;
+            animation: slideIn 0.3s ease;
+        }
+
+        .toast.success {
+            border-color: #4ecdc4;
+        }
+
+        .toast.error {
+            border-color: #e74c3c;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <h1>CAMERA TIMELAPSE</h1>
+        <a href="../../index.html">back to site</a>
+    </header>
+
+    <main class="main-container">
+        <!-- Left Panel - Project Info -->
+        <aside class="project-panel">
+            <div class="panel-section">
+                <h3>Project Stats</h3>
+                <div class="project-stats">
+                    <div class="stat-box">
+                        <div class="value" id="totalFrames">0</div>
+                        <div class="label">Frames</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="value" id="daysElapsed">0</div>
+                        <div class="label">Days</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="value" id="videoLength">0s</div>
+                        <div class="label">Video</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="value" id="storageUsed">0 MB</div>
+                        <div class="label">Storage</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="panel-section">
+                <h3>2-Month Progress</h3>
+                <div class="progress-container">
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="progressFill"></div>
+                    </div>
+                    <div class="progress-text">
+                        <span id="progressDays">Day 0 of 60</span>
+                        <span id="progressPercent">0%</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="panel-section">
+                <h3>Timelapse Settings</h3>
+                <div class="settings-form">
+                    <label for="projectName">Project Name</label>
+                    <input type="text" id="projectName" value="My 2 Month Timelapse" placeholder="Project name">
+
+                    <label for="captureInterval">Capture Interval</label>
+                    <select id="captureInterval">
+                        <option value="1">Every hour</option>
+                        <option value="4">Every 4 hours</option>
+                        <option value="24" selected>Once daily</option>
+                        <option value="168">Once weekly</option>
+                    </select>
+
+                    <label for="playbackFps">Playback FPS</label>
+                    <select id="playbackFps">
+                        <option value="12">12 fps (cinematic)</option>
+                        <option value="24" selected>24 fps (film)</option>
+                        <option value="30">30 fps (smooth)</option>
+                        <option value="60">60 fps (ultra smooth)</option>
+                    </select>
+
+                    <label for="outputResolution">Output Resolution</label>
+                    <select id="outputResolution">
+                        <option value="1280x720">720p (1280x720)</option>
+                        <option value="1920x1080" selected>1080p (1920x1080)</option>
+                        <option value="2560x1440">1440p (2560x1440)</option>
+                        <option value="3840x2160">4K (3840x2160)</option>
+                    </select>
+
+                    <label for="startDate">Project Start Date</label>
+                    <input type="date" id="startDate">
+                </div>
+            </div>
+
+            <div class="panel-section">
+                <button class="action-btn secondary" onclick="saveProject()">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
+                        <polyline points="17 21 17 13 7 13 7 21"/>
+                        <polyline points="7 3 7 8 15 8"/>
+                    </svg>
+                    Save Project
+                </button>
+                <button class="action-btn secondary" onclick="loadProject()">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
+                    </svg>
+                    Load Project
+                </button>
+            </div>
+        </aside>
+
+        <!-- Center Panel - Preview & Timeline -->
+        <section class="content-panel">
+            <div class="preview-container">
+                <div class="preview-placeholder" id="previewPlaceholder">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
+                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                        <circle cx="8.5" cy="8.5" r="1.5"/>
+                        <polyline points="21 15 16 10 5 21"/>
+                    </svg>
+                    <p>Import images to begin your timelapse</p>
+                </div>
+                <img id="previewImage" style="display: none;" alt="Preview">
+                <div class="frame-counter" id="frameCounter" style="display: none;">
+                    Frame <span id="currentFrame">1</span> / <span id="totalFrameCount">0</span>
+                </div>
+                <div class="preview-controls" id="previewControls" style="display: none;">
+                    <button onclick="firstFrame()" title="First frame">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M6 6h2v12H6zm3.5 6l8.5 6V6z"/>
+                        </svg>
+                    </button>
+                    <button onclick="prevFrame()" title="Previous frame">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z"/>
+                        </svg>
+                    </button>
+                    <button onclick="togglePlayback()" id="playBtn" title="Play/Pause">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" id="playIcon">
+                            <path d="M8 5v14l11-7z"/>
+                        </svg>
+                    </button>
+                    <button onclick="nextFrame()" title="Next frame">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/>
+                        </svg>
+                    </button>
+                    <button onclick="lastFrame()" title="Last frame">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z"/>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+
+            <div class="timeline-container">
+                <div class="timeline-header">
+                    <h3>Timeline - 60 Days</h3>
+                    <span id="timelineInfo">Select images to preview</span>
+                </div>
+                <div class="timeline-months" id="timelineMonths">
+                    <!-- Generated by JS -->
+                </div>
+                <div class="timeline-strip" id="timelineStrip">
+                    <!-- Generated by JS -->
+                </div>
+                <div class="thumbnail-strip" id="thumbnailStrip">
+                    <!-- Thumbnails appear here -->
+                </div>
+            </div>
+        </section>
+
+        <!-- Right Panel - Actions -->
+        <aside class="action-panel">
+            <div class="panel-section">
+                <h3>Import Images</h3>
+                <div class="drop-zone" id="dropZone">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                        <polyline points="17 8 12 3 7 8"/>
+                        <line x1="12" y1="3" x2="12" y2="15"/>
+                    </svg>
+                    <p>Drop images here</p>
+                    <small>or click to browse from SD card</small>
+                </div>
+                <input type="file" id="fileInput" multiple accept="image/*">
+            </div>
+
+            <div class="panel-section">
+                <h3>Camera Connection</h3>
+                <div class="camera-connect">
+                    <div class="camera-status">
+                        <div class="status-dot" id="cameraStatusDot"></div>
+                        <span id="cameraStatusText">No camera detected</span>
+                    </div>
+                    <button class="action-btn secondary" onclick="detectCamera()">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+                            <circle cx="12" cy="13" r="4"/>
+                        </svg>
+                        Detect Camera
+                    </button>
+                    <button class="action-btn secondary" onclick="importFromCamera()" id="importCameraBtn" disabled>
+                        Import from Camera
+                    </button>
+                </div>
+            </div>
+
+            <div class="panel-section">
+                <h3>Quick Actions</h3>
+                <button class="action-btn secondary" onclick="autoArrangeByDate()">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+                        <line x1="16" y1="2" x2="16" y2="6"/>
+                        <line x1="8" y1="2" x2="8" y2="6"/>
+                        <line x1="3" y1="10" x2="21" y2="10"/>
+                    </svg>
+                    Auto-Arrange by Date
+                </button>
+                <button class="action-btn secondary" onclick="removeDuplicates()">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                        <line x1="9" y1="9" x2="15" y2="15"/>
+                        <line x1="15" y1="9" x2="9" y2="15"/>
+                    </svg>
+                    Remove Duplicates
+                </button>
+                <button class="action-btn secondary" onclick="fillGaps()">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M12 2v20M2 12h20"/>
+                    </svg>
+                    Fill Missing Days
+                </button>
+            </div>
+
+            <div class="panel-section">
+                <h3>Export</h3>
+                <div class="export-options">
+                    <label for="exportFormat">Format</label>
+                    <select id="exportFormat">
+                        <option value="webm">WebM (recommended)</option>
+                        <option value="mp4">MP4</option>
+                        <option value="gif">GIF (smaller size)</option>
+                    </select>
+
+                    <label for="exportQuality">Quality</label>
+                    <select id="exportQuality">
+                        <option value="0.6">Draft (smaller file)</option>
+                        <option value="0.8" selected>Standard</option>
+                        <option value="0.95">High Quality</option>
+                    </select>
+                </div>
+                <button class="action-btn primary" onclick="generateTimelapse()" id="generateBtn" disabled>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polygon points="5 3 19 12 5 21 5 3"/>
+                    </svg>
+                    Generate Timelapse
+                </button>
+            </div>
+
+            <div class="panel-section">
+                <button class="action-btn danger" onclick="clearProject()">
+                    Clear All Images
+                </button>
+            </div>
+        </aside>
+    </main>
+
+    <!-- Processing Modal -->
+    <div class="modal-overlay" id="processingModal">
+        <div class="modal">
+            <div class="processing-status">
+                <div class="processing-spinner"></div>
+                <h3 id="processingTitle">Generating Timelapse...</h3>
+                <p id="processingStatus">Preparing frames...</p>
+                <div class="progress-bar" style="margin-top: 20px;">
+                    <div class="progress-fill" id="processingProgress"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- New Project Modal -->
+    <div class="modal-overlay" id="newProjectModal">
+        <div class="modal">
+            <h2>Start New Project</h2>
+            <p style="color: #888; margin-bottom: 20px;">This will clear all current images. Are you sure?</p>
+            <div class="modal-actions">
+                <button class="action-btn secondary" onclick="closeModal('newProjectModal')">Cancel</button>
+                <button class="action-btn danger" onclick="confirmClearProject()">Clear & Start New</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Project State
+        let project = {
+            name: 'My 2 Month Timelapse',
+            startDate: new Date().toISOString().split('T')[0],
+            frames: [], // Array of { id, dataUrl, timestamp, dayIndex }
+            settings: {
+                captureInterval: 24,
+                playbackFps: 24,
+                outputResolution: '1920x1080'
+            }
+        };
+
+        let currentFrameIndex = 0;
+        let isPlaying = false;
+        let playbackInterval = null;
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            initializeTimeline();
+            setupDropZone();
+            loadSavedProject();
+            updateUI();
+
+            // Set default start date to today
+            document.getElementById('startDate').value = project.startDate;
+        });
+
+        // Initialize 60-day timeline
+        function initializeTimeline() {
+            const monthsContainer = document.getElementById('timelineMonths');
+            const stripContainer = document.getElementById('timelineStrip');
+
+            // Create month labels
+            const startDate = new Date(project.startDate);
+            const months = [];
+            for (let i = 0; i < 60; i++) {
+                const date = new Date(startDate);
+                date.setDate(date.getDate() + i);
+                const monthName = date.toLocaleString('default', { month: 'short' });
+                if (!months.includes(monthName)) {
+                    months.push(monthName);
+                }
+            }
+
+            monthsContainer.innerHTML = months.map((m, i) =>
+                `<div class="month-block ${i === 0 ? 'active' : ''}">${m}</div>`
+            ).join('');
+
+            // Create day blocks
+            stripContainer.innerHTML = '';
+            for (let i = 0; i < 60; i++) {
+                const dayDiv = document.createElement('div');
+                dayDiv.className = 'timeline-day';
+                dayDiv.dataset.day = i;
+                dayDiv.innerHTML = `<span class="day-num">${i + 1}</span>`;
+                dayDiv.onclick = () => selectDay(i);
+                stripContainer.appendChild(dayDiv);
+            }
+        }
+
+        // Setup drag and drop
+        function setupDropZone() {
+            const dropZone = document.getElementById('dropZone');
+            const fileInput = document.getElementById('fileInput');
+
+            dropZone.onclick = () => fileInput.click();
+
+            dropZone.ondragover = (e) => {
+                e.preventDefault();
+                dropZone.classList.add('dragover');
+            };
+
+            dropZone.ondragleave = () => {
+                dropZone.classList.remove('dragover');
+            };
+
+            dropZone.ondrop = (e) => {
+                e.preventDefault();
+                dropZone.classList.remove('dragover');
+                handleFiles(e.dataTransfer.files);
+            };
+
+            fileInput.onchange = (e) => {
+                handleFiles(e.target.files);
+            };
+        }
+
+        // Handle imported files
+        async function handleFiles(files) {
+            const imageFiles = Array.from(files).filter(f => f.type.startsWith('image/'));
+
+            if (imageFiles.length === 0) {
+                showToast('No valid image files found', 'error');
+                return;
+            }
+
+            showToast(`Importing ${imageFiles.length} images...`);
+
+            for (const file of imageFiles) {
+                await importImage(file);
+            }
+
+            updateUI();
+            showToast(`Successfully imported ${imageFiles.length} images`, 'success');
+        }
+
+        // Import single image
+        function importImage(file) {
+            return new Promise((resolve) => {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const timestamp = file.lastModified || Date.now();
+                    const dayIndex = calculateDayIndex(timestamp);
+
+                    project.frames.push({
+                        id: Date.now() + Math.random(),
+                        dataUrl: e.target.result,
+                        timestamp: timestamp,
+                        dayIndex: dayIndex,
+                        filename: file.name
+                    });
+
+                    // Sort frames by timestamp
+                    project.frames.sort((a, b) => a.timestamp - b.timestamp);
+                    resolve();
+                };
+                reader.readAsDataURL(file);
+            });
+        }
+
+        // Calculate which day (0-59) an image belongs to
+        function calculateDayIndex(timestamp) {
+            const startDate = new Date(project.startDate);
+            startDate.setHours(0, 0, 0, 0);
+            const imageDate = new Date(timestamp);
+            const diffTime = imageDate - startDate;
+            const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+            return Math.max(0, Math.min(59, diffDays));
+        }
+
+        // Update all UI elements
+        function updateUI() {
+            // Update stats
+            document.getElementById('totalFrames').textContent = project.frames.length;
+
+            const uniqueDays = new Set(project.frames.map(f => f.dayIndex)).size;
+            document.getElementById('daysElapsed').textContent = uniqueDays;
+
+            const fps = parseInt(document.getElementById('playbackFps').value);
+            const videoSeconds = project.frames.length / fps;
+            document.getElementById('videoLength').textContent = formatDuration(videoSeconds);
+
+            // Estimate storage (rough estimate based on data URLs)
+            const storageBytes = project.frames.reduce((sum, f) => sum + (f.dataUrl?.length || 0), 0);
+            document.getElementById('storageUsed').textContent = formatBytes(storageBytes);
+
+            // Update progress
+            const progressPercent = Math.min(100, (uniqueDays / 60) * 100);
+            document.getElementById('progressFill').style.width = `${progressPercent}%`;
+            document.getElementById('progressDays').textContent = `Day ${uniqueDays} of 60`;
+            document.getElementById('progressPercent').textContent = `${Math.round(progressPercent)}%`;
+
+            // Update timeline
+            updateTimeline();
+
+            // Update thumbnails
+            updateThumbnails();
+
+            // Update preview
+            if (project.frames.length > 0) {
+                document.getElementById('previewPlaceholder').style.display = 'none';
+                document.getElementById('previewImage').style.display = 'block';
+                document.getElementById('previewControls').style.display = 'flex';
+                document.getElementById('frameCounter').style.display = 'block';
+                document.getElementById('generateBtn').disabled = false;
+
+                showFrame(currentFrameIndex);
+            } else {
+                document.getElementById('previewPlaceholder').style.display = 'block';
+                document.getElementById('previewImage').style.display = 'none';
+                document.getElementById('previewControls').style.display = 'none';
+                document.getElementById('frameCounter').style.display = 'none';
+                document.getElementById('generateBtn').disabled = true;
+            }
+
+            document.getElementById('totalFrameCount').textContent = project.frames.length;
+        }
+
+        // Update timeline visualization
+        function updateTimeline() {
+            const days = document.querySelectorAll('.timeline-day');
+            days.forEach((day, index) => {
+                const hasImages = project.frames.some(f => f.dayIndex === index);
+                day.classList.toggle('has-images', hasImages);
+            });
+        }
+
+        // Update thumbnail strip
+        function updateThumbnails() {
+            const container = document.getElementById('thumbnailStrip');
+            container.innerHTML = '';
+
+            project.frames.forEach((frame, index) => {
+                const thumb = document.createElement('div');
+                thumb.className = 'thumbnail' + (index === currentFrameIndex ? ' selected' : '');
+                thumb.innerHTML = `<img src="${frame.dataUrl}" alt="Frame ${index + 1}">`;
+                thumb.onclick = () => {
+                    currentFrameIndex = index;
+                    showFrame(index);
+                    updateThumbnails();
+                };
+                container.appendChild(thumb);
+            });
+        }
+
+        // Show specific frame
+        function showFrame(index) {
+            if (project.frames.length === 0) return;
+
+            index = Math.max(0, Math.min(project.frames.length - 1, index));
+            currentFrameIndex = index;
+
+            const frame = project.frames[index];
+            document.getElementById('previewImage').src = frame.dataUrl;
+            document.getElementById('currentFrame').textContent = index + 1;
+
+            // Update timeline info
+            const date = new Date(frame.timestamp);
+            document.getElementById('timelineInfo').textContent =
+                `Day ${frame.dayIndex + 1} - ${date.toLocaleDateString()}`;
+
+            // Highlight in timeline
+            document.querySelectorAll('.timeline-day').forEach((day, i) => {
+                day.classList.toggle('selected', i === frame.dayIndex);
+            });
+
+            // Scroll thumbnail into view
+            const thumbs = document.querySelectorAll('.thumbnail');
+            thumbs.forEach((t, i) => t.classList.toggle('selected', i === index));
+            if (thumbs[index]) {
+                thumbs[index].scrollIntoView({ behavior: 'smooth', inline: 'center' });
+            }
+        }
+
+        // Playback controls
+        function firstFrame() {
+            stopPlayback();
+            showFrame(0);
+            updateThumbnails();
+        }
+
+        function lastFrame() {
+            stopPlayback();
+            showFrame(project.frames.length - 1);
+            updateThumbnails();
+        }
+
+        function prevFrame() {
+            stopPlayback();
+            showFrame(currentFrameIndex - 1);
+            updateThumbnails();
+        }
+
+        function nextFrame() {
+            stopPlayback();
+            showFrame(currentFrameIndex + 1);
+            updateThumbnails();
+        }
+
+        function togglePlayback() {
+            if (isPlaying) {
+                stopPlayback();
+            } else {
+                startPlayback();
+            }
+        }
+
+        function startPlayback() {
+            if (project.frames.length === 0) return;
+
+            isPlaying = true;
+            document.getElementById('playBtn').classList.add('active');
+            document.getElementById('playIcon').innerHTML = '<rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/>';
+
+            const fps = parseInt(document.getElementById('playbackFps').value);
+            const interval = 1000 / fps;
+
+            playbackInterval = setInterval(() => {
+                currentFrameIndex++;
+                if (currentFrameIndex >= project.frames.length) {
+                    currentFrameIndex = 0;
+                }
+                showFrame(currentFrameIndex);
+            }, interval);
+        }
+
+        function stopPlayback() {
+            isPlaying = false;
+            document.getElementById('playBtn').classList.remove('active');
+            document.getElementById('playIcon').innerHTML = '<path d="M8 5v14l11-7z"/>';
+
+            if (playbackInterval) {
+                clearInterval(playbackInterval);
+                playbackInterval = null;
+            }
+        }
+
+        // Select a specific day on timeline
+        function selectDay(dayIndex) {
+            const frameOnDay = project.frames.findIndex(f => f.dayIndex === dayIndex);
+            if (frameOnDay !== -1) {
+                currentFrameIndex = frameOnDay;
+                showFrame(frameOnDay);
+                updateThumbnails();
+            }
+        }
+
+        // Generate timelapse video
+        async function generateTimelapse() {
+            if (project.frames.length === 0) {
+                showToast('No frames to generate timelapse', 'error');
+                return;
+            }
+
+            const modal = document.getElementById('processingModal');
+            const progressBar = document.getElementById('processingProgress');
+            const statusText = document.getElementById('processingStatus');
+            modal.classList.add('active');
+
+            try {
+                const resolution = document.getElementById('outputResolution').value.split('x');
+                const width = parseInt(resolution[0]);
+                const height = parseInt(resolution[1]);
+                const fps = parseInt(document.getElementById('playbackFps').value);
+                const quality = parseFloat(document.getElementById('exportQuality').value);
+                const format = document.getElementById('exportFormat').value;
+
+                // Create canvas for rendering
+                const canvas = document.createElement('canvas');
+                canvas.width = width;
+                canvas.height = height;
+                const ctx = canvas.getContext('2d');
+
+                // Setup MediaRecorder
+                const stream = canvas.captureStream(fps);
+                const mimeType = format === 'webm' ? 'video/webm;codecs=vp9' :
+                                 format === 'mp4' ? 'video/mp4' : 'image/gif';
+
+                const mediaRecorder = new MediaRecorder(stream, {
+                    mimeType: mimeType.includes('gif') ? 'video/webm' : mimeType,
+                    videoBitsPerSecond: quality * 8000000
+                });
+
+                const chunks = [];
+                mediaRecorder.ondataavailable = (e) => chunks.push(e.data);
+
+                mediaRecorder.onstop = () => {
+                    const blob = new Blob(chunks, { type: mimeType.includes('gif') ? 'video/webm' : mimeType });
+                    const url = URL.createObjectURL(blob);
+
+                    // Download the video
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `${project.name.replace(/\s+/g, '_')}_timelapse.${format === 'gif' ? 'webm' : format}`;
+                    a.click();
+
+                    modal.classList.remove('active');
+                    showToast('Timelapse generated successfully!', 'success');
+                };
+
+                mediaRecorder.start();
+
+                // Render each frame
+                const frameDelay = 1000 / fps;
+                for (let i = 0; i < project.frames.length; i++) {
+                    statusText.textContent = `Rendering frame ${i + 1} of ${project.frames.length}`;
+                    progressBar.style.width = `${(i / project.frames.length) * 100}%`;
+
+                    await renderFrame(ctx, project.frames[i], width, height);
+                    await delay(frameDelay);
+                }
+
+                progressBar.style.width = '100%';
+                statusText.textContent = 'Finalizing video...';
+
+                await delay(500);
+                mediaRecorder.stop();
+
+            } catch (error) {
+                console.error('Error generating timelapse:', error);
+                modal.classList.remove('active');
+                showToast('Error generating timelapse: ' + error.message, 'error');
+            }
+        }
+
+        // Render a single frame to canvas
+        function renderFrame(ctx, frame, width, height) {
+            return new Promise((resolve) => {
+                const img = new Image();
+                img.onload = () => {
+                    // Calculate cover dimensions
+                    const imgRatio = img.width / img.height;
+                    const canvasRatio = width / height;
+
+                    let drawWidth, drawHeight, offsetX, offsetY;
+
+                    if (imgRatio > canvasRatio) {
+                        drawHeight = height;
+                        drawWidth = height * imgRatio;
+                        offsetX = (width - drawWidth) / 2;
+                        offsetY = 0;
+                    } else {
+                        drawWidth = width;
+                        drawHeight = width / imgRatio;
+                        offsetX = 0;
+                        offsetY = (height - drawHeight) / 2;
+                    }
+
+                    ctx.fillStyle = '#000';
+                    ctx.fillRect(0, 0, width, height);
+                    ctx.drawImage(img, offsetX, offsetY, drawWidth, drawHeight);
+                    resolve();
+                };
+                img.src = frame.dataUrl;
+            });
+        }
+
+        // Auto-arrange images by EXIF date
+        function autoArrangeByDate() {
+            if (project.frames.length === 0) {
+                showToast('No images to arrange', 'error');
+                return;
+            }
+
+            project.frames.sort((a, b) => a.timestamp - b.timestamp);
+
+            // Recalculate day indices
+            project.frames.forEach(frame => {
+                frame.dayIndex = calculateDayIndex(frame.timestamp);
+            });
+
+            updateUI();
+            showToast('Images arranged by date', 'success');
+        }
+
+        // Remove duplicate frames (same timestamp)
+        function removeDuplicates() {
+            const before = project.frames.length;
+            const seen = new Set();
+
+            project.frames = project.frames.filter(frame => {
+                const key = `${frame.dayIndex}-${Math.floor(frame.timestamp / 3600000)}`; // Same day & hour
+                if (seen.has(key)) return false;
+                seen.add(key);
+                return true;
+            });
+
+            const removed = before - project.frames.length;
+            updateUI();
+            showToast(`Removed ${removed} duplicate frames`, 'success');
+        }
+
+        // Fill gaps by duplicating nearest frame
+        function fillGaps() {
+            if (project.frames.length < 2) {
+                showToast('Need at least 2 frames to fill gaps', 'error');
+                return;
+            }
+
+            const filledFrames = [];
+            const frameDays = new Map();
+
+            project.frames.forEach(f => {
+                if (!frameDays.has(f.dayIndex)) {
+                    frameDays.set(f.dayIndex, f);
+                }
+            });
+
+            let lastFrame = null;
+            for (let day = 0; day < 60; day++) {
+                if (frameDays.has(day)) {
+                    filledFrames.push(frameDays.get(day));
+                    lastFrame = frameDays.get(day);
+                } else if (lastFrame) {
+                    // Duplicate last frame for this day
+                    filledFrames.push({
+                        ...lastFrame,
+                        id: Date.now() + Math.random(),
+                        dayIndex: day,
+                        filled: true
+                    });
+                }
+            }
+
+            const added = filledFrames.length - project.frames.length;
+            project.frames = filledFrames;
+            updateUI();
+            showToast(`Filled ${added} missing days`, 'success');
+        }
+
+        // Camera detection (PTP/WebUSB)
+        async function detectCamera() {
+            const statusDot = document.getElementById('cameraStatusDot');
+            const statusText = document.getElementById('cameraStatusText');
+            const importBtn = document.getElementById('importCameraBtn');
+
+            try {
+                // Try WebUSB first
+                if ('usb' in navigator) {
+                    statusText.textContent = 'Searching for camera...';
+
+                    const device = await navigator.usb.requestDevice({
+                        filters: [
+                            { classCode: 6 }, // PTP/MTP class
+                            { vendorId: 0x04A9 }, // Canon
+                            { vendorId: 0x04B0 }, // Nikon
+                            { vendorId: 0x054C }, // Sony
+                            { vendorId: 0x0489 }, // Fujifilm
+                        ]
+                    });
+
+                    if (device) {
+                        statusDot.classList.add('connected');
+                        statusText.textContent = `Connected: ${device.productName || 'Camera'}`;
+                        importBtn.disabled = false;
+                        showToast('Camera connected!', 'success');
+                    }
+                } else {
+                    statusText.textContent = 'WebUSB not supported';
+                    showToast('WebUSB not supported in this browser. Use file import instead.', 'error');
+                }
+            } catch (error) {
+                if (error.name === 'NotFoundError') {
+                    statusText.textContent = 'No camera selected';
+                } else {
+                    statusText.textContent = 'Camera not found';
+                    console.error('Camera detection error:', error);
+                }
+            }
+        }
+
+        // Import from connected camera
+        async function importFromCamera() {
+            showToast('Camera import requires additional setup. Please use SD card import for now.', 'error');
+        }
+
+        // Project persistence
+        function saveProject() {
+            const projectData = {
+                ...project,
+                savedAt: Date.now()
+            };
+
+            try {
+                // For large projects, we'll save metadata separately
+                const metadata = {
+                    name: project.name,
+                    startDate: project.startDate,
+                    settings: project.settings,
+                    frameCount: project.frames.length,
+                    savedAt: Date.now()
+                };
+
+                localStorage.setItem('timelapse_metadata', JSON.stringify(metadata));
+
+                // Store frames in IndexedDB for larger storage
+                saveFramesToIndexedDB(project.frames);
+
+                showToast('Project saved!', 'success');
+            } catch (error) {
+                console.error('Save error:', error);
+                showToast('Error saving project: ' + error.message, 'error');
+            }
+        }
+
+        function loadProject() {
+            try {
+                const metadata = localStorage.getItem('timelapse_metadata');
+                if (metadata) {
+                    const parsed = JSON.parse(metadata);
+                    project.name = parsed.name;
+                    project.startDate = parsed.startDate;
+                    project.settings = parsed.settings;
+
+                    document.getElementById('projectName').value = project.name;
+                    document.getElementById('startDate').value = project.startDate;
+
+                    // Load frames from IndexedDB
+                    loadFramesFromIndexedDB();
+                } else {
+                    showToast('No saved project found', 'error');
+                }
+            } catch (error) {
+                console.error('Load error:', error);
+                showToast('Error loading project: ' + error.message, 'error');
+            }
+        }
+
+        function loadSavedProject() {
+            // Auto-load on startup if project exists
+            const metadata = localStorage.getItem('timelapse_metadata');
+            if (metadata) {
+                loadProject();
+            }
+        }
+
+        // IndexedDB helpers for large data
+        function openDatabase() {
+            return new Promise((resolve, reject) => {
+                const request = indexedDB.open('TimelapseDB', 1);
+                request.onerror = () => reject(request.error);
+                request.onsuccess = () => resolve(request.result);
+                request.onupgradeneeded = (e) => {
+                    const db = e.target.result;
+                    if (!db.objectStoreNames.contains('frames')) {
+                        db.createObjectStore('frames', { keyPath: 'id' });
+                    }
+                };
+            });
+        }
+
+        async function saveFramesToIndexedDB(frames) {
+            try {
+                const db = await openDatabase();
+                const tx = db.transaction('frames', 'readwrite');
+                const store = tx.objectStore('frames');
+
+                // Clear existing
+                store.clear();
+
+                // Add all frames
+                frames.forEach(frame => store.add(frame));
+
+                return new Promise((resolve, reject) => {
+                    tx.oncomplete = resolve;
+                    tx.onerror = () => reject(tx.error);
+                });
+            } catch (error) {
+                console.error('IndexedDB save error:', error);
+            }
+        }
+
+        async function loadFramesFromIndexedDB() {
+            try {
+                const db = await openDatabase();
+                const tx = db.transaction('frames', 'readonly');
+                const store = tx.objectStore('frames');
+                const request = store.getAll();
+
+                request.onsuccess = () => {
+                    project.frames = request.result || [];
+                    project.frames.sort((a, b) => a.timestamp - b.timestamp);
+                    updateUI();
+                    if (project.frames.length > 0) {
+                        showToast(`Loaded ${project.frames.length} frames`, 'success');
+                    }
+                };
+            } catch (error) {
+                console.error('IndexedDB load error:', error);
+            }
+        }
+
+        function clearProject() {
+            document.getElementById('newProjectModal').classList.add('active');
+        }
+
+        async function confirmClearProject() {
+            project.frames = [];
+            currentFrameIndex = 0;
+
+            // Clear IndexedDB
+            try {
+                const db = await openDatabase();
+                const tx = db.transaction('frames', 'readwrite');
+                tx.objectStore('frames').clear();
+            } catch (e) {
+                console.error(e);
+            }
+
+            localStorage.removeItem('timelapse_metadata');
+            updateUI();
+            closeModal('newProjectModal');
+            showToast('Project cleared', 'success');
+        }
+
+        function closeModal(id) {
+            document.getElementById(id).classList.remove('active');
+        }
+
+        // Settings listeners
+        document.getElementById('projectName').addEventListener('change', (e) => {
+            project.name = e.target.value;
+        });
+
+        document.getElementById('startDate').addEventListener('change', (e) => {
+            project.startDate = e.target.value;
+            initializeTimeline();
+            // Recalculate all day indices
+            project.frames.forEach(frame => {
+                frame.dayIndex = calculateDayIndex(frame.timestamp);
+            });
+            updateUI();
+        });
+
+        // Utility functions
+        function delay(ms) {
+            return new Promise(resolve => setTimeout(resolve, ms));
+        }
+
+        function formatDuration(seconds) {
+            if (seconds < 60) return `${Math.round(seconds)}s`;
+            const mins = Math.floor(seconds / 60);
+            const secs = Math.round(seconds % 60);
+            return `${mins}m ${secs}s`;
+        }
+
+        function formatBytes(bytes) {
+            if (bytes < 1024) return bytes + ' B';
+            if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+            return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+        }
+
+        function showToast(message, type = '') {
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            toast.textContent = message;
+            document.body.appendChild(toast);
+
+            setTimeout(() => {
+                toast.style.animation = 'slideIn 0.3s ease reverse';
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+
+        // Keyboard shortcuts
+        document.addEventListener('keydown', (e) => {
+            if (e.target.tagName === 'INPUT') return;
+
+            switch(e.key) {
+                case ' ':
+                    e.preventDefault();
+                    togglePlayback();
+                    break;
+                case 'ArrowLeft':
+                    prevFrame();
+                    break;
+                case 'ArrowRight':
+                    nextFrame();
+                    break;
+                case 'Home':
+                    firstFrame();
+                    break;
+                case 'End':
+                    lastFrame();
+                    break;
+            }
+        });
+    </script>
+</body>
+</html>
