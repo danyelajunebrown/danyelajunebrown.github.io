@@ -1,0 +1,1008 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <meta name="theme-color" content="#0f0e0c" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <title>Drop a Song — THE QUEUE</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=Outfit:ital,wght@0,300;0,400;0,500;0,600;1,400&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      /* ============================================ */
+      /* RESET & BASE                                */
+      /* ============================================ */
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+
+      :root {
+        --bg: #0f0e0c;
+        --surface: #1a1815;
+        --surface-elevated: #242119;
+        --surface-hover: #2e2a24;
+        --primary: #f0c05a;
+        --primary-dim: #c49a3a;
+        --primary-glow: rgba(240, 192, 90, 0.12);
+        --text: #f5f0e5;
+        --text-secondary: #9e978a;
+        --text-muted: #6b6560;
+        --success: #8bc48a;
+        --success-bg: rgba(139, 196, 138, 0.1);
+        --error: #e87b7b;
+        --error-bg: rgba(232, 123, 123, 0.1);
+        --border: #2a2622;
+
+        --youtube: #ff0000;
+        --spotify: #1db954;
+        --apple: #fc3c44;
+        --soundcloud: #ff5500;
+        --tidal: #00ffff;
+        --deezer: #a238ff;
+
+        --font-display: "Syne", sans-serif;
+        --font-body: "Outfit", sans-serif;
+
+        --radius: 12px;
+        --radius-sm: 8px;
+      }
+
+      html {
+        height: 100%;
+      }
+
+      body {
+        min-height: 100%;
+        background: var(--bg);
+        color: var(--text);
+        font-family: var(--font-body);
+        font-weight: 400;
+        line-height: 1.5;
+        -webkit-font-smoothing: antialiased;
+        overflow-x: hidden;
+      }
+
+      /* Subtle texture */
+      body::before {
+        content: "";
+        position: fixed;
+        inset: 0;
+        background: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");
+        pointer-events: none;
+        z-index: 0;
+      }
+
+      /* ============================================ */
+      /* LAYOUT                                      */
+      /* ============================================ */
+      .app {
+        position: relative;
+        z-index: 1;
+        max-width: 480px;
+        margin: 0 auto;
+        padding: 24px 20px 40px;
+        display: flex;
+        flex-direction: column;
+        gap: 28px;
+        min-height: 100vh;
+      }
+
+      /* ============================================ */
+      /* HEADER                                      */
+      /* ============================================ */
+      .header {
+        text-align: center;
+        padding: 8px 0;
+      }
+
+      .header h1 {
+        font-family: var(--font-display);
+        font-weight: 800;
+        font-size: 32px;
+        color: var(--primary);
+        letter-spacing: -0.02em;
+        line-height: 1.1;
+      }
+
+      .header p {
+        color: var(--text-secondary);
+        font-size: 14px;
+        margin-top: 6px;
+      }
+
+      .platform-list {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        margin-top: 12px;
+        flex-wrap: wrap;
+      }
+
+      .platform-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        font-size: 11px;
+        font-weight: 500;
+        padding: 4px 10px;
+        border-radius: 99px;
+        background: var(--surface);
+        color: var(--text-secondary);
+        border: 1px solid var(--border);
+      }
+
+      .platform-chip .dot {
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        flex-shrink: 0;
+      }
+
+      /* ============================================ */
+      /* SUBMIT FORM                                 */
+      /* ============================================ */
+      .submit-section {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+      }
+
+      .input-wrap {
+        position: relative;
+        display: flex;
+        gap: 0;
+        background: var(--surface);
+        border: 2px solid var(--border);
+        border-radius: var(--radius);
+        transition: border-color 0.2s ease;
+        overflow: hidden;
+      }
+
+      .input-wrap:focus-within {
+        border-color: var(--primary-dim);
+      }
+
+      .input-wrap.has-error {
+        border-color: var(--error);
+      }
+
+      .input-wrap input {
+        flex: 1;
+        background: transparent;
+        border: none;
+        padding: 16px;
+        font-family: var(--font-body);
+        font-size: 16px; /* Prevents iOS zoom on focus */
+        color: var(--text);
+        outline: none;
+        min-width: 0;
+      }
+
+      .input-wrap input::placeholder {
+        color: var(--text-muted);
+      }
+
+      .input-wrap input:disabled {
+        opacity: 0.5;
+      }
+
+      .submit-btn {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0 20px;
+        background: var(--primary);
+        color: var(--bg);
+        border: none;
+        font-family: var(--font-body);
+        font-weight: 600;
+        font-size: 15px;
+        cursor: pointer;
+        transition: background 0.2s ease;
+        white-space: nowrap;
+        flex-shrink: 0;
+      }
+
+      .submit-btn:hover:not(:disabled) {
+        background: var(--primary-dim);
+      }
+
+      .submit-btn:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
+
+      /* ============================================ */
+      /* STATUS MESSAGES                             */
+      /* ============================================ */
+      .status {
+        display: none;
+        align-items: center;
+        gap: 10px;
+        padding: 14px 16px;
+        border-radius: var(--radius-sm);
+        font-size: 14px;
+        line-height: 1.4;
+        animation: fadeIn 0.25s ease;
+      }
+
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+          transform: translateY(-4px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      .status.visible {
+        display: flex;
+      }
+
+      .status-loading {
+        background: var(--primary-glow);
+        color: var(--primary);
+        border: 1px solid rgba(240, 192, 90, 0.2);
+      }
+
+      .status-success {
+        background: var(--success-bg);
+        color: var(--success);
+        border: 1px solid rgba(139, 196, 138, 0.2);
+      }
+
+      .status-error {
+        background: var(--error-bg);
+        color: var(--error);
+        border: 1px solid rgba(232, 123, 123, 0.2);
+      }
+
+      .status-cooldown {
+        background: var(--surface);
+        color: var(--text-secondary);
+        border: 1px solid var(--border);
+      }
+
+      .status-icon {
+        font-size: 18px;
+        flex-shrink: 0;
+      }
+
+      /* Loading spinner */
+      .spinner {
+        width: 18px;
+        height: 18px;
+        border: 2px solid transparent;
+        border-top-color: var(--primary);
+        border-radius: 50%;
+        animation: spin 0.8s linear infinite;
+        flex-shrink: 0;
+      }
+
+      @keyframes spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+
+      /* Resolved song preview */
+      .song-preview {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 14px 16px;
+        background: var(--surface);
+        border-radius: var(--radius-sm);
+        border: 1px solid var(--primary-dim);
+        animation: fadeIn 0.3s ease;
+      }
+
+      .song-preview.hidden {
+        display: none;
+      }
+
+      .song-preview-thumb {
+        width: 48px;
+        height: 48px;
+        border-radius: 6px;
+        object-fit: cover;
+        background: var(--surface-elevated);
+        flex-shrink: 0;
+      }
+
+      .song-preview-info {
+        flex: 1;
+        min-width: 0;
+      }
+
+      .song-preview-title {
+        font-weight: 500;
+        font-size: 15px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      .song-preview-artist {
+        font-size: 13px;
+        color: var(--text-secondary);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      .song-preview-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        font-size: 11px;
+        font-weight: 500;
+        padding: 3px 8px;
+        border-radius: 99px;
+        background: var(--surface-elevated);
+        color: var(--text-secondary);
+        flex-shrink: 0;
+      }
+
+      /* ============================================ */
+      /* QUEUE DISPLAY                               */
+      /* ============================================ */
+      .queue-section {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+      }
+
+      .section-header {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-size: 11px;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: var(--text-muted);
+        font-weight: 600;
+      }
+
+      .section-header::after {
+        content: "";
+        flex: 1;
+        height: 1px;
+        background: var(--border);
+      }
+
+      /* Now playing card (on submit page) */
+      .np-card {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 12px 14px;
+        background: var(--primary-glow);
+        border-radius: var(--radius-sm);
+        border: 1px solid rgba(240, 192, 90, 0.15);
+      }
+
+      .np-card.empty {
+        opacity: 0.4;
+        border-color: var(--border);
+        background: var(--surface);
+      }
+
+      .np-card-thumb {
+        width: 40px;
+        height: 40px;
+        border-radius: 6px;
+        object-fit: cover;
+        background: var(--surface-elevated);
+        flex-shrink: 0;
+      }
+
+      .np-card-info {
+        flex: 1;
+        min-width: 0;
+      }
+
+      .np-card-label {
+        font-size: 10px;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: var(--primary);
+        font-weight: 600;
+      }
+
+      .np-card-title {
+        font-size: 14px;
+        font-weight: 500;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      .np-card-artist {
+        font-size: 12px;
+        color: var(--text-secondary);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      .playing-bars-sm {
+        display: flex;
+        align-items: flex-end;
+        gap: 1.5px;
+        height: 12px;
+        flex-shrink: 0;
+      }
+
+      .playing-bars-sm span {
+        width: 2.5px;
+        background: var(--primary);
+        border-radius: 1px;
+        animation: bar 0.8s ease-in-out infinite;
+      }
+
+      .playing-bars-sm span:nth-child(1) { animation-delay: 0s; height: 40%; }
+      .playing-bars-sm span:nth-child(2) { animation-delay: 0.15s; height: 70%; }
+      .playing-bars-sm span:nth-child(3) { animation-delay: 0.3s; height: 50%; }
+
+      @keyframes bar {
+        0%, 100% { transform: scaleY(1); }
+        50% { transform: scaleY(0.4); }
+      }
+
+      /* Queue items (compact for mobile) */
+      .queue-items {
+        display: flex;
+        flex-direction: column;
+        gap: 3px;
+      }
+
+      .q-item {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 10px 12px;
+        background: var(--surface);
+        border-radius: var(--radius-sm);
+      }
+
+      .q-item-num {
+        width: 20px;
+        font-size: 12px;
+        color: var(--text-muted);
+        text-align: center;
+        flex-shrink: 0;
+        font-weight: 500;
+      }
+
+      .q-item-thumb {
+        width: 36px;
+        height: 36px;
+        border-radius: 4px;
+        object-fit: cover;
+        background: var(--surface-elevated);
+        flex-shrink: 0;
+      }
+
+      .q-item-info {
+        flex: 1;
+        min-width: 0;
+      }
+
+      .q-item-title {
+        font-size: 13px;
+        font-weight: 500;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      .q-item-artist {
+        font-size: 11px;
+        color: var(--text-secondary);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      .q-item-dot {
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        flex-shrink: 0;
+      }
+
+      .queue-empty-msg {
+        text-align: center;
+        padding: 24px 16px;
+        color: var(--text-muted);
+        font-size: 14px;
+      }
+
+      /* ============================================ */
+      /* CONFIG WARNING                              */
+      /* ============================================ */
+      .config-warning {
+        position: fixed;
+        inset: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: var(--bg);
+        z-index: 999;
+        padding: 24px;
+      }
+
+      .config-warning-box {
+        max-width: 400px;
+        background: var(--surface);
+        border: 1px solid var(--primary-dim);
+        border-radius: var(--radius);
+        padding: 28px;
+        text-align: center;
+      }
+
+      .config-warning-box h2 {
+        font-family: var(--font-display);
+        font-weight: 700;
+        color: var(--primary);
+        margin-bottom: 12px;
+      }
+
+      .config-warning-box p {
+        color: var(--text-secondary);
+        font-size: 14px;
+        line-height: 1.6;
+      }
+
+      .config-warning-box code {
+        background: var(--surface-elevated);
+        padding: 2px 6px;
+        border-radius: 3px;
+        font-size: 13px;
+        color: var(--primary);
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Config check overlay -->
+    <div id="config-warning" class="config-warning" style="display: none">
+      <div class="config-warning-box">
+        <h2>⚡ Setup Required</h2>
+        <p>
+          This page isn't configured yet.<br />
+          The host needs to set up Firebase first.
+        </p>
+      </div>
+    </div>
+
+    <div class="app">
+      <!-- HEADER -->
+      <div class="header">
+        <h1>DROP A SONG</h1>
+        <p>Paste a link from any of these platforms</p>
+        <div class="platform-list">
+          <span class="platform-chip">
+            <span class="dot" style="background: var(--youtube)"></span>
+            YouTube
+          </span>
+          <span class="platform-chip">
+            <span class="dot" style="background: var(--spotify)"></span>
+            Spotify
+          </span>
+          <span class="platform-chip">
+            <span class="dot" style="background: var(--apple)"></span>
+            Apple Music
+          </span>
+          <span class="platform-chip">
+            <span class="dot" style="background: var(--soundcloud)"></span>
+            SoundCloud
+          </span>
+        </div>
+      </div>
+
+      <!-- SUBMIT FORM -->
+      <div class="submit-section">
+        <div class="input-wrap" id="input-wrap">
+          <input
+            type="url"
+            id="link-input"
+            placeholder="Paste a song link..."
+            autocomplete="off"
+            autocorrect="off"
+            spellcheck="false"
+          />
+          <button
+            class="submit-btn"
+            id="submit-btn"
+            onclick="handleSubmit()"
+          >
+            Add
+          </button>
+        </div>
+
+        <!-- Song preview (shown after resolving) -->
+        <div class="song-preview hidden" id="song-preview">
+          <img class="song-preview-thumb" id="preview-thumb" src="" alt="" />
+          <div class="song-preview-info">
+            <div class="song-preview-title" id="preview-title"></div>
+            <div class="song-preview-artist" id="preview-artist"></div>
+          </div>
+          <span class="song-preview-badge" id="preview-badge"></span>
+        </div>
+
+        <!-- Status messages -->
+        <div class="status status-loading" id="status-loading">
+          <div class="spinner"></div>
+          <span>Finding your song...</span>
+        </div>
+
+        <div class="status status-success" id="status-success">
+          <span class="status-icon">✓</span>
+          <span id="success-text">Added to the queue!</span>
+        </div>
+
+        <div class="status status-error" id="status-error">
+          <span class="status-icon">✕</span>
+          <span id="error-text">Something went wrong</span>
+        </div>
+
+        <div class="status status-cooldown" id="status-cooldown">
+          <span class="status-icon">⏱</span>
+          <span>Next song in <strong id="cooldown-time">5:00</strong></span>
+        </div>
+      </div>
+
+      <!-- QUEUE DISPLAY -->
+      <div class="queue-section">
+        <!-- Now Playing -->
+        <div class="section-header">Now Playing</div>
+        <div class="np-card empty" id="np-card">
+          <div class="np-card-info">
+            <div class="np-card-label">NOW PLAYING</div>
+            <div class="np-card-title" id="sub-np-title">Nothing yet</div>
+            <div class="np-card-artist" id="sub-np-artist"></div>
+          </div>
+        </div>
+
+        <!-- Up Next -->
+        <div class="section-header" style="margin-top: 8px">
+          Up Next
+          <span id="sub-queue-count" style="margin-left: auto; margin-right: 8px; font-weight: 400;"></span>
+        </div>
+        <div class="queue-items" id="sub-queue-list">
+          <div class="queue-empty-msg">No songs in the queue yet. Be the first!</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Firebase SDK (compat) -->
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
+
+    <!-- App shared modules (path goes up one directory) -->
+    <script src="../js/config.js"></script>
+    <script src="../js/resolver.js"></script>
+    <script src="../js/queue.js"></script>
+
+    <script>
+      // ============================================
+      // SUBMIT PAGE LOGIC
+      // ============================================
+
+      let cooldownTimer = null;
+      let isSubmitting = false;
+
+      // --- Initialization ---
+
+      document.addEventListener("DOMContentLoaded", () => {
+        // Check if Firebase is configured
+        if (
+          FIREBASE_CONFIG.apiKey === "YOUR_API_KEY" ||
+          !FIREBASE_CONFIG.databaseURL ||
+          FIREBASE_CONFIG.databaseURL.includes("YOUR_PROJECT")
+        ) {
+          document.getElementById("config-warning").style.display = "flex";
+          return;
+        }
+
+        initFirebase();
+
+        // Listen to queue for display
+        onQueueChange(handleQueueDisplay);
+
+        // Check if already rate-limited on page load
+        checkInitialCooldown();
+
+        // Allow Enter key to submit
+        document
+          .getElementById("link-input")
+          .addEventListener("keydown", (e) => {
+            if (e.key === "Enter") {
+              e.preventDefault();
+              handleSubmit();
+            }
+          });
+      });
+
+      // --- Check initial cooldown ---
+
+      async function checkInitialCooldown() {
+        try {
+          const remaining = await checkRateLimit();
+          if (remaining > 0) {
+            startCooldownUI(remaining);
+          }
+        } catch (e) {
+          // Ignore — might fail if Firebase is still loading
+        }
+      }
+
+      // --- Submit Handler ---
+
+      async function handleSubmit() {
+        if (isSubmitting) return;
+
+        const input = document.getElementById("link-input");
+        const url = input.value.trim();
+
+        if (!url) {
+          input.focus();
+          return;
+        }
+
+        isSubmitting = true;
+        hideAllStatus();
+        hideSongPreview();
+        showStatus("loading");
+        disableInput(true);
+
+        try {
+          // Step 1: Resolve the link
+          const songData = await resolveLink(url);
+
+          // Step 2: Show preview briefly
+          showSongPreview(songData);
+          hideStatus("loading");
+
+          // Step 3: Add to queue
+          await addToQueue(songData);
+
+          // Step 4: Success!
+          const successText = document.getElementById("success-text");
+          if (songData.manualPlay) {
+            successText.textContent = `Added! (will need manual play — not on YouTube)`;
+          } else {
+            successText.textContent = `Added to the queue!`;
+          }
+          showStatus("success");
+
+          // Clear input
+          input.value = "";
+
+          // Start cooldown
+          startCooldownUI(RATE_LIMIT_MS);
+
+          // Hide success after 4 seconds
+          setTimeout(() => {
+            hideStatus("success");
+            hideSongPreview();
+          }, 4000);
+        } catch (error) {
+          hideStatus("loading");
+          hideSongPreview();
+
+          if (error.message === "RATE_LIMITED") {
+            startCooldownUI(error.remaining);
+          } else {
+            document.getElementById("error-text").textContent = error.message;
+            showStatus("error");
+            disableInput(false);
+
+            // Hide error after 5 seconds
+            setTimeout(() => hideStatus("error"), 5000);
+          }
+        }
+
+        isSubmitting = false;
+      }
+
+      // --- Cooldown Timer ---
+
+      function startCooldownUI(remainingMs) {
+        disableInput(true);
+        hideStatus("loading");
+        hideStatus("success");
+        hideStatus("error");
+        showStatus("cooldown");
+
+        const cooldownEl = document.getElementById("cooldown-time");
+
+        // Clear any existing timer
+        if (cooldownTimer) clearInterval(cooldownTimer);
+
+        let remaining = remainingMs;
+
+        function updateDisplay() {
+          cooldownEl.textContent = formatTimeRemaining(remaining);
+        }
+
+        updateDisplay();
+
+        cooldownTimer = setInterval(() => {
+          remaining -= 1000;
+          if (remaining <= 0) {
+            clearInterval(cooldownTimer);
+            cooldownTimer = null;
+            hideStatus("cooldown");
+            disableInput(false);
+          } else {
+            updateDisplay();
+          }
+        }, 1000);
+      }
+
+      // --- Song Preview ---
+
+      function showSongPreview(song) {
+        const container = document.getElementById("song-preview");
+        const thumb = document.getElementById("preview-thumb");
+        const title = document.getElementById("preview-title");
+        const artist = document.getElementById("preview-artist");
+        const badge = document.getElementById("preview-badge");
+
+        if (song.thumbnailUrl) {
+          thumb.src = song.thumbnailUrl;
+          thumb.style.display = "";
+        } else {
+          thumb.style.display = "none";
+        }
+
+        title.textContent = song.title;
+        artist.textContent = song.artist || "";
+
+        const color = PLATFORM_COLORS[song.platform] || "#888";
+        const name = PLATFORM_NAMES[song.platform] || song.platform;
+        badge.innerHTML = `<span class="dot" style="background:${color}; width:6px; height:6px; border-radius:50%; display:inline-block;"></span> ${name}`;
+
+        container.classList.remove("hidden");
+      }
+
+      function hideSongPreview() {
+        document.getElementById("song-preview").classList.add("hidden");
+      }
+
+      // --- Status Helpers ---
+
+      function showStatus(type) {
+        document.getElementById(`status-${type}`).classList.add("visible");
+      }
+
+      function hideStatus(type) {
+        document.getElementById(`status-${type}`).classList.remove("visible");
+      }
+
+      function hideAllStatus() {
+        ["loading", "success", "error", "cooldown"].forEach(hideStatus);
+      }
+
+      function disableInput(disabled) {
+        document.getElementById("link-input").disabled = disabled;
+        document.getElementById("submit-btn").disabled = disabled;
+        if (disabled) {
+          document.getElementById("input-wrap").classList.add("disabled");
+        } else {
+          document.getElementById("input-wrap").classList.remove("disabled");
+          document.getElementById("link-input").focus();
+        }
+      }
+
+      // --- Queue Display ---
+
+      function handleQueueDisplay(queue) {
+        renderNowPlaying(queue);
+        renderUpNext(queue);
+      }
+
+      function renderNowPlaying(queue) {
+        const playing = getCurrentlyPlaying(queue);
+        const card = document.getElementById("np-card");
+        const titleEl = document.getElementById("sub-np-title");
+        const artistEl = document.getElementById("sub-np-artist");
+
+        if (!playing) {
+          card.classList.add("empty");
+          titleEl.textContent = "Nothing yet";
+          artistEl.textContent = "";
+          // Remove thumbnail and bars if present
+          const existingThumb = card.querySelector(".np-card-thumb");
+          if (existingThumb) existingThumb.remove();
+          const existingBars = card.querySelector(".playing-bars-sm");
+          if (existingBars) existingBars.remove();
+          return;
+        }
+
+        card.classList.remove("empty");
+        titleEl.textContent = playing.title;
+        artistEl.textContent = playing.artist || "";
+
+        // Add thumbnail
+        let thumb = card.querySelector(".np-card-thumb");
+        if (playing.thumbnailUrl) {
+          if (!thumb) {
+            thumb = document.createElement("img");
+            thumb.className = "np-card-thumb";
+            card.insertBefore(thumb, card.firstChild);
+          }
+          thumb.src = playing.thumbnailUrl;
+        } else if (thumb) {
+          thumb.remove();
+        }
+
+        // Add playing bars
+        let bars = card.querySelector(".playing-bars-sm");
+        if (!bars) {
+          bars = document.createElement("div");
+          bars.className = "playing-bars-sm";
+          bars.innerHTML =
+            "<span></span><span></span><span></span>";
+          card.appendChild(bars);
+        }
+      }
+
+      function renderUpNext(queue) {
+        const waiting = getByStatus(queue, "waiting");
+        const container = document.getElementById("sub-queue-list");
+        const countEl = document.getElementById("sub-queue-count");
+
+        countEl.textContent =
+          waiting.length > 0
+            ? `${waiting.length} song${waiting.length !== 1 ? "s" : ""}`
+            : "";
+
+        if (waiting.length === 0) {
+          container.innerHTML =
+            '<div class="queue-empty-msg">No songs in the queue yet. Be the first!</div>';
+          return;
+        }
+
+        container.innerHTML = waiting
+          .map((song, i) => {
+            const color =
+              PLATFORM_COLORS[song.platform] || "#888";
+            const thumb = song.thumbnailUrl
+              ? `<img class="q-item-thumb" src="${song.thumbnailUrl}" alt="" loading="lazy">`
+              : `<div class="q-item-thumb"></div>`;
+            return `
+              <div class="q-item">
+                <div class="q-item-num">${i + 1}</div>
+                ${thumb}
+                <div class="q-item-info">
+                  <div class="q-item-title">${escapeHtml(song.title)}</div>
+                  <div class="q-item-artist">${escapeHtml(song.artist || "")}</div>
+                </div>
+                <span class="q-item-dot" style="background:${color}"></span>
+              </div>`;
+          })
+          .join("");
+      }
+
+      function escapeHtml(str) {
+        const div = document.createElement("div");
+        div.textContent = str;
+        return div.innerHTML;
+      }
+    </script>
+  </body>
+</html>

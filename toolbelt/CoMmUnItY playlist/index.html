@@ -1,0 +1,1131 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>THE QUEUE</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=Outfit:ital,wght@0,300;0,400;0,500;0,600;1,400&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      /* ============================================ */
+      /* RESET & BASE                                */
+      /* ============================================ */
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+
+      :root {
+        --bg: #0f0e0c;
+        --surface: #1a1815;
+        --surface-elevated: #242119;
+        --surface-hover: #2e2a24;
+        --primary: #f0c05a;
+        --primary-dim: #c49a3a;
+        --primary-glow: rgba(240, 192, 90, 0.15);
+        --text: #f5f0e5;
+        --text-secondary: #9e978a;
+        --text-muted: #6b6560;
+        --success: #8bc48a;
+        --error: #e87b7b;
+        --border: #2a2622;
+
+        --youtube: #ff0000;
+        --spotify: #1db954;
+        --apple: #fc3c44;
+        --soundcloud: #ff5500;
+        --tidal: #00ffff;
+        --deezer: #a238ff;
+
+        --font-display: "Syne", sans-serif;
+        --font-body: "Outfit", sans-serif;
+
+        --radius: 10px;
+        --radius-sm: 6px;
+      }
+
+      html,
+      body {
+        height: 100%;
+        background: var(--bg);
+        color: var(--text);
+        font-family: var(--font-body);
+        font-weight: 400;
+        line-height: 1.5;
+        -webkit-font-smoothing: antialiased;
+        overflow-x: hidden;
+      }
+
+      /* Subtle texture */
+      body::before {
+        content: "";
+        position: fixed;
+        inset: 0;
+        background: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");
+        pointer-events: none;
+        z-index: 0;
+      }
+
+      /* ============================================ */
+      /* LAYOUT                                      */
+      /* ============================================ */
+      .app {
+        position: relative;
+        z-index: 1;
+        display: grid;
+        grid-template-rows: auto 1fr;
+        min-height: 100vh;
+        max-width: 1600px;
+        margin: 0 auto;
+        padding: 24px 32px;
+        gap: 24px;
+      }
+
+      /* HEADER */
+      header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 24px;
+      }
+
+      .logo {
+        font-family: var(--font-display);
+        font-weight: 800;
+        font-size: clamp(28px, 4vw, 48px);
+        letter-spacing: -0.02em;
+        color: var(--primary);
+        line-height: 1;
+      }
+
+      .logo span {
+        color: var(--text-muted);
+        font-weight: 700;
+      }
+
+      .header-right {
+        display: flex;
+        align-items: center;
+        gap: 20px;
+        flex-shrink: 0;
+      }
+
+      .scan-label {
+        font-size: 13px;
+        color: var(--text-secondary);
+        text-align: right;
+        line-height: 1.3;
+      }
+
+      .scan-label strong {
+        display: block;
+        color: var(--text);
+        font-weight: 500;
+        font-size: 14px;
+      }
+
+      #qr-wrap {
+        width: 80px;
+        height: 80px;
+        background: #fff;
+        border-radius: var(--radius-sm);
+        padding: 4px;
+        flex-shrink: 0;
+      }
+
+      #qr-wrap canvas,
+      #qr-wrap img {
+        width: 100% !important;
+        height: 100% !important;
+        display: block;
+      }
+
+      /* MAIN CONTENT — two columns */
+      .content {
+        display: grid;
+        grid-template-columns: 1fr 380px;
+        gap: 28px;
+        min-height: 0;
+      }
+
+      @media (max-width: 1024px) {
+        .content {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      /* ============================================ */
+      /* PLAYER SECTION                              */
+      /* ============================================ */
+      .player-col {
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+        min-height: 0;
+      }
+
+      .player-container {
+        position: relative;
+        width: 100%;
+        aspect-ratio: 16 / 9;
+        background: #000;
+        border-radius: var(--radius);
+        overflow: hidden;
+        border: 1px solid var(--border);
+      }
+
+      .player-container iframe {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+      }
+
+      /* Idle state overlay */
+      .player-idle {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 16px;
+        background: var(--surface);
+        z-index: 2;
+        transition: opacity 0.4s ease;
+      }
+
+      .player-idle.hidden {
+        opacity: 0;
+        pointer-events: none;
+      }
+
+      .player-idle .idle-icon {
+        font-size: 48px;
+        opacity: 0.3;
+      }
+
+      .player-idle p {
+        color: var(--text-secondary);
+        font-size: 15px;
+      }
+
+      .btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 12px 28px;
+        border: none;
+        border-radius: var(--radius);
+        font-family: var(--font-body);
+        font-weight: 500;
+        font-size: 15px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+      }
+
+      .btn-primary {
+        background: var(--primary);
+        color: var(--bg);
+      }
+
+      .btn-primary:hover {
+        background: var(--primary-dim);
+        transform: translateY(-1px);
+      }
+
+      .btn-ghost {
+        background: transparent;
+        color: var(--text-secondary);
+        border: 1px solid var(--border);
+      }
+
+      .btn-ghost:hover {
+        border-color: var(--text-muted);
+        color: var(--text);
+      }
+
+      /* Manual play overlay */
+      .manual-overlay {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 16px;
+        background: var(--surface);
+        z-index: 3;
+        padding: 24px;
+        text-align: center;
+        transition: opacity 0.3s ease;
+      }
+
+      .manual-overlay.hidden {
+        opacity: 0;
+        pointer-events: none;
+      }
+
+      .manual-overlay h3 {
+        font-family: var(--font-display);
+        font-weight: 700;
+        font-size: 20px;
+        color: var(--primary);
+      }
+
+      .manual-overlay .manual-song-info {
+        color: var(--text);
+        font-size: 18px;
+      }
+
+      .manual-overlay .manual-song-info .artist {
+        color: var(--text-secondary);
+      }
+
+      .manual-overlay .manual-actions {
+        display: flex;
+        gap: 12px;
+        margin-top: 8px;
+      }
+
+      /* Now playing bar */
+      .now-playing {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        padding: 14px 18px;
+        background: var(--surface);
+        border-radius: var(--radius);
+        border: 1px solid var(--border);
+        min-height: 64px;
+      }
+
+      .now-playing.empty {
+        opacity: 0.5;
+      }
+
+      .now-playing-thumb {
+        width: 44px;
+        height: 44px;
+        border-radius: var(--radius-sm);
+        object-fit: cover;
+        background: var(--surface-elevated);
+        flex-shrink: 0;
+      }
+
+      .now-playing-info {
+        flex: 1;
+        min-width: 0;
+      }
+
+      .now-playing-label {
+        font-size: 11px;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: var(--primary);
+        font-weight: 600;
+      }
+
+      .now-playing-title {
+        font-size: 16px;
+        font-weight: 500;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      .now-playing-artist {
+        font-size: 13px;
+        color: var(--text-secondary);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      .platform-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        font-size: 11px;
+        font-weight: 500;
+        padding: 3px 8px;
+        border-radius: 99px;
+        background: var(--surface-elevated);
+        color: var(--text-secondary);
+        white-space: nowrap;
+      }
+
+      .platform-dot {
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        flex-shrink: 0;
+      }
+
+      /* ============================================ */
+      /* QUEUE SECTION                               */
+      /* ============================================ */
+      .queue-col {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        min-height: 0;
+      }
+
+      .queue-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0 4px;
+      }
+
+      .queue-header h2 {
+        font-family: var(--font-display);
+        font-weight: 700;
+        font-size: 18px;
+        color: var(--text);
+        letter-spacing: -0.01em;
+      }
+
+      .queue-count {
+        font-size: 13px;
+        color: var(--text-muted);
+      }
+
+      .queue-list {
+        flex: 1;
+        overflow-y: auto;
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        padding-right: 4px;
+      }
+
+      /* Custom scrollbar */
+      .queue-list::-webkit-scrollbar {
+        width: 4px;
+      }
+      .queue-list::-webkit-scrollbar-track {
+        background: transparent;
+      }
+      .queue-list::-webkit-scrollbar-thumb {
+        background: var(--border);
+        border-radius: 99px;
+      }
+
+      .queue-item {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 10px 12px;
+        background: var(--surface);
+        border-radius: var(--radius-sm);
+        border: 1px solid transparent;
+        transition: all 0.25s ease;
+        animation: slideIn 0.3s ease;
+      }
+
+      @keyframes slideIn {
+        from {
+          opacity: 0;
+          transform: translateY(-8px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      .queue-item.is-playing {
+        border-color: var(--primary);
+        background: var(--primary-glow);
+      }
+
+      .queue-item.is-played {
+        opacity: 0.35;
+      }
+
+      .queue-item-number {
+        width: 22px;
+        font-size: 13px;
+        color: var(--text-muted);
+        text-align: center;
+        flex-shrink: 0;
+        font-weight: 500;
+      }
+
+      .queue-item.is-playing .queue-item-number {
+        color: var(--primary);
+      }
+
+      .queue-item.is-played .queue-item-number {
+        color: var(--text-muted);
+      }
+
+      .queue-item-thumb {
+        width: 40px;
+        height: 40px;
+        border-radius: 4px;
+        object-fit: cover;
+        background: var(--surface-elevated);
+        flex-shrink: 0;
+      }
+
+      .queue-item-info {
+        flex: 1;
+        min-width: 0;
+      }
+
+      .queue-item-title {
+        font-size: 14px;
+        font-weight: 500;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      .queue-item-artist {
+        font-size: 12px;
+        color: var(--text-secondary);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      .queue-item-meta {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        flex-shrink: 0;
+      }
+
+      .manual-tag {
+        font-size: 10px;
+        padding: 2px 6px;
+        border-radius: 99px;
+        background: var(--surface-elevated);
+        color: var(--text-muted);
+        border: 1px solid var(--border);
+      }
+
+      /* Playing indicator animation */
+      .playing-bars {
+        display: flex;
+        align-items: flex-end;
+        gap: 2px;
+        height: 14px;
+      }
+
+      .playing-bars span {
+        width: 3px;
+        background: var(--primary);
+        border-radius: 1px;
+        animation: bar 0.8s ease-in-out infinite;
+      }
+
+      .playing-bars span:nth-child(1) {
+        animation-delay: 0s;
+        height: 40%;
+      }
+      .playing-bars span:nth-child(2) {
+        animation-delay: 0.15s;
+        height: 70%;
+      }
+      .playing-bars span:nth-child(3) {
+        animation-delay: 0.3s;
+        height: 50%;
+      }
+
+      @keyframes bar {
+        0%,
+        100% {
+          transform: scaleY(1);
+        }
+        50% {
+          transform: scaleY(0.4);
+        }
+      }
+
+      /* Queue empty state */
+      .queue-empty {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 12px;
+        padding: 48px 24px;
+        text-align: center;
+        color: var(--text-muted);
+        font-size: 14px;
+      }
+
+      .queue-empty .empty-icon {
+        font-size: 32px;
+        opacity: 0.4;
+      }
+
+      /* Queue section divider */
+      .queue-divider {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 8px 4px 4px;
+        font-size: 11px;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: var(--text-muted);
+        font-weight: 600;
+      }
+
+      .queue-divider::after {
+        content: "";
+        flex: 1;
+        height: 1px;
+        background: var(--border);
+      }
+
+      /* Host controls */
+      .host-controls {
+        display: flex;
+        gap: 8px;
+        padding-top: 8px;
+        border-top: 1px solid var(--border);
+        margin-top: auto;
+      }
+
+      .host-controls .btn {
+        flex: 1;
+        justify-content: center;
+        font-size: 13px;
+        padding: 10px 16px;
+      }
+
+      /* Config warning */
+      .config-warning {
+        position: fixed;
+        inset: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: var(--bg);
+        z-index: 999;
+        padding: 24px;
+      }
+
+      .config-warning-box {
+        max-width: 480px;
+        background: var(--surface);
+        border: 1px solid var(--primary-dim);
+        border-radius: var(--radius);
+        padding: 32px;
+        text-align: center;
+      }
+
+      .config-warning-box h2 {
+        font-family: var(--font-display);
+        font-weight: 700;
+        color: var(--primary);
+        margin-bottom: 12px;
+      }
+
+      .config-warning-box p {
+        color: var(--text-secondary);
+        font-size: 14px;
+        line-height: 1.6;
+      }
+
+      .config-warning-box code {
+        background: var(--surface-elevated);
+        padding: 2px 6px;
+        border-radius: 3px;
+        font-size: 13px;
+        color: var(--primary);
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Config check overlay -->
+    <div id="config-warning" class="config-warning" style="display: none">
+      <div class="config-warning-box">
+        <h2>⚡ Setup Required</h2>
+        <p>
+          Open <code>js/config.js</code> and add your Firebase configuration.
+          <br /><br />
+          See <code>README.md</code> for step-by-step instructions.
+        </p>
+      </div>
+    </div>
+
+    <div class="app">
+      <header>
+        <div class="logo">THE QUEUE</div>
+        <div class="header-right">
+          <div class="scan-label">
+            <strong>Scan to add a song</strong>
+            or go to the link below
+          </div>
+          <div id="qr-wrap"></div>
+        </div>
+      </header>
+
+      <div class="content">
+        <!-- LEFT: Player -->
+        <div class="player-col">
+          <div class="player-container">
+            <div id="player"></div>
+
+            <!-- Idle overlay -->
+            <div id="idle-overlay" class="player-idle">
+              <div class="idle-icon">♫</div>
+              <p id="idle-text">Waiting for songs...</p>
+              <button
+                id="start-btn"
+                class="btn btn-primary"
+                style="display: none"
+                onclick="startPlaying()"
+              >
+                ▶ Start Playing
+              </button>
+            </div>
+
+            <!-- Manual play overlay -->
+            <div id="manual-overlay" class="manual-overlay hidden">
+              <h3>MANUAL PLAY</h3>
+              <p style="color: var(--text-secondary); font-size: 14px">
+                This song isn't on YouTube. Play it from the original platform:
+              </p>
+              <div class="manual-song-info">
+                <span id="manual-title"></span>
+                <span class="artist" id="manual-artist"></span>
+              </div>
+              <div class="manual-actions">
+                <a
+                  id="manual-link"
+                  href="#"
+                  target="_blank"
+                  class="btn btn-primary"
+                  >Open Song ↗</a
+                >
+                <button class="btn btn-ghost" onclick="skipManual()">
+                  Skip →
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Now Playing -->
+          <div id="now-playing" class="now-playing empty">
+            <div class="now-playing-info">
+              <div class="now-playing-label">NOW PLAYING</div>
+              <div class="now-playing-title" id="np-title">
+                Nothing playing yet
+              </div>
+              <div class="now-playing-artist" id="np-artist"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- RIGHT: Queue -->
+        <div class="queue-col">
+          <div class="queue-header">
+            <h2>UP NEXT</h2>
+            <span class="queue-count" id="queue-count"></span>
+          </div>
+
+          <div class="queue-list" id="queue-list">
+            <div class="queue-empty">
+              <div class="empty-icon">🎵</div>
+              <p>No songs yet.<br />Scan the QR code to add one!</p>
+            </div>
+          </div>
+
+          <div class="host-controls">
+            <button class="btn btn-ghost" onclick="skipCurrent()">
+              Skip ⏭
+            </button>
+            <button class="btn btn-ghost" onclick="clearAll()">
+              Clear Queue
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Firebase SDK (compat) -->
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
+
+    <!-- QR Code library -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+
+    <!-- App shared modules -->
+    <script src="js/config.js"></script>
+    <script src="js/resolver.js"></script>
+    <script src="js/queue.js"></script>
+
+    <script>
+      // ============================================
+      // HOST PAGE LOGIC
+      // ============================================
+
+      let ytPlayer = null;
+      let ytReady = false;
+      let currentQueue = [];
+      let currentSong = null;
+      let isPlaying = false;
+      let playerStarted = false; // Has the user clicked "Start" at least once?
+
+      // --- Initialization ---
+
+      document.addEventListener("DOMContentLoaded", () => {
+        // Check if Firebase is configured
+        if (
+          FIREBASE_CONFIG.apiKey === "YOUR_API_KEY" ||
+          !FIREBASE_CONFIG.databaseURL ||
+          FIREBASE_CONFIG.databaseURL.includes("YOUR_PROJECT")
+        ) {
+          document.getElementById("config-warning").style.display = "flex";
+          return;
+        }
+
+        initFirebase();
+        generateQRCode();
+        loadYouTubeAPI();
+
+        // Reset any songs stuck in "playing" state from a previous session
+        resetPlayingToWaiting().then(() => {
+          // Start listening to queue
+          onQueueChange(handleQueueUpdate);
+        });
+      });
+
+      // --- QR Code ---
+
+      function generateQRCode() {
+        const submitUrl = SITE_URL + "/submit/";
+        const container = document.getElementById("qr-wrap");
+        new QRCode(container, {
+          text: submitUrl,
+          width: 72,
+          height: 72,
+          colorDark: "#0f0e0c",
+          colorLight: "#ffffff",
+          correctLevel: QRCode.CorrectLevel.M,
+        });
+      }
+
+      // --- YouTube Player ---
+
+      function loadYouTubeAPI() {
+        return new Promise((resolve) => {
+          window.onYouTubeIframeAPIReady = () => {
+            ytPlayer = new YT.Player("player", {
+              width: "100%",
+              height: "100%",
+              playerVars: {
+                autoplay: 0,
+                controls: 1,
+                modestbranding: 1,
+                rel: 0,
+                fs: 1,
+                playsinline: 1,
+              },
+              events: {
+                onReady: () => {
+                  ytReady = true;
+                  resolve();
+                },
+                onStateChange: onPlayerStateChange,
+                onError: onPlayerError,
+              },
+            });
+          };
+
+          const tag = document.createElement("script");
+          tag.src = "https://www.youtube.com/iframe_api";
+          document.head.appendChild(tag);
+        });
+      }
+
+      function onPlayerStateChange(event) {
+        // When a video ends, advance to the next song
+        if (event.data === YT.PlayerState.ENDED) {
+          advanceQueue();
+        }
+      }
+
+      function onPlayerError(event) {
+        console.error("YouTube player error:", event.data);
+        // On error, skip to next song after a brief pause
+        setTimeout(() => advanceQueue(), 2000);
+      }
+
+      // --- Queue Handling ---
+
+      function handleQueueUpdate(queue) {
+        currentQueue = queue;
+        renderQueue(queue);
+
+        const waiting = getByStatus(queue, "waiting");
+        const playing = getCurrentlyPlaying(queue);
+
+        // Update idle overlay
+        const idleOverlay = document.getElementById("idle-overlay");
+        const startBtn = document.getElementById("start-btn");
+        const idleText = document.getElementById("idle-text");
+
+        if (!playing && !isPlaying) {
+          if (waiting.length > 0) {
+            if (!playerStarted) {
+              // First time: show start button
+              idleText.textContent = `${waiting.length} song${waiting.length > 1 ? "s" : ""} in queue`;
+              startBtn.style.display = "";
+              idleOverlay.classList.remove("hidden");
+            } else {
+              // Player was started before, auto-play next
+              idleOverlay.classList.add("hidden");
+              playNext();
+            }
+          } else {
+            idleText.textContent = "Waiting for songs...";
+            startBtn.style.display = "none";
+            idleOverlay.classList.remove("hidden");
+            updateNowPlaying(null);
+          }
+        } else if (playing) {
+          idleOverlay.classList.add("hidden");
+        }
+      }
+
+      function startPlaying() {
+        playerStarted = true;
+        document.getElementById("idle-overlay").classList.add("hidden");
+        playNext();
+      }
+
+      function playNext() {
+        const next = getNextWaiting(currentQueue);
+        if (!next) {
+          isPlaying = false;
+          currentSong = null;
+          setNowPlaying(null);
+          updateNowPlaying(null);
+          return;
+        }
+
+        currentSong = next;
+        isPlaying = true;
+
+        // Update status in Firebase
+        updateSongStatus(next.id, "playing");
+        setNowPlaying(next.id);
+        updateNowPlaying(next);
+
+        if (next.manualPlay || !next.youtubeId) {
+          // Show manual play overlay
+          showManualOverlay(next);
+        } else {
+          // Play on YouTube
+          hideManualOverlay();
+          if (ytReady && ytPlayer && ytPlayer.loadVideoById) {
+            ytPlayer.loadVideoById(next.youtubeId);
+          }
+        }
+      }
+
+      function advanceQueue() {
+        if (currentSong) {
+          updateSongStatus(currentSong.id, "played");
+        }
+        currentSong = null;
+        isPlaying = false;
+        hideManualOverlay();
+
+        // Small delay before next song
+        setTimeout(() => playNext(), 1500);
+      }
+
+      function skipCurrent() {
+        if (currentSong) {
+          if (ytReady && ytPlayer && ytPlayer.stopVideo) {
+            ytPlayer.stopVideo();
+          }
+          advanceQueue();
+        }
+      }
+
+      function skipManual() {
+        advanceQueue();
+      }
+
+      function clearAll() {
+        if (confirm("Clear the entire queue? This can't be undone.")) {
+          if (ytReady && ytPlayer && ytPlayer.stopVideo) {
+            ytPlayer.stopVideo();
+          }
+          isPlaying = false;
+          currentSong = null;
+          clearQueue();
+        }
+      }
+
+      // --- Manual Play Overlay ---
+
+      function showManualOverlay(song) {
+        const overlay = document.getElementById("manual-overlay");
+        document.getElementById("manual-title").textContent = song.title;
+        document.getElementById("manual-artist").textContent = song.artist
+          ? ` — ${song.artist}`
+          : "";
+        const link = document.getElementById("manual-link");
+        link.href = song.originalUrl;
+        link.textContent = `Open on ${PLATFORM_NAMES[song.platform] || "Original"} ↗`;
+        overlay.classList.remove("hidden");
+      }
+
+      function hideManualOverlay() {
+        document.getElementById("manual-overlay").classList.add("hidden");
+      }
+
+      // --- Now Playing Bar ---
+
+      function updateNowPlaying(song) {
+        const container = document.getElementById("now-playing");
+        const titleEl = document.getElementById("np-title");
+        const artistEl = document.getElementById("np-artist");
+
+        if (!song) {
+          container.classList.add("empty");
+          titleEl.textContent = "Nothing playing yet";
+          artistEl.textContent = "";
+          // Remove thumbnail if exists
+          const existingThumb = container.querySelector(
+            ".now-playing-thumb"
+          );
+          if (existingThumb) existingThumb.remove();
+          const existingBadge = container.querySelector(".platform-badge");
+          if (existingBadge) existingBadge.remove();
+          return;
+        }
+
+        container.classList.remove("empty");
+        titleEl.textContent = song.title;
+        artistEl.textContent = song.artist || "";
+
+        // Add/update thumbnail
+        let thumb = container.querySelector(".now-playing-thumb");
+        if (song.thumbnailUrl) {
+          if (!thumb) {
+            thumb = document.createElement("img");
+            thumb.className = "now-playing-thumb";
+            container.insertBefore(thumb, container.firstChild);
+          }
+          thumb.src = song.thumbnailUrl;
+          thumb.alt = "";
+        } else if (thumb) {
+          thumb.remove();
+        }
+
+        // Add/update platform badge
+        let badge = container.querySelector(".platform-badge");
+        if (!badge) {
+          badge = document.createElement("span");
+          badge.className = "platform-badge";
+          container.appendChild(badge);
+        }
+        const color =
+          PLATFORM_COLORS[song.platform] || PLATFORM_COLORS.unknown;
+        badge.innerHTML = `<span class="platform-dot" style="background:${color}"></span> ${PLATFORM_NAMES[song.platform] || song.platform}`;
+      }
+
+      // --- Queue Rendering ---
+
+      function renderQueue(queue) {
+        const container = document.getElementById("queue-list");
+        const countEl = document.getElementById("queue-count");
+
+        const waiting = getByStatus(queue, "waiting");
+        const played = getByStatus(queue, "played");
+
+        countEl.textContent = `${waiting.length} song${waiting.length !== 1 ? "s" : ""} waiting`;
+
+        if (queue.length === 0) {
+          container.innerHTML = `
+            <div class="queue-empty">
+              <div class="empty-icon">🎵</div>
+              <p>No songs yet.<br>Scan the QR code to add one!</p>
+            </div>`;
+          return;
+        }
+
+        let html = "";
+
+        // Waiting songs
+        if (waiting.length > 0) {
+          waiting.forEach((song, i) => {
+            html += renderQueueItem(song, i + 1, "waiting");
+          });
+        }
+
+        // Played songs
+        if (played.length > 0) {
+          html += `<div class="queue-divider">Played</div>`;
+          played.forEach((song, i) => {
+            html += renderQueueItem(song, "✓", "played");
+          });
+        }
+
+        container.innerHTML = html;
+      }
+
+      function renderQueueItem(song, number, status) {
+        const color =
+          PLATFORM_COLORS[song.platform] || PLATFORM_COLORS.unknown;
+        const statusClass =
+          status === "playing"
+            ? "is-playing"
+            : status === "played"
+              ? "is-played"
+              : "";
+        const manualTag = song.manualPlay
+          ? `<span class="manual-tag">manual</span>`
+          : "";
+        const playingBars =
+          status === "playing"
+            ? `<div class="playing-bars"><span></span><span></span><span></span></div>`
+            : "";
+        const thumb = song.thumbnailUrl
+          ? `<img class="queue-item-thumb" src="${song.thumbnailUrl}" alt="" loading="lazy">`
+          : `<div class="queue-item-thumb"></div>`;
+
+        return `
+          <div class="queue-item ${statusClass}">
+            <div class="queue-item-number">${number}</div>
+            ${thumb}
+            <div class="queue-item-info">
+              <div class="queue-item-title">${escapeHtml(song.title)}</div>
+              <div class="queue-item-artist">${escapeHtml(song.artist || "")}</div>
+            </div>
+            <div class="queue-item-meta">
+              ${manualTag}
+              <span class="platform-dot" style="background:${color}" title="${PLATFORM_NAMES[song.platform] || ""}"></span>
+              ${playingBars}
+            </div>
+          </div>`;
+      }
+
+      function escapeHtml(str) {
+        const div = document.createElement("div");
+        div.textContent = str;
+        return div.innerHTML;
+      }
+    </script>
+  </body>
+</html>
