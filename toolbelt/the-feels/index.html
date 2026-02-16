@@ -1861,69 +1861,101 @@
         }
 
         async function downloadDiaryCardPDF() {
-            const pdfBtn = document.getElementById('pdfBtn');
-            const reportText = document.getElementById('reportText');
-            
-            const originalText = pdfBtn.textContent;
-            pdfBtn.textContent = 'Generating...';
-            pdfBtn.disabled = true;
-            
-            try {
-                const canvas = await html2canvas(reportText, {
-                    scale: 2,
-                    useCORS: true,
-                    logging: false,
-                    backgroundColor: '#ffffff'
-                });
-                
-                const { jsPDF } = window.jspdf;
-                
-                // Use landscape orientation for diary cards (they're wide tables)
-                const pdf = new jsPDF({
-                    orientation: 'landscape',
-                    unit: 'mm',
-                    format: 'a4'
-                });
-                
-                const pageWidth = pdf.internal.pageSize.getWidth();
-                const pageHeight = pdf.internal.pageSize.getHeight();
-                
-                // Add margins (15mm on all sides)
-                const margin = 15;
-                const maxWidth = pageWidth - (margin * 2);
-                const maxHeight = pageHeight - (margin * 2);
-                
-                // Calculate scaled dimensions to fit within margins
-                let imgWidth = maxWidth;
-                let imgHeight = (canvas.height * imgWidth) / canvas.width;
-                
-                // If content is too tall, scale down further
-                if (imgHeight > maxHeight) {
-                    imgHeight = maxHeight;
-                    imgWidth = (canvas.width * imgHeight) / canvas.height;
-                }
-                
-                // Center horizontally and add top margin
-                const x = (pageWidth - imgWidth) / 2;
-                const y = margin;
-                
-                const imgData = canvas.toDataURL('image/png');
-                pdf.addImage(imgData, 'PNG', x, y, imgWidth, imgHeight);
-                
-                const today = new Date();
-                const filename = `DBT_Diary_Card_${today.getFullYear()}-${(today.getMonth()+1).toString().padStart(2,'0')}-${today.getDate().toString().padStart(2,'0')}.pdf`;
-                
-                pdf.save(filename);
-                
-                showSuccess('PDF downloaded successfully!');
-            } catch (error) {
-                console.error('Error generating PDF:', error);
-                showError('Error generating PDF. Please try again.');
-            } finally {
-                pdfBtn.textContent = originalText;
-                pdfBtn.disabled = false;
-            }
+    const pdfBtn = document.getElementById('pdfBtn');
+    const reportText = document.getElementById('reportText');
+    
+    const originalText = pdfBtn.textContent;
+    pdfBtn.textContent = 'Generating...';
+    pdfBtn.disabled = true;
+    
+    try {
+        // PHASE 1 & 4: Hide overlays
+        const successAlertEl = document.getElementById('successAlert');
+        const errorAlertEl = document.getElementById('errorAlert');
+        const successDisplay = successAlertEl.style.display;
+        const errorDisplay = errorAlertEl.style.display;
+        successAlertEl.style.display = 'none';
+        errorAlertEl.style.display = 'none';
+        
+        // PHASE 2: Expand container for full capture
+        const originalStyles = {
+            overflow: reportText.style.overflow,
+            maxHeight: reportText.style.maxHeight,
+            height: reportText.style.height
+        };
+        reportText.style.overflow = 'visible';
+        reportText.style.maxHeight = 'none';
+        reportText.style.height = 'auto';
+        
+        const scrollWidth = reportText.scrollWidth;
+        const scrollHeight = reportText.scrollHeight;
+        
+        // Capture full content
+        const canvas = await html2canvas(reportText, {
+            scale: 2,
+            useCORS: true,
+            logging: false,
+            backgroundColor: '#ffffff',
+            windowWidth: scrollWidth,
+            windowHeight: scrollHeight
+        });
+        
+        // Restore styles
+        reportText.style.overflow = originalStyles.overflow;
+        reportText.style.maxHeight = originalStyles.maxHeight;
+        reportText.style.height = originalStyles.height;
+        successAlertEl.style.display = successDisplay;
+        errorAlertEl.style.display = errorDisplay;
+        
+        // PHASE 3: Fix PDF layout with proper centering
+        const { jsPDF } = window.jspdf;
+        const pdf = new jsPDF({
+            orientation: 'landscape',
+            unit: 'mm',
+            format: 'a4'
+        });
+        
+        const pageWidth = pdf.internal.pageSize.getWidth();
+        const pageHeight = pdf.internal.pageSize.getHeight();
+        const margin = 10;
+        const availableWidth = pageWidth - (margin * 2);
+        const availableHeight = pageHeight - (margin * 2);
+        
+        const contentAspectRatio = canvas.width / canvas.height;
+        const pageAspectRatio = availableWidth / availableHeight;
+        
+        let imgWidth, imgHeight;
+        
+        if (contentAspectRatio > pageAspectRatio) {
+            imgWidth = availableWidth;
+            imgHeight = imgWidth / contentAspectRatio;
+        } else {
+            imgHeight = availableHeight;
+            imgWidth = imgHeight * contentAspectRatio;
         }
+        
+        // Center BOTH horizontally AND vertically
+        const x = (pageWidth - imgWidth) / 2;
+        const y = (pageHeight - imgHeight) / 2;
+        
+        const imgData = canvas.toDataURL('image/png');
+        pdf.addImage(imgData, 'PNG', x, y, imgWidth, imgHeight);
+        
+        const today = new Date();
+        const filename = `DBT_Diary_Card_${today.getFullYear()}-${(today.getMonth()+1).toString().padStart(2,'0')}-${today.getDate().toString().padStart(2,'0')}.pdf`;
+        
+        pdf.save(filename);
+        
+        showSuccess('PDF downloaded successfully!');
+    } catch (error) {
+        console.error('Error generating PDF:', error);
+        showError('Error generating PDF. Please try again.');
+    } finally {
+        pdfBtn.textContent = originalText;
+        pdfBtn.disabled = false;
+    }
+}
+
 
         function copyReport() {
             const reportText = document.getElementById('reportText').textContent;
