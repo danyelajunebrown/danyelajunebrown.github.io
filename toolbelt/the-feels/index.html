@@ -1867,7 +1867,6 @@
             const originalText = pdfBtn.textContent;
             pdfBtn.textContent = 'Generating...';
             pdfBtn.disabled = true;
-            reportText.classList.add('pdf-generating');
             
             try {
                 const canvas = await html2canvas(reportText, {
@@ -1879,17 +1878,37 @@
                 
                 const { jsPDF } = window.jspdf;
                 
-                const imgWidth = 210;
-                const imgHeight = (canvas.height * imgWidth) / canvas.width;
-                
+                // Use landscape orientation for diary cards (they're wide tables)
                 const pdf = new jsPDF({
-                    orientation: imgHeight > imgWidth ? 'portrait' : 'landscape',
+                    orientation: 'landscape',
                     unit: 'mm',
                     format: 'a4'
                 });
                 
+                const pageWidth = pdf.internal.pageSize.getWidth();
+                const pageHeight = pdf.internal.pageSize.getHeight();
+                
+                // Add margins (15mm on all sides)
+                const margin = 15;
+                const maxWidth = pageWidth - (margin * 2);
+                const maxHeight = pageHeight - (margin * 2);
+                
+                // Calculate scaled dimensions to fit within margins
+                let imgWidth = maxWidth;
+                let imgHeight = (canvas.height * imgWidth) / canvas.width;
+                
+                // If content is too tall, scale down further
+                if (imgHeight > maxHeight) {
+                    imgHeight = maxHeight;
+                    imgWidth = (canvas.width * imgHeight) / canvas.height;
+                }
+                
+                // Center horizontally and add top margin
+                const x = (pageWidth - imgWidth) / 2;
+                const y = margin;
+                
                 const imgData = canvas.toDataURL('image/png');
-                pdf.addImage(imgData, 'PNG', 0, 0, imgWidth, imgHeight);
+                pdf.addImage(imgData, 'PNG', x, y, imgWidth, imgHeight);
                 
                 const today = new Date();
                 const filename = `DBT_Diary_Card_${today.getFullYear()}-${(today.getMonth()+1).toString().padStart(2,'0')}-${today.getDate().toString().padStart(2,'0')}.pdf`;
@@ -1903,7 +1922,6 @@
             } finally {
                 pdfBtn.textContent = originalText;
                 pdfBtn.disabled = false;
-                reportText.classList.remove('pdf-generating');
             }
         }
 
