@@ -131,6 +131,20 @@
         font-size: 14px;
       }
 
+      .submit-link {
+        display: block;
+        font-size: 11px;
+        color: var(--primary-dim);
+        margin-top: 4px;
+        word-break: break-all;
+        text-decoration: none;
+      }
+
+      .submit-link:hover {
+        color: var(--primary);
+        text-decoration: underline;
+      }
+
       #qr-wrap {
         width: 80px;
         height: 80px;
@@ -607,6 +621,85 @@
         padding: 10px 16px;
       }
 
+      /* Drop zone overlay */
+      .drop-overlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(15, 14, 12, 0.85);
+        z-index: 100;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.2s ease;
+      }
+
+      .drop-overlay.active {
+        opacity: 1;
+        pointer-events: auto;
+      }
+
+      .drop-overlay-inner {
+        border: 3px dashed var(--primary);
+        border-radius: 20px;
+        padding: 60px 80px;
+        text-align: center;
+        background: var(--surface);
+      }
+
+      .drop-overlay-icon {
+        font-size: 48px;
+        margin-bottom: 16px;
+        opacity: 0.7;
+      }
+
+      .drop-overlay-text {
+        font-family: var(--font-display);
+        font-size: 22px;
+        font-weight: 700;
+        color: var(--primary);
+        margin-bottom: 6px;
+      }
+
+      .drop-overlay-hint {
+        font-size: 14px;
+        color: var(--text-secondary);
+      }
+
+      /* Drop toast notification */
+      .drop-toast {
+        position: fixed;
+        bottom: 24px;
+        left: 50%;
+        transform: translateX(-50%) translateY(80px);
+        background: var(--surface-elevated);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        padding: 12px 20px;
+        font-size: 14px;
+        color: var(--text);
+        z-index: 200;
+        opacity: 0;
+        transition: all 0.3s ease;
+        white-space: nowrap;
+      }
+
+      .drop-toast.visible {
+        opacity: 1;
+        transform: translateX(-50%) translateY(0);
+      }
+
+      .drop-toast.success {
+        border-color: var(--success);
+        color: var(--success);
+      }
+
+      .drop-toast.error {
+        border-color: var(--error);
+        color: var(--error);
+      }
+
       /* Config warning */
       .config-warning {
         position: fixed;
@@ -651,6 +744,18 @@
     </style>
   </head>
   <body>
+    <!-- Drop zone overlay -->
+    <div id="drop-overlay" class="drop-overlay">
+      <div class="drop-overlay-inner">
+        <div class="drop-overlay-icon">♫</div>
+        <div class="drop-overlay-text">Drop to add song</div>
+        <div class="drop-overlay-hint">Drop a song link or text with a URL</div>
+      </div>
+    </div>
+
+    <!-- Drop toast -->
+    <div id="drop-toast" class="drop-toast"></div>
+
     <!-- Config check overlay -->
     <div id="config-warning" class="config-warning" style="display: none">
       <div class="config-warning-box">
@@ -670,6 +775,7 @@
           <div class="scan-label">
             <strong>Scan to add a song</strong>
             or go to the link below
+            <a class="submit-link" id="submit-link" href="#" target="_blank"></a>
           </div>
           <div id="qr-wrap"></div>
         </div>
@@ -766,9 +872,9 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 
     <!-- App shared modules -->
-    <script src="js/config.js"></script>
-    <script src="js/resolver.js"></script>
-    <script src="js/queue.js"></script>
+    <script src="config.js"></script>
+    <script src="resolver.js"></script>
+    <script src="queue.js"></script>
 
     <script>
       // ============================================
@@ -797,6 +903,7 @@
 
         initFirebase();
         generateQRCode();
+        initDragDrop();
         loadYouTubeAPI();
 
         // Reset any songs stuck in "playing" state from a previous session
@@ -819,6 +926,11 @@
           colorLight: "#ffffff",
           correctLevel: QRCode.CorrectLevel.M,
         });
+
+        // Show the submit link
+        const linkEl = document.getElementById("submit-link");
+        linkEl.href = submitUrl;
+        linkEl.textContent = decodeURIComponent(submitUrl);
       }
 
       // --- YouTube Player ---
@@ -1125,6 +1237,96 @@
         const div = document.createElement("div");
         div.textContent = str;
         return div.innerHTML;
+      }
+
+      // ============================================
+      // DRAG & DROP — Host can drop song links
+      // ============================================
+
+      let dragCounter = 0;
+
+      function initDragDrop() {
+        const overlay = document.getElementById("drop-overlay");
+
+        document.addEventListener("dragenter", (e) => {
+          e.preventDefault();
+          dragCounter++;
+          overlay.classList.add("active");
+        });
+
+        document.addEventListener("dragleave", (e) => {
+          e.preventDefault();
+          dragCounter--;
+          if (dragCounter <= 0) {
+            dragCounter = 0;
+            overlay.classList.remove("active");
+          }
+        });
+
+        document.addEventListener("dragover", (e) => {
+          e.preventDefault();
+        });
+
+        document.addEventListener("drop", async (e) => {
+          e.preventDefault();
+          dragCounter = 0;
+          overlay.classList.remove("active");
+
+          // Try to extract a URL from the drop
+          const url = extractDroppedUrl(e.dataTransfer);
+          if (!url) {
+            showDropToast("No song link found. Drag a URL from Spotify, YouTube, etc.", "error");
+            return;
+          }
+
+          showDropToast("Resolving song...", "");
+
+          try {
+            const songData = await resolveLink(url);
+            await addToQueue(songData);
+            const label = songData.manualPlay ? "Added (manual play)" : "Added to queue";
+            showDropToast(`${label}: ${songData.title}`, "success");
+          } catch (error) {
+            if (error.message === "RATE_LIMITED") {
+              showDropToast("Rate limited — wait before adding another song", "error");
+            } else {
+              showDropToast(error.message, "error");
+            }
+          }
+        });
+      }
+
+      function extractDroppedUrl(dataTransfer) {
+        // Check for a URI list (dragged links from browser)
+        const uriList = dataTransfer.getData("text/uri-list");
+        if (uriList) {
+          const firstUrl = uriList.split("\n").find(line => line.trim() && !line.startsWith("#"));
+          if (firstUrl) return firstUrl.trim();
+        }
+
+        // Check for plain text that looks like a URL
+        const text = dataTransfer.getData("text/plain");
+        if (text) {
+          const trimmed = text.trim();
+          // Extract URL if the text contains one
+          const urlMatch = trimmed.match(/https?:\/\/[^\s]+/);
+          if (urlMatch) return urlMatch[0];
+        }
+
+        return null;
+      }
+
+      let dropToastTimeout = null;
+
+      function showDropToast(message, type) {
+        const toast = document.getElementById("drop-toast");
+        toast.textContent = message;
+        toast.className = "drop-toast visible" + (type ? " " + type : "");
+
+        if (dropToastTimeout) clearTimeout(dropToastTimeout);
+        dropToastTimeout = setTimeout(() => {
+          toast.classList.remove("visible");
+        }, 4000);
       }
     </script>
   </body>
