@@ -5,7 +5,8 @@
 // and resolves it to a YouTube video for unified playback.
 // Uses the Odesli (song.link) API — free, no key needed.
 
-const ODESLI_API = "https://api.song.link/v1-alpha.1/links";
+// CORS proxy on Cloudflare Workers — the raw Odesli API blocks browser requests
+const ODESLI_API = "https://songlink-proxy.danyelajune.workers.dev/";
 
 const PLATFORM_NAMES = {
   youtube: "YouTube",
