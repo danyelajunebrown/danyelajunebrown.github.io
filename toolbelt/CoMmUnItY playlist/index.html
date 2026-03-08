@@ -363,6 +363,51 @@
         text-overflow: ellipsis;
       }
 
+      /* Devotion volume indicator */
+      .devotion-indicator {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 6px 12px;
+        background: var(--surface);
+        border-radius: var(--radius-sm);
+        border: 1px solid var(--border);
+        font-size: 12px;
+        color: var(--text-muted);
+      }
+
+      .devotion-label {
+        font-family: var(--font-display);
+        font-weight: 700;
+        font-size: 10px;
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+        color: var(--text-secondary);
+      }
+
+      .devotion-bar {
+        width: 60px;
+        height: 4px;
+        background: var(--surface-elevated);
+        border-radius: 2px;
+        overflow: hidden;
+      }
+
+      .devotion-bar-fill {
+        height: 100%;
+        background: var(--primary);
+        border-radius: 2px;
+        transition: width 2s ease;
+      }
+
+      .devotion-pct {
+        font-variant-numeric: tabular-nums;
+        color: var(--primary-dim);
+        font-weight: 500;
+        min-width: 28px;
+        text-align: right;
+      }
+
       .platform-badge {
         display: inline-flex;
         align-items: center;
@@ -791,14 +836,6 @@
             <div id="idle-overlay" class="player-idle">
               <div class="idle-icon">♫</div>
               <p id="idle-text">Waiting for songs...</p>
-              <button
-                id="start-btn"
-                class="btn btn-primary"
-                style="display: none"
-                onclick="startPlaying()"
-              >
-                ▶ Start Playing
-              </button>
             </div>
 
             <!-- Manual play overlay -->
@@ -826,14 +863,25 @@
             </div>
           </div>
 
-          <!-- Now Playing -->
-          <div id="now-playing" class="now-playing empty">
-            <div class="now-playing-info">
-              <div class="now-playing-label">NOW PLAYING</div>
-              <div class="now-playing-title" id="np-title">
-                Nothing playing yet
+          <!-- Now Playing + Devotion indicator -->
+          <div style="display: flex; gap: 12px; align-items: stretch;">
+            <div id="now-playing" class="now-playing empty" style="flex: 1;">
+              <div class="now-playing-info">
+                <div class="now-playing-label">NOW PLAYING</div>
+                <div class="now-playing-title" id="np-title">
+                  Nothing playing yet
+                </div>
+                <div class="now-playing-artist" id="np-artist"></div>
               </div>
-              <div class="now-playing-artist" id="np-artist"></div>
+            </div>
+            <div class="devotion-indicator">
+              <div>
+                <div class="devotion-label">Devotion</div>
+                <div class="devotion-bar">
+                  <div class="devotion-bar-fill" id="devotion-bar" style="width: 0%"></div>
+                </div>
+              </div>
+              <span class="devotion-pct" id="devotion-level">0%</span>
             </div>
           </div>
         </div>
@@ -886,7 +934,65 @@
       let currentQueue = [];
       let currentSong = null;
       let isPlaying = false;
-      let playerStarted = false; // Has the user clicked "Start" at least once?
+      let playerStarted = true; // Always on — no start button needed
+
+      // ============================================
+      // DEVOTION — Time-based volume curve
+      // ============================================
+      // Inspired by Jace Clayton's Devotion (Max for Live device)
+      // which reads the computer clock and adjusts audio at prayer times.
+      // This adaptation gradually raises volume from 0% at 9 AM
+      // to 75% by 5 PM — a slow daily crescendo.
+
+      const DEVOTION_START_HOUR = 9;   // 9:00 AM — volume begins at 0%
+      const DEVOTION_END_HOUR = 17;    // 5:00 PM — volume reaches 75%
+      const DEVOTION_MAX_VOLUME = 75;  // Max volume percentage
+      let devotionVolume = 0;          // Current calculated volume
+      let devotionInterval = null;     // Timer ref (like Devotion's metro 1000)
+
+      function getDevotionVolume() {
+        const now = new Date();
+        const hours = now.getHours();
+        const minutes = now.getMinutes();
+        const currentMinutes = hours * 60 + minutes;
+
+        const startMinutes = DEVOTION_START_HOUR * 60;  // 540
+        const endMinutes = DEVOTION_END_HOUR * 60;      // 1020
+        const range = endMinutes - startMinutes;         // 480 minutes
+
+        if (currentMinutes <= startMinutes) return 0;
+        if (currentMinutes >= endMinutes) return DEVOTION_MAX_VOLUME;
+
+        // Linear interpolation: 0% at 9AM → 75% at 5PM
+        const elapsed = currentMinutes - startMinutes;
+        return Math.round(DEVOTION_MAX_VOLUME * (elapsed / range));
+      }
+
+      function updateDevotionVolume() {
+        devotionVolume = getDevotionVolume();
+
+        // Apply to YouTube player
+        if (ytReady && ytPlayer && ytPlayer.setVolume) {
+          ytPlayer.setVolume(devotionVolume);
+        }
+
+        // Update UI indicator
+        const el = document.getElementById("devotion-level");
+        if (el) el.textContent = `${devotionVolume}%`;
+
+        const bar = document.getElementById("devotion-bar");
+        if (bar) bar.style.width = `${(devotionVolume / DEVOTION_MAX_VOLUME) * 100}%`;
+
+        console.log(`Devotion volume: ${devotionVolume}% at ${new Date().toLocaleTimeString()}`);
+      }
+
+      function initDevotion() {
+        // Initial volume set
+        updateDevotionVolume();
+        // Check every 60 seconds (Devotion uses metro 1000 = every second,
+        // but volume changes slowly enough that per-minute is fine)
+        devotionInterval = setInterval(updateDevotionVolume, 60000);
+      }
 
       // --- Initialization ---
 
@@ -904,6 +1010,7 @@
         initFirebase();
         generateQRCode();
         initDragDrop();
+        initDevotion();
         loadYouTubeAPI();
 
         // Reset any songs stuck in "playing" state from a previous session
@@ -952,6 +1059,8 @@
               events: {
                 onReady: () => {
                   ytReady = true;
+                  // Apply Devotion volume immediately
+                  updateDevotionVolume();
                   resolve();
                 },
                 onStateChange: onPlayerStateChange,
@@ -990,36 +1099,21 @@
 
         // Update idle overlay
         const idleOverlay = document.getElementById("idle-overlay");
-        const startBtn = document.getElementById("start-btn");
         const idleText = document.getElementById("idle-text");
 
         if (!playing && !isPlaying) {
           if (waiting.length > 0) {
-            if (!playerStarted) {
-              // First time: show start button
-              idleText.textContent = `${waiting.length} song${waiting.length > 1 ? "s" : ""} in queue`;
-              startBtn.style.display = "";
-              idleOverlay.classList.remove("hidden");
-            } else {
-              // Player was started before, auto-play next
-              idleOverlay.classList.add("hidden");
-              playNext();
-            }
+            // Always auto-play — no start button needed
+            idleOverlay.classList.add("hidden");
+            playNext();
           } else {
             idleText.textContent = "Waiting for songs...";
-            startBtn.style.display = "none";
             idleOverlay.classList.remove("hidden");
             updateNowPlaying(null);
           }
         } else if (playing) {
           idleOverlay.classList.add("hidden");
         }
-      }
-
-      function startPlaying() {
-        playerStarted = true;
-        document.getElementById("idle-overlay").classList.add("hidden");
-        playNext();
       }
 
       function playNext() {
@@ -1047,6 +1141,8 @@
           // Play on YouTube
           hideManualOverlay();
           if (ytReady && ytPlayer && ytPlayer.loadVideoById) {
+            // Re-apply Devotion volume for new song
+            updateDevotionVolume();
             ytPlayer.loadVideoById(next.youtubeId);
           }
         }
