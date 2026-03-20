@@ -16,34 +16,84 @@ const activeStreams = new Map();
 
 // Health check endpoint
 app.get('/health', (req, res) => {
-    res.json({ status: 'ok', activeStreams: activeStreams.size });
+    res.json({
+        status: 'ok',
+        activeStreams: activeStreams.size,
+        uptime: Math.round(process.uptime()),
+        streams: Array.from(activeStreams.entries()).map(([id, info]) => ({
+            clientId: id,
+            hasAudio: info.hasAudio,
+            mimeType: info.mimeType,
+            bytesReceived: info.bytesReceived,
+            chunksReceived: info.chunksReceived,
+            ffmpegRunning: !!(info.ffmpeg && !info.ffmpeg.killed),
+            startedAt: info.startedAt
+        }))
+    });
 });
 
-// Start streaming endpoint - receives stream key
+// Debug endpoint for a specific client
+app.get('/debug/:clientId', (req, res) => {
+    const info = activeStreams.get(req.params.clientId);
+    if (!info) {
+        return res.status(404).json({ error: 'No stream found for this client' });
+    }
+    res.json({
+        clientId: req.params.clientId,
+        hasAudio: info.hasAudio,
+        mimeType: info.mimeType,
+        bytesReceived: info.bytesReceived,
+        chunksReceived: info.chunksReceived,
+        ffmpegRunning: !!(info.ffmpeg && !info.ffmpeg.killed),
+        ffmpegLogs: info.ffmpegLogs.slice(-20), // last 20 log lines
+        startedAt: info.startedAt
+    });
+});
+
+// Determine FFmpeg input format from browser mimeType
+function getInputFormat(mimeType) {
+    if (!mimeType) return 'mp4';
+    if (mimeType.includes('webm')) return 'webm';
+    if (mimeType.includes('mp4')) return 'mp4';
+    return 'mp4';
+}
+
+// Start streaming endpoint
 app.post('/start-stream', (req, res) => {
-    const { streamKey, clientId } = req.body;
+    const { streamKey, clientId, mimeType, hasAudio } = req.body;
 
     if (!streamKey) {
         return res.status(400).json({ error: 'Stream key required' });
     }
 
     // Kill any existing stream for this client
-    const existingStream = activeStreams.get(clientId);
-    if (existingStream && existingStream.ffmpeg) {
-        console.log(`Killing existing FFmpeg for client: ${clientId}`);
-        existingStream.ffmpeg.stdin.end();
-        existingStream.ffmpeg.kill('SIGTERM');
+    const existing = activeStreams.get(clientId);
+    if (existing && existing.ffmpeg) {
+        console.log(`[${clientId}] Killing existing FFmpeg`);
+        try {
+            existing.ffmpeg.stdin.end();
+            existing.ffmpeg.kill('SIGTERM');
+        } catch (e) {}
     }
 
-    // Create fresh stream info
     const streamInfo = {
-        streamKey: streamKey,
+        streamKey,
         rtmpUrl: `rtmp://a.rtmp.youtube.com/live2/${streamKey}`,
-        ffmpeg: null
+        mimeType: mimeType || 'video/mp4',
+        hasAudio: !!hasAudio,
+        ffmpeg: null,
+        bytesReceived: 0,
+        chunksReceived: 0,
+        ffmpegLogs: [],
+        startedAt: new Date().toISOString()
     };
     activeStreams.set(clientId, streamInfo);
 
-    console.log(`Stream registered for ${clientId}: ${streamInfo.rtmpUrl}`);
+    console.log(`[${clientId}] Stream registered`);
+    console.log(`  RTMP: ${streamInfo.rtmpUrl}`);
+    console.log(`  mimeType: ${streamInfo.mimeType}`);
+    console.log(`  hasAudio: ${streamInfo.hasAudio}`);
+
     res.json({ success: true, clientId });
 });
 
@@ -52,101 +102,183 @@ app.post('/stop-stream', (req, res) => {
     const { clientId } = req.body;
 
     const streamInfo = activeStreams.get(clientId);
-    if (streamInfo && streamInfo.ffmpeg) {
-        streamInfo.ffmpeg.stdin.end();
-        streamInfo.ffmpeg.kill('SIGTERM');
+    if (streamInfo) {
+        console.log(`[${clientId}] Stop requested — received ${streamInfo.chunksReceived} chunks (${formatBytes(streamInfo.bytesReceived)})`);
+        if (streamInfo.ffmpeg) {
+            try {
+                streamInfo.ffmpeg.stdin.end();
+                streamInfo.ffmpeg.kill('SIGTERM');
+            } catch (e) {}
+        }
     }
     activeStreams.delete(clientId);
 
     res.json({ success: true });
 });
 
+// Build FFmpeg arguments based on stream configuration
+function buildFFmpegArgs(streamInfo) {
+    const inputFormat = getInputFormat(streamInfo.mimeType);
+    const args = [];
+
+    // Input: piped video (+ possibly audio) from browser
+    args.push(
+        '-probesize', '2M',
+        '-analyzeduration', '2M',
+        '-f', inputFormat,
+        '-i', 'pipe:0'
+    );
+
+    if (!streamInfo.hasAudio) {
+        // No audio from browser — generate silent audio (YouTube requires audio)
+        args.push(
+            '-f', 'lavfi',
+            '-i', 'anullsrc=r=44100:cl=stereo'
+        );
+    }
+
+    // Video encoding
+    args.push(
+        '-c:v', 'libx264',
+        '-preset', 'veryfast',
+        '-tune', 'zerolatency',
+        '-g', '60',
+        '-keyint_min', '60',
+        '-b:v', '2500k',
+        '-maxrate', '2500k',
+        '-bufsize', '5000k'
+    );
+
+    // Audio encoding
+    args.push(
+        '-c:a', 'aac',
+        '-ar', '44100',
+        '-b:a', '128k'
+    );
+
+    if (!streamInfo.hasAudio) {
+        // Map video from input 0, audio from input 1 (silent)
+        args.push(
+            '-map', '0:v:0',
+            '-map', '1:a:0',
+            '-shortest'
+        );
+    }
+    // When hasAudio=true, FFmpeg auto-maps the single input's video+audio tracks
+
+    // Output
+    args.push(
+        '-f', 'flv',
+        streamInfo.rtmpUrl
+    );
+
+    return args;
+}
+
 wss.on('connection', (ws, req) => {
-    // Extract client ID from query string
     const url = new URL(req.url, 'http://localhost');
     const clientId = url.searchParams.get('clientId');
 
-    console.log(`Client connected: ${clientId}`);
-
-    let ffmpeg = null;
+    console.log(`[${clientId}] WebSocket connected`);
 
     ws.on('message', (data) => {
         const streamInfo = activeStreams.get(clientId);
 
         if (!streamInfo || !streamInfo.streamKey) {
-            console.log('No stream key configured for client:', clientId);
+            console.log(`[${clientId}] No stream key configured — dropping data`);
             return;
         }
 
-        // Initialize FFmpeg if not started
-        if (!ffmpeg && !streamInfo.ffmpeg) {
-            console.log(`Starting FFmpeg for ${clientId} -> ${streamInfo.rtmpUrl}`);
+        // Track stats
+        streamInfo.bytesReceived += data.length;
+        streamInfo.chunksReceived++;
 
-            // YouTube REQUIRES both video AND audio streams
-            // Since browser sends video-only, we generate silent audio
-            ffmpeg = spawn('ffmpeg', [
-                '-f', 'mp4',              // Force input format (fragmented mp4 from iOS Safari)
-                '-i', 'pipe:0',           // Video input from stdin
-                '-f', 'lavfi',            // Audio filter input
-                '-i', 'anullsrc=r=44100:cl=stereo', // Generate silent stereo audio
-                '-c:v', 'libx264',        // Video codec
-                '-preset', 'veryfast',    // Fast encoding for live
-                '-tune', 'zerolatency',   // Low latency
-                '-g', '60',               // Keyframe every 2 seconds (30fps)
-                '-keyint_min', '60',      // Min keyframe interval
-                '-c:a', 'aac',            // Audio codec
-                '-ar', '44100',           // Audio sample rate
-                '-b:a', '128k',           // Audio bitrate
-                '-map', '0:v:0',          // Use video from first input
-                '-map', '1:a:0',          // Use audio from second input (silent)
-                '-shortest',              // End when video ends
-                '-f', 'flv',              // Output format
-                streamInfo.rtmpUrl        // YouTube RTMP endpoint
-            ]);
+        if (streamInfo.chunksReceived % 30 === 0) {
+            console.log(`[${clientId}] ${streamInfo.chunksReceived} chunks, ${formatBytes(streamInfo.bytesReceived)} total`);
+        }
 
-            ffmpeg.stderr.on('data', (data) => {
-                console.log(`FFmpeg: ${data}`);
-            });
+        // Initialize FFmpeg on first data
+        if (!streamInfo.ffmpeg) {
+            const ffmpegArgs = buildFFmpegArgs(streamInfo);
+            console.log(`[${clientId}] Starting FFmpeg:`);
+            console.log(`  ffmpeg ${ffmpegArgs.join(' ')}`);
 
-            ffmpeg.on('close', (code) => {
-                console.log(`FFmpeg exited with code ${code}`);
-                if (streamInfo) {
-                    streamInfo.ffmpeg = null;
+            const ffmpeg = spawn('ffmpeg', ffmpegArgs);
+
+            ffmpeg.stderr.on('data', (chunk) => {
+                const line = chunk.toString().trim();
+                if (line) {
+                    // Store recent logs for debug endpoint
+                    streamInfo.ffmpegLogs.push(line);
+                    if (streamInfo.ffmpegLogs.length > 100) {
+                        streamInfo.ffmpegLogs.shift();
+                    }
+                    // Log important lines (skip progress spam)
+                    if (!line.startsWith('frame=') && !line.startsWith('size=')) {
+                        console.log(`[${clientId}] FFmpeg: ${line}`);
+                    }
                 }
             });
 
+            ffmpeg.on('close', (code) => {
+                console.log(`[${clientId}] FFmpeg exited with code ${code}`);
+                streamInfo.ffmpeg = null;
+            });
+
             ffmpeg.on('error', (err) => {
-                console.error('FFmpeg error:', err);
+                console.error(`[${clientId}] FFmpeg spawn error: ${err.message}`);
+                streamInfo.ffmpegLogs.push('SPAWN ERROR: ' + err.message);
             });
 
             streamInfo.ffmpeg = ffmpeg;
-            activeStreams.set(clientId, streamInfo);
         }
 
-        // Write video data to FFmpeg
-        if (streamInfo.ffmpeg && streamInfo.ffmpeg.stdin.writable) {
-            streamInfo.ffmpeg.stdin.write(data);
+        // Write data to FFmpeg stdin
+        if (streamInfo.ffmpeg && streamInfo.ffmpeg.stdin && streamInfo.ffmpeg.stdin.writable) {
+            const ok = streamInfo.ffmpeg.stdin.write(data);
+            if (!ok) {
+                // Backpressure — FFmpeg can't keep up
+                if (streamInfo.chunksReceived % 50 === 0) {
+                    console.warn(`[${clientId}] FFmpeg stdin backpressure`);
+                }
+            }
+        } else {
+            if (streamInfo.chunksReceived % 50 === 0) {
+                console.warn(`[${clientId}] FFmpeg stdin not writable`);
+            }
         }
     });
 
     ws.on('close', () => {
-        console.log(`Client disconnected: ${clientId}`);
+        console.log(`[${clientId}] WebSocket disconnected`);
         const streamInfo = activeStreams.get(clientId);
-        if (streamInfo && streamInfo.ffmpeg) {
-            streamInfo.ffmpeg.stdin.end();
-            streamInfo.ffmpeg.kill('SIGTERM');
-            streamInfo.ffmpeg = null;
+        if (streamInfo) {
+            console.log(`[${clientId}] Final: ${streamInfo.chunksReceived} chunks, ${formatBytes(streamInfo.bytesReceived)}`);
+            if (streamInfo.ffmpeg) {
+                try {
+                    streamInfo.ffmpeg.stdin.end();
+                    streamInfo.ffmpeg.kill('SIGTERM');
+                } catch (e) {}
+                streamInfo.ffmpeg = null;
+            }
         }
         activeStreams.delete(clientId);
     });
 
     ws.on('error', (err) => {
-        console.error('WebSocket error:', err);
+        console.error(`[${clientId}] WebSocket error: ${err.message}`);
     });
 });
+
+function formatBytes(b) {
+    if (b < 1024) return b + ' B';
+    if (b < 1048576) return (b / 1024).toFixed(1) + ' KB';
+    return (b / 1048576).toFixed(1) + ' MB';
+}
 
 const PORT = process.env.PORT || 3001;
 server.listen(PORT, () => {
     console.log(`Relay server running on port ${PORT}`);
-    console.log(`WebSocket endpoint: ws://localhost:${PORT}`);
+    console.log(`HTTP: http://localhost:${PORT}`);
+    console.log(`WebSocket: ws://localhost:${PORT}`);
 });

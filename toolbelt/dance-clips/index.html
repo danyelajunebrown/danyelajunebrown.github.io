@@ -5,658 +5,894 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>Dance</title>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-        }
-        html, body {
-            height: 100%;
-            width: 100%;
-            overflow: hidden;
-        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html, body { height: 100%; width: 100%; overflow: hidden; }
         body {
             background: #ef4444;
-            transition: background 0.3s ease;
+            transition: background 0.4s ease;
+            font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
         }
-        body.live {
-            background: #22c55e;
+        body.live { background: #22c55e; }
+
+        #start-btn {
+            padding: 24px 48px;
+            font-size: 22px;
+            font-weight: 700;
+            background: rgba(255,255,255,0.15);
+            border: 3px solid rgba(255,255,255,0.5);
+            border-radius: 16px;
+            color: white;
+            cursor: pointer;
+            display: none;
+            text-align: center;
+            line-height: 1.4;
+        }
+        #start-btn:active { background: rgba(255,255,255,0.35); }
+
+        #status {
+            color: rgba(255,255,255,0.8);
+            font-size: 16px;
+            text-align: center;
+            padding: 20px;
+            max-width: 85%;
+            line-height: 1.5;
+        }
+
+        /* ---- debug log overlay ---- */
+        #debug {
+            position: fixed;
+            bottom: 0; left: 0; right: 0;
+            max-height: 38vh;
+            overflow-y: auto;
+            background: rgba(0,0,0,0.92);
+            font-family: 'SF Mono', Menlo, Consolas, monospace;
+            font-size: 11px;
+            padding: 6px 8px;
+            z-index: 100;
+            -webkit-overflow-scrolling: touch;
+        }
+        #debug.collapsed { max-height: 0; padding: 0; overflow: hidden; }
+        .log-line { padding: 1px 0; line-height: 1.35; word-wrap: break-word; }
+        .log-info    { color: #d4d4d4; }
+        .log-success { color: #4ade80; }
+        .log-warn    { color: #facc15; }
+        .log-error   { color: #f87171; }
+        .log-time    { color: #777; margin-right: 4px; }
+
+        #debug-toggle {
+            position: fixed;
+            bottom: 0; right: 0;
+            padding: 6px 14px;
+            background: rgba(0,0,0,0.6);
+            color: #aaa;
+            font-size: 11px;
+            z-index: 101;
+            border: none;
+            border-radius: 10px 0 0 0;
         }
     </style>
 </head>
 <body>
-    <script>
-        // =====================
-        // CONFIG
-        // =====================
-        const CLIENT_ID = '129984821928-u6iqasj284ffcmkh15on4gsnbbah7pvo.apps.googleusercontent.com';
-        const SCOPES = 'https://www.googleapis.com/auth/youtube';
-        // Remove index.html from pathname to match OAuth config
-        const pathname = window.location.pathname.replace(/index\.html$/, '');
-        const REDIRECT_URI = window.location.origin + pathname;
-        const DEFAULT_RELAY = 'wss://dance.danyelica.fish';
 
-        // =====================
-        // STATE
-        // =====================
-        let accessToken = localStorage.getItem('yt_access_token');
-        let videoStream = null;
-        let streamSocket = null;
-        let mediaRecorder = null;
-        let isStreaming = false;
-        let currentBroadcastId = null;
-        let currentStreamId = null;
-        let currentStreamKey = null;
-        let currentClientId = null;
+<div id="status">Loading&hellip;</div>
+<button id="start-btn" onclick="onStartTap()">TAP TO START</button>
 
-        // Motion detection
-        let lastMotion = Date.now();
-        let isStill = false;
+<div id="debug"></div>
+<button id="debug-toggle" onclick="toggleDebug()">LOG</button>
 
-        // Wake lock to prevent screen sleep
-        let wakeLock = null;
+<script>
+// ============================================================
+// CONFIG
+// ============================================================
+const CLIENT_ID   = '129984821928-u6iqasj284ffcmkh15on4gsnbbah7pvo.apps.googleusercontent.com';
+const SCOPES      = 'https://www.googleapis.com/auth/youtube';
+const pathname    = window.location.pathname.replace(/index\.html$/, '');
+const REDIRECT_URI = window.location.origin + pathname;
+const DEFAULT_RELAY = 'wss://dance.danyelica.fish';
 
-        // =====================
-        // SCREEN COLOR
-        // =====================
-        function setLive(live) {
-            if (live) {
-                document.body.classList.add('live');
-            } else {
-                document.body.classList.remove('live');
-            }
+// ============================================================
+// STATE
+// ============================================================
+let accessToken       = null;
+let tokenExpiresAt    = 0;
+let videoStream       = null;   // MediaStream (video, possibly + audio)
+let hasAudio          = false;  // did we get mic access?
+let streamSocket      = null;   // WebSocket to relay
+let mediaRecorder     = null;
+let isStreaming       = false;
+let currentBroadcastId = null;
+let currentStreamId    = null;
+let currentStreamKey   = null;
+let currentClientId    = null;
+let wakeLock           = null;
+let debugCollapsed     = false;
+let chunksSent         = 0;
+let bytesSent          = 0;
+
+// ============================================================
+// DEBUG / LOGGING  (on-screen so you can see it on the phone)
+// ============================================================
+const logEntries = [];
+
+function log(msg, level) {
+    level = level || 'info';
+    const t = new Date().toLocaleTimeString('en-US', { hour12: false });
+    logEntries.push({ t, msg, level });
+    // Also output to real console for Safari Web Inspector if connected
+    if (level === 'error') console.error('[' + t + '] ' + msg);
+    else if (level === 'warn') console.warn('[' + t + '] ' + msg);
+    else console.log('[' + t + '] ' + msg);
+    renderLog();
+}
+
+function renderLog() {
+    var el = document.getElementById('debug');
+    if (!el || debugCollapsed) return;
+    var recent = logEntries.slice(-40);
+    el.innerHTML = recent.map(function(e) {
+        return '<div class="log-line log-' + e.level + '"><span class="log-time">' + e.t + '</span>' + esc(e.msg) + '</div>';
+    }).join('');
+    el.scrollTop = el.scrollHeight;
+}
+
+function esc(s) { // basic HTML escape
+    return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function toggleDebug() {
+    debugCollapsed = !debugCollapsed;
+    var el = document.getElementById('debug');
+    if (debugCollapsed) { el.classList.add('collapsed'); }
+    else { el.classList.remove('collapsed'); renderLog(); }
+}
+
+// ============================================================
+// UI HELPERS
+// ============================================================
+function setStatus(text) {
+    document.getElementById('status').textContent = text;
+}
+
+function showStartButton(label) {
+    var btn = document.getElementById('start-btn');
+    btn.textContent = label || 'TAP TO START';
+    btn.style.display = 'block';
+    document.getElementById('status').style.display = 'none';
+}
+
+function hideStartButton() {
+    document.getElementById('start-btn').style.display = 'none';
+    document.getElementById('status').style.display = 'block';
+}
+
+function setLive(live) {
+    if (live) document.body.classList.add('live');
+    else document.body.classList.remove('live');
+}
+
+// ============================================================
+// OAUTH  — token stored with expiry; no aggressive re-validation
+// ============================================================
+function loadToken() {
+    accessToken    = localStorage.getItem('yt_access_token');
+    tokenExpiresAt = parseInt(localStorage.getItem('yt_token_expires') || '0', 10);
+}
+
+function saveToken(token, expiresIn) {
+    accessToken    = token;
+    tokenExpiresAt = Date.now() + (expiresIn * 1000);
+    localStorage.setItem('yt_access_token', token);
+    localStorage.setItem('yt_token_expires', tokenExpiresAt.toString());
+}
+
+function clearToken() {
+    accessToken = null;
+    tokenExpiresAt = 0;
+    localStorage.removeItem('yt_access_token');
+    localStorage.removeItem('yt_token_expires');
+}
+
+function isTokenFresh() {
+    // Consider token fresh if it has > 2 minutes remaining
+    return accessToken && (Date.now() < tokenExpiresAt - 120000);
+}
+
+function checkAuthCallback() {
+    var hash = window.location.hash;
+    if (hash.includes('access_token')) {
+        var params = new URLSearchParams(hash.substring(1));
+        var token = params.get('access_token');
+        var expiresIn = parseInt(params.get('expires_in') || '3600', 10);
+        saveToken(token, expiresIn);
+        history.replaceState(null, '', window.location.pathname);
+        log('Token saved — expires in ' + Math.round(expiresIn / 60) + ' min', 'success');
+        return true;
+    }
+    return false;
+}
+
+function redirectToAuth() {
+    log('Redirecting to Google login…', 'warn');
+    setStatus('Redirecting to Google login…');
+    setTimeout(function() {
+        var authUrl = 'https://accounts.google.com/o/oauth2/v2/auth?' +
+            'client_id=' + CLIENT_ID +
+            '&redirect_uri=' + encodeURIComponent(REDIRECT_URI) +
+            '&response_type=token' +
+            '&scope=' + encodeURIComponent(SCOPES) +
+            '&include_granted_scopes=true' +
+            '&prompt=consent';
+        window.location.href = authUrl;
+    }, 1500);
+}
+
+// Light-weight token check: only call the API if we aren't sure locally
+async function ensureAuth() {
+    loadToken();
+
+    if (isTokenFresh()) {
+        var minsLeft = Math.round((tokenExpiresAt - Date.now()) / 60000);
+        log('Token looks good (' + minsLeft + ' min left)');
+        return true;
+    }
+
+    // Token missing or expired locally
+    if (!accessToken) {
+        log('No token found', 'warn');
+        return false;
+    }
+
+    // Token exists but might be expired — quick API check
+    log('Token may be expired, verifying with YouTube…');
+    try {
+        var resp = await fetch('https://www.googleapis.com/youtube/v3/channels?part=id&mine=true', {
+            headers: { 'Authorization': 'Bearer ' + accessToken }
+        });
+        if (resp.ok) {
+            // Token still works — extend our local expiry estimate by 30 min
+            tokenExpiresAt = Date.now() + 1800000;
+            localStorage.setItem('yt_token_expires', tokenExpiresAt.toString());
+            log('Token still valid (extended estimate)', 'success');
+            return true;
         }
+        log('Token rejected by YouTube (HTTP ' + resp.status + ')', 'error');
+    } catch (e) {
+        log('Network error checking token: ' + e.message, 'error');
+    }
 
-        // =====================
-        // OAUTH
-        // =====================
-        function checkAuthCallback() {
-            const hash = window.location.hash;
-            if (hash.includes('access_token')) {
-                const params = new URLSearchParams(hash.substring(1));
-                accessToken = params.get('access_token');
-                localStorage.setItem('yt_access_token', accessToken);
-                history.replaceState(null, '', window.location.pathname);
-            }
+    clearToken();
+    return false;
+}
+
+// ============================================================
+// CAMERA + AUDIO
+// ============================================================
+async function startCameraAndAudio() {
+    // --- Step 1: Video only (never affects music) ---
+    log('Requesting camera (video only)…');
+    try {
+        videoStream = await navigator.mediaDevices.getUserMedia({
+            video: { facingMode: 'user', width: { ideal: 1280 }, height: { ideal: 720 } },
+            audio: false
+        });
+        log('Camera started', 'success');
+    } catch (err) {
+        log('Camera failed: ' + err.name + ' — ' + err.message, 'error');
+        return false;
+    }
+
+    // --- Step 2: Try to warm up audio session (may help preserve bg music) ---
+    try {
+        var AudioCtx = window.AudioContext || window.webkitAudioContext;
+        if (AudioCtx) {
+            var ctx = new AudioCtx();
+            await ctx.resume();
+            // play a tiny silent buffer to activate the audio output path
+            var buf = ctx.createBuffer(1, ctx.sampleRate, ctx.sampleRate);
+            var src = ctx.createBufferSource();
+            src.buffer = buf;
+            src.connect(ctx.destination);
+            src.start();
+            log('Audio session pre-warmed');
         }
+    } catch (e) {
+        log('Audio warm-up skipped: ' + e.message, 'warn');
+    }
 
-        function redirectToAuth() {
-            const authUrl = 'https://accounts.google.com/o/oauth2/v2/auth?' +
-                'client_id=' + CLIENT_ID +
-                '&redirect_uri=' + encodeURIComponent(REDIRECT_URI) +
-                '&response_type=token' +
-                '&scope=' + encodeURIComponent(SCOPES) +
-                '&include_granted_scopes=true';
-            window.location.href = authUrl;
-        }
-
-        async function validateToken() {
-            if (!accessToken) return false;
-            try {
-                const response = await fetch('https://www.googleapis.com/youtube/v3/channels?part=snippet&mine=true', {
-                    headers: { 'Authorization': 'Bearer ' + accessToken }
-                });
-                if (response.ok) {
-                    const data = await response.json();
-                    return data.items && data.items.length > 0;
-                }
-            } catch (e) {
-                console.error('Token validation failed:', e);
-            }
-            localStorage.removeItem('yt_access_token');
-            accessToken = null;
-            return false;
-        }
-
-        // =====================
-        // CAMERA
-        // =====================
-        async function startCamera() {
-            try {
-                videoStream = await navigator.mediaDevices.getUserMedia({
-                    video: { facingMode: 'user', width: 1280, height: 720 },
-                    audio: false
-                });
-                console.log('Camera started');
-                return true;
-            } catch (err) {
-                console.error('Camera error:', err);
-                return false;
-            }
-        }
-
-        // =====================
-        // MOTION DETECTION
-        // =====================
-        let motionReceived = false;
-
-        function initMotion() {
-            // Try adding listener first - works if permission already granted
-            if (window.DeviceMotionEvent) {
-                window.addEventListener('devicemotion', handleMotion);
-                startMotionCheck();
-            }
-
-            // Start streaming after 3 second delay regardless of motion
-            // Motion is only used for STOPPING the stream (picking up phone)
-            setTimeout(() => {
-                if (!isStreaming && videoStream) {
-                    startStreaming();
-                }
-            }, 3000);
-        }
-
-        function handleMotion(e) {
-            motionReceived = true;
-            const a = e.accelerationIncludingGravity;
-            if (!a) return;
-            const movement = Math.abs(Math.sqrt(a.x*a.x + a.y*a.y + a.z*a.z) - 9.8);
-
-            if (movement > 1.5 && isStreaming) {
-                // Phone was picked up - stop streaming
-                stopStreaming();
-            }
-        }
-
-        function startMotionCheck() {
-            // This interval just keeps motion detection active
-            // Actual stop logic is in handleMotion
-        }
-
-        // =====================
-        // YOUTUBE API
-        // =====================
-        async function createYouTubeBroadcast() {
-            // Create broadcast
-            const broadcastResponse = await fetch('https://www.googleapis.com/youtube/v3/liveBroadcasts?part=snippet,status,contentDetails', {
-                method: 'POST',
-                headers: {
-                    'Authorization': 'Bearer ' + accessToken,
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    snippet: {
-                        title: 'Dance Session ' + new Date().toLocaleString(),
-                        scheduledStartTime: new Date().toISOString()
-                    },
-                    status: {
-                        privacyStatus: 'unlisted',
-                        selfDeclaredMadeForKids: false
-                    },
-                    contentDetails: {
-                        enableAutoStart: true,
-                        enableAutoStop: true
-                    }
-                })
-            });
-
-            if (!broadcastResponse.ok) {
-                const err = await broadcastResponse.json();
-                throw new Error(err.error?.message || 'Failed to create broadcast');
-            }
-
-            const broadcast = await broadcastResponse.json();
-            currentBroadcastId = broadcast.id;
-
-            // Create stream
-            const streamResponse = await fetch('https://www.googleapis.com/youtube/v3/liveStreams?part=snippet,cdn', {
-                method: 'POST',
-                headers: {
-                    'Authorization': 'Bearer ' + accessToken,
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    snippet: {
-                        title: 'Dance Stream ' + Date.now()
-                    },
-                    cdn: {
-                        frameRate: '30fps',
-                        ingestionType: 'rtmp',
-                        resolution: '720p'
-                    }
-                })
-            });
-
-            if (!streamResponse.ok) {
-                const err = await streamResponse.json();
-                throw new Error(err.error?.message || 'Failed to create stream');
-            }
-
-            const stream = await streamResponse.json();
-            currentStreamId = stream.id;
-            currentStreamKey = stream.cdn.ingestionInfo.streamName;
-
-            // Bind stream to broadcast
-            const bindResponse = await fetch(`https://www.googleapis.com/youtube/v3/liveBroadcasts/bind?id=${currentBroadcastId}&part=id&streamId=${stream.id}`, {
-                method: 'POST',
-                headers: { 'Authorization': 'Bearer ' + accessToken }
-            });
-
-            if (!bindResponse.ok) {
-                const err = await bindResponse.json();
-                throw new Error(err.error?.message || 'Failed to bind stream');
-            }
-
-            // Give YouTube a moment to set up the RTMP ingest
-            await new Promise(resolve => setTimeout(resolve, 2000));
-
-            return currentStreamKey;
-        }
-
-        // Poll stream status until it's active (receiving video)
-        async function waitForStreamActive(maxWaitMs = 30000) {
-            console.log('Waiting for stream to become active, streamId:', currentStreamId);
-            const startTime = Date.now();
-            while (Date.now() - startTime < maxWaitMs) {
-                try {
-                    const url = `https://www.googleapis.com/youtube/v3/liveStreams?part=status&id=${currentStreamId}`;
-                    console.log('Polling:', url);
-                    const response = await fetch(url, {
-                        headers: { 'Authorization': 'Bearer ' + accessToken }
-                    });
-                    const data = await response.json();
-                    console.log('Stream API response:', JSON.stringify(data));
-
-                    if (response.ok && data.items && data.items[0]) {
-                        const status = data.items[0].status.streamStatus;
-                        console.log('Stream status:', status);
-                        if (status === 'active') {
-                            return true;
-                        }
-                    } else if (!response.ok) {
-                        console.error('API error:', response.status, data);
-                    }
-                } catch (e) {
-                    console.error('Error checking stream status:', e);
-                }
-                await new Promise(resolve => setTimeout(resolve, 2000));
-            }
-            console.log('Timed out waiting for stream to become active');
-            return false;
-        }
-
-        // =====================
-        // STAGE 1: BROADCAST DIAGNOSTICS
-        // =====================
-        
-        // Get current broadcast status
-        async function getBroadcastStatus() {
-            try {
-                const response = await fetch(
-                    `https://www.googleapis.com/youtube/v3/liveBroadcasts?part=status&id=${currentBroadcastId}`,
-                    { headers: { 'Authorization': 'Bearer ' + accessToken }}
-                );
-                
-                if (response.ok) {
-                    const data = await response.json();
-                    if (data.items && data.items[0]) {
-                        return data.items[0].status;
-                    }
-                }
-            } catch (e) {
-                console.error('Error getting broadcast status:', e);
-            }
-            return null;
-        }
-
-        // Monitor broadcast status over time (observation only - no behavior changes)
-        async function monitorBroadcastStatus(durationMs = 30000) {
-            console.log('📡 Starting broadcast status monitoring...');
-            const startTime = Date.now();
-            let lastStatus = null;
-            
-            while (Date.now() - startTime < durationMs) {
-                const status = await getBroadcastStatus();
-                
-                if (status) {
-                    const lifeCycleStatus = status.lifeCycleStatus;
-                    
-                    // Only log when status changes
-                    if (lifeCycleStatus !== lastStatus) {
-                        console.group('📺 Broadcast Status Update');
-                        console.log('Lifecycle Status:', lifeCycleStatus);
-                        console.log('Privacy Status:', status.privacyStatus);
-                        console.log('Recording Status:', status.recordingStatus);
-                        console.log('Time Elapsed:', `${Math.round((Date.now() - startTime) / 1000)}s`);
-                        console.groupEnd();
-                        lastStatus = lifeCycleStatus;
-                    }
-                    
-                    if (lifeCycleStatus === 'live') {
-                        console.log('✅ Broadcast is LIVE!');
-                        return true;
-                    }
-                }
-                
-                await new Promise(resolve => setTimeout(resolve, 2000));
-            }
-            
-            console.log('⏱️ Broadcast monitoring timeout. Final status:', lastStatus);
-            return false;
-        }
-
-        // =====================
-        // STAGE 2: MANUAL BROADCAST TRANSITION
-        // =====================
-        
-        // Manually transition broadcast to live status
-        async function transitionBroadcastToLive() {
-            if (!currentBroadcastId) {
-                console.error('❌ No active broadcast to transition');
-                return false;
-            }
-            
-            console.log('🚀 STAGE 2: Manually transitioning broadcast to LIVE...');
-            console.log('Broadcast ID:', currentBroadcastId);
-            
-            try {
-                const response = await fetch(
-                    `https://www.googleapis.com/youtube/v3/liveBroadcasts/transition?broadcastStatus=live&id=${currentBroadcastId}&part=status`,
-                    {
-                        method: 'POST',
-                        headers: { 'Authorization': 'Bearer ' + accessToken }
-                    }
-                );
-                
-                if (response.ok) {
-                    const data = await response.json();
-                    console.log('✅ Transition request successful!');
-                    console.log('New status:', data.status.lifeCycleStatus);
-                    
-                    // Wait a moment for YouTube to process
-                    await new Promise(resolve => setTimeout(resolve, 2000));
-                    
-                    // Verify the transition worked
-                    const status = await getBroadcastStatus();
-                    if (status && status.lifeCycleStatus === 'live') {
-                        console.log('🎉 Broadcast is now LIVE!');
-                        console.log('Video should be playable at: https://youtube.com/watch?v=' + currentBroadcastId);
-                        return true;
-                    } else {
-                        console.warn('⚠️ Transition succeeded but status is:', status?.lifeCycleStatus);
-                        return false;
-                    }
-                } else {
-                    const error = await response.json();
-                    console.error('❌ Transition failed:', error);
-                    console.error('Error details:', JSON.stringify(error, null, 2));
-                    return false;
-                }
-            } catch (e) {
-                console.error('❌ Error during transition:', e);
-                return false;
-            }
-        }
-
-        // =====================
-        // STAGE 3: AUTOMATIC BROADCAST TRANSITION
-        // =====================
-        
-        // Wait for broadcast to go live, with automatic fallback to manual transition
-        async function waitForBroadcastLive(maxWaitMs = 15000) {
-            console.log('🎬 STAGE 3: Waiting for broadcast to go LIVE...');
-            const startTime = Date.now();
-            let didManualTransition = false;
-            
-            while (Date.now() - startTime < maxWaitMs) {
-                const status = await getBroadcastStatus();
-                
-                if (status) {
-                    const lifeCycleStatus = status.lifeCycleStatus;
-                    console.log(`📡 Broadcast status: ${lifeCycleStatus} (${Math.round((Date.now() - startTime) / 1000)}s elapsed)`);
-                    
-                    if (lifeCycleStatus === 'live') {
-                        if (didManualTransition) {
-                            console.log('✅ Manual transition successful - Broadcast is LIVE!');
-                        } else {
-                            console.log('✅ Broadcast auto-transitioned to LIVE!');
-                        }
-                        return true;
-                    }
-                    
-                    // If still "ready" after 10 seconds, manually trigger transition
-                    if (!didManualTransition && lifeCycleStatus === 'ready' && (Date.now() - startTime) > 10000) {
-                        console.log('⚠️ Broadcast still "ready" after 10s - triggering manual transition...');
-                        const transitionSuccess = await transitionBroadcastToLive();
-                        didManualTransition = true;
-                        
-                        if (transitionSuccess) {
-                            // Give it a moment then return success
-                            await new Promise(resolve => setTimeout(resolve, 2000));
-                            return true;
-                        }
-                    }
-                }
-                
-                await new Promise(resolve => setTimeout(resolve, 2000));
-            }
-            
-            console.warn('⏱️ Timeout waiting for broadcast to go live');
-            return false;
-        }
-
-        // Make diagnostic functions available in console for manual testing
-        window.getBroadcastStatus = getBroadcastStatus;
-        window.monitorBroadcastStatus = monitorBroadcastStatus;
-        window.transitionBroadcastToLive = transitionBroadcastToLive;
-        window.waitForBroadcastLive = waitForBroadcastLive;
-
-        // =====================
-        // WAKE LOCK (prevents screen sleep)
-        // =====================
-        async function requestWakeLock() {
-            if ('wakeLock' in navigator) {
-                try {
-                    wakeLock = await navigator.wakeLock.request('screen');
-                    console.log('Wake lock acquired - screen will stay on');
-
-                    wakeLock.addEventListener('release', () => {
-                        console.log('Wake lock released');
-                    });
-
-                    return wakeLock;
-                } catch (err) {
-                    console.error('Wake lock failed:', err);
-                }
-            } else {
-                console.warn('Wake Lock API not supported - screen may turn off during streaming');
-            }
-            return null;
-        }
-
-        async function releaseWakeLock() {
-            if (wakeLock) {
-                try {
-                    await wakeLock.release();
-                    wakeLock = null;
-                } catch (e) {}
-            }
-        }
-
-        // Re-acquire wake lock when page becomes visible again
-        document.addEventListener('visibilitychange', async () => {
-            if (document.visibilityState === 'visible' && isStreaming && !wakeLock) {
-                await requestWakeLock();
+    // --- Step 3: Request microphone ---
+    log('Requesting microphone…');
+    log('(Your music may pause briefly — this is normal on iOS)');
+    try {
+        var audioStream = await navigator.mediaDevices.getUserMedia({
+            audio: {
+                echoCancellation: false,
+                noiseSuppression: false,
+                autoGainControl: false
             }
         });
 
-        // =====================
-        // STREAMING
-        // =====================
-        async function startStreaming() {
-            if (isStreaming) return;
+        // Combine video + audio into one stream
+        var combined = new MediaStream();
+        videoStream.getVideoTracks().forEach(function(t) { combined.addTrack(t); });
+        audioStream.getAudioTracks().forEach(function(t) { combined.addTrack(t); });
+        videoStream = combined;
+        hasAudio = true;
 
-            // CRITICAL: Request wake lock to keep screen on during streaming
-            await requestWakeLock();
+        log('Microphone enabled!', 'success');
+        log('CHECK: Is your music still playing?', 'warn');
+        log('If music stopped → switch to Spotify/Apple Music, press play, then come back here', 'warn');
+    } catch (err) {
+        log('Mic denied or failed: ' + err.name + ' — ' + err.message, 'warn');
+        log('Continuing WITHOUT audio (video only)', 'warn');
+        hasAudio = false;
+    }
 
-            const relay = localStorage.getItem('relayUrl') || DEFAULT_RELAY;
-            currentClientId = 'yt_' + Date.now();
+    return true;
+}
 
-            try {
-                // Create YouTube broadcast
-                const streamKey = await createYouTubeBroadcast();
+// ============================================================
+// YOUTUBE API
+// ============================================================
+async function ytFetch(url, options) {
+    options = options || {};
+    options.headers = options.headers || {};
+    options.headers['Authorization'] = 'Bearer ' + accessToken;
+    var resp = await fetch(url, options);
+    if (!resp.ok) {
+        var body;
+        try { body = await resp.json(); } catch(e) { body = {}; }
+        var msg = (body.error && body.error.message) || ('HTTP ' + resp.status);
+        throw new Error(msg);
+    }
+    return resp.json();
+}
 
-                // Find supported format BEFORE registering
-                let mimeType = '';
-                ['video/webm;codecs=vp9', 'video/webm;codecs=vp8', 'video/webm', 'video/mp4'].forEach(type => {
-                    if (!mimeType && MediaRecorder.isTypeSupported(type)) mimeType = type;
-                });
-                console.log('Using MIME type:', mimeType);
+async function createYouTubeBroadcast() {
+    log('Creating YouTube broadcast…');
 
-                // Register with relay (include mime type so server knows format)
-                const http = relay.replace('wss://', 'https://').replace('ws://', 'http://');
-                await fetch(`${http}/start-stream`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ streamKey, clientId: currentClientId, mimeType })
-                });
-
-                // Connect WebSocket
-                streamSocket = new WebSocket(`${relay}?clientId=${currentClientId}`);
-
-                streamSocket.onopen = async () => {
-                    // mimeType already detected above
-                    const options = { videoBitsPerSecond: 2500000 };
-                    if (mimeType) options.mimeType = mimeType;
-
-                    mediaRecorder = new MediaRecorder(videoStream, options);
-                    mediaRecorder.ondataavailable = (e) => {
-                        if (e.data.size > 0 && streamSocket.readyState === WebSocket.OPEN) {
-                            streamSocket.send(e.data);
-                        }
-                    };
-                    mediaRecorder.start(1000);
-
-                    isStreaming = true;
-                    console.log('Streaming started, waiting for YouTube to confirm...');
-
-                    // Wait for YouTube to confirm stream is active
-                    const isActive = await waitForStreamActive(60000); // 60 second timeout
-                    if (isActive) {
-                        console.log('✅ Stream is active - now ensuring broadcast goes LIVE...');
-                        
-                        // STAGE 3: Automatically ensure broadcast transitions to "live"
-                        const isLive = await waitForBroadcastLive(15000);
-                        
-                        if (isLive) {
-                            setLive(true); // GREEN - Video is truly playable!
-                            console.log('🎉 SUCCESS! Broadcast is LIVE - video should be playable on YouTube');
-                            console.log('📺 View at: https://youtube.com/watch?v=' + currentBroadcastId);
-                        } else {
-                            console.warn('⚠️ Broadcast did not go live, but turning green anyway');
-                            setLive(true); // Turn green as fallback
-                        }
-                    } else {
-                        console.log('Stream active timeout - turning green anyway');
-                        setLive(true); // Turn green after timeout regardless
-                    }
-                };
-
-                streamSocket.onclose = () => {
-                    if (isStreaming) stopStreaming();
-                };
-
-                streamSocket.onerror = (err) => {
-                    console.error('WebSocket error:', err);
-                    setLive(false); // RED
-                };
-
-            } catch (err) {
-                console.error('Streaming error:', err);
-                setLive(false); // RED
-
-                // If auth error, redirect to login
-                if (err.message && (err.message.includes('401') || err.message.includes('auth'))) {
-                    localStorage.removeItem('yt_access_token');
-                    accessToken = null;
-                    redirectToAuth();
+    // 1. Create broadcast
+    var broadcast = await ytFetch(
+        'https://www.googleapis.com/youtube/v3/liveBroadcasts?part=snippet,status,contentDetails',
+        {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                snippet: {
+                    title: 'Dance Session ' + new Date().toLocaleString(),
+                    scheduledStartTime: new Date().toISOString()
+                },
+                status: {
+                    privacyStatus: 'unlisted',
+                    selfDeclaredMadeForKids: false
+                },
+                contentDetails: {
+                    enableAutoStart: true,
+                    enableAutoStop: true
                 }
+            })
+        }
+    );
+    currentBroadcastId = broadcast.id;
+    log('Broadcast created: ' + currentBroadcastId, 'success');
+
+    // 2. Create stream
+    log('Creating YouTube stream…');
+    var stream = await ytFetch(
+        'https://www.googleapis.com/youtube/v3/liveStreams?part=snippet,cdn',
+        {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                snippet: { title: 'Dance Stream ' + Date.now() },
+                cdn: { frameRate: '30fps', ingestionType: 'rtmp', resolution: '720p' }
+            })
+        }
+    );
+    currentStreamId  = stream.id;
+    currentStreamKey = stream.cdn.ingestionInfo.streamName;
+    log('Stream created: ' + currentStreamId, 'success');
+
+    // 3. Bind stream to broadcast
+    log('Binding stream to broadcast…');
+    await ytFetch(
+        'https://www.googleapis.com/youtube/v3/liveBroadcasts/bind?id=' + currentBroadcastId +
+        '&part=id&streamId=' + currentStreamId,
+        { method: 'POST' }
+    );
+    log('Bound!', 'success');
+
+    // 4. Brief delay for YouTube to set up RTMP ingest
+    log('Waiting 2s for YouTube RTMP endpoint…');
+    await sleep(2000);
+
+    return currentStreamKey;
+}
+
+// Poll stream status
+async function waitForStreamActive(maxWaitMs) {
+    maxWaitMs = maxWaitMs || 60000;
+    log('Waiting for YouTube to confirm stream is active…');
+    var start = Date.now();
+    while (Date.now() - start < maxWaitMs) {
+        try {
+            var data = await ytFetch(
+                'https://www.googleapis.com/youtube/v3/liveStreams?part=status&id=' + currentStreamId
+            );
+            if (data.items && data.items[0]) {
+                var s = data.items[0].status.streamStatus;
+                log('Stream status: ' + s);
+                if (s === 'active') return true;
+            }
+        } catch (e) {
+            log('Error checking stream: ' + e.message, 'warn');
+        }
+        await sleep(3000);
+    }
+    log('Timed out waiting for stream to go active', 'warn');
+    return false;
+}
+
+// Get broadcast lifecycle status
+async function getBroadcastStatus() {
+    try {
+        var data = await ytFetch(
+            'https://www.googleapis.com/youtube/v3/liveBroadcasts?part=status&id=' + currentBroadcastId
+        );
+        if (data.items && data.items[0]) return data.items[0].status;
+    } catch (e) {
+        log('Error getting broadcast status: ' + e.message, 'warn');
+    }
+    return null;
+}
+
+// Manually transition to live
+async function transitionToLive() {
+    log('Requesting broadcast transition to LIVE…');
+    try {
+        await ytFetch(
+            'https://www.googleapis.com/youtube/v3/liveBroadcasts/transition?broadcastStatus=live&id=' +
+            currentBroadcastId + '&part=status',
+            { method: 'POST' }
+        );
+        log('Transition request sent', 'success');
+    } catch (e) {
+        log('Transition failed: ' + e.message, 'error');
+    }
+}
+
+// Wait for broadcast to reach "live", with automatic manual fallback
+async function waitForBroadcastLive(maxWaitMs) {
+    maxWaitMs = maxWaitMs || 20000;
+    log('Waiting for broadcast to go LIVE…');
+    var start = Date.now();
+    var triedManual = false;
+
+    while (Date.now() - start < maxWaitMs) {
+        var status = await getBroadcastStatus();
+        if (status) {
+            var lcs = status.lifeCycleStatus;
+            log('Broadcast: ' + lcs + '  (' + Math.round((Date.now() - start) / 1000) + 's)');
+
+            if (lcs === 'live') {
+                log('Broadcast is LIVE!', 'success');
+                log('Watch: https://youtube.com/watch?v=' + currentBroadcastId, 'success');
+                return true;
+            }
+
+            // After 8s in "ready", try manual transition
+            if (!triedManual && lcs === 'ready' && (Date.now() - start) > 8000) {
+                triedManual = true;
+                await transitionToLive();
             }
         }
+        await sleep(2500);
+    }
 
-        async function stopStreaming() {
-            if (!isStreaming) return;
+    log('Broadcast did not reach LIVE within timeout', 'warn');
+    return false;
+}
 
-            setLive(false); // RED
+// Expose for manual testing in Safari console
+window.getBroadcastStatus     = getBroadcastStatus;
+window.transitionToLive       = transitionToLive;
+window.waitForBroadcastLive   = waitForBroadcastLive;
 
-            // Release wake lock - screen can sleep now
-            await releaseWakeLock();
+// ============================================================
+// STREAMING  (relay server + WebSocket + MediaRecorder)
+// ============================================================
+async function startStreaming() {
+    if (isStreaming) return;
+    log('--- Starting stream pipeline ---');
 
-            if (mediaRecorder && mediaRecorder.state !== 'inactive') {
-                mediaRecorder.stop();
+    // Wake lock
+    await requestWakeLock();
+
+    var relay = localStorage.getItem('relayUrl') || DEFAULT_RELAY;
+    currentClientId = 'yt_' + Date.now();
+
+    try {
+        // 1. YouTube broadcast
+        var streamKey = await createYouTubeBroadcast();
+
+        // 2. Detect supported MediaRecorder format
+        var mimeType = '';
+        var candidates = [
+            'video/mp4',                          // iOS Safari
+            'video/webm;codecs=vp9,opus',         // Chrome with audio
+            'video/webm;codecs=vp9',              // Chrome video-only
+            'video/webm;codecs=vp8,opus',
+            'video/webm;codecs=vp8',
+            'video/webm'
+        ];
+        for (var i = 0; i < candidates.length; i++) {
+            if (MediaRecorder.isTypeSupported(candidates[i])) {
+                mimeType = candidates[i];
+                break;
             }
-            if (streamSocket) {
-                streamSocket.close();
-            }
+        }
+        log('MediaRecorder format: ' + (mimeType || '(default)'));
 
-            const relay = localStorage.getItem('relayUrl') || DEFAULT_RELAY;
+        // 3. Register with relay
+        log('Registering with relay server…');
+        var httpRelay = relay.replace('wss://', 'https://').replace('ws://', 'http://');
+        var regResp = await fetch(httpRelay + '/start-stream', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                streamKey: streamKey,
+                clientId: currentClientId,
+                mimeType: mimeType,
+                hasAudio: hasAudio
+            })
+        });
+        if (!regResp.ok) {
+            var regErr = await regResp.text();
+            throw new Error('Relay registration failed: ' + regErr);
+        }
+        log('Registered with relay', 'success');
+
+        // 4. Connect WebSocket
+        log('Connecting WebSocket to relay…');
+        streamSocket = new WebSocket(relay + '?clientId=' + currentClientId);
+
+        streamSocket.onopen = function() {
+            log('WebSocket connected', 'success');
+
+            // 5. Start MediaRecorder
+            var options = { videoBitsPerSecond: 2500000 };
+            if (mimeType) options.mimeType = mimeType;
+
             try {
-                const http = relay.replace('wss://', 'https://').replace('ws://', 'http://');
-                await fetch(`${http}/stop-stream`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ clientId: currentClientId })
-                });
-            } catch (e) {}
-
-            // End YouTube broadcast
-            if (currentBroadcastId && accessToken) {
-                try {
-                    await fetch(`https://www.googleapis.com/youtube/v3/liveBroadcasts/transition?broadcastStatus=complete&id=${currentBroadcastId}&part=id`, {
-                        method: 'POST',
-                        headers: { 'Authorization': 'Bearer ' + accessToken }
-                    });
-                } catch (e) {}
+                mediaRecorder = new MediaRecorder(videoStream, options);
+            } catch (recErr) {
+                log('MediaRecorder creation failed: ' + recErr.message, 'error');
+                log('Trying without explicit mimeType…', 'warn');
+                mediaRecorder = new MediaRecorder(videoStream, { videoBitsPerSecond: 2500000 });
             }
 
-            isStreaming = false;
-            currentBroadcastId = null;
-            currentStreamId = null;
-            currentStreamKey = null;
-            mediaRecorder = null;
-            streamSocket = null;
+            mediaRecorder.ondataavailable = function(e) {
+                if (e.data.size > 0 && streamSocket && streamSocket.readyState === WebSocket.OPEN) {
+                    streamSocket.send(e.data);
+                    chunksSent++;
+                    bytesSent += e.data.size;
+                    if (chunksSent % 10 === 0) {
+                        log('Sent ' + chunksSent + ' chunks (' + formatBytes(bytesSent) + ')');
+                    }
+                }
+            };
 
-            console.log('Streaming stopped');
+            mediaRecorder.onerror = function(e) {
+                log('MediaRecorder error: ' + (e.error ? e.error.message : 'unknown'), 'error');
+            };
+
+            mediaRecorder.onstop = function() {
+                log('MediaRecorder stopped');
+            };
+
+            mediaRecorder.start(1000); // request data every 1s
+            log('MediaRecorder started (1s chunks)', 'success');
+
+            isStreaming = true;
+            chunksSent = 0;
+            bytesSent  = 0;
+            setStatus('Streaming…');
+
+            // 6. Wait for YouTube to confirm stream is active, then broadcast live
+            (async function() {
+                var active = await waitForStreamActive(90000); // 90s timeout
+                if (active) {
+                    var live = await waitForBroadcastLive(20000);
+                    if (live) {
+                        setLive(true);
+                        setStatus('LIVE');
+                        log('GREEN — stream is live on YouTube!', 'success');
+                    } else {
+                        // Turn green anyway — video is recording even if broadcast status is delayed
+                        setLive(true);
+                        setStatus('Streaming (broadcast pending)');
+                        log('Turned green — video is flowing, broadcast may still be transitioning', 'warn');
+                    }
+                } else {
+                    setLive(true);
+                    setStatus('Streaming (status unknown)');
+                    log('Stream active check timed out. Data IS flowing (' + chunksSent + ' chunks sent). Turning green.', 'warn');
+                }
+            })();
+        };
+
+        streamSocket.onclose = function(e) {
+            log('WebSocket closed (code=' + e.code + ' reason=' + (e.reason || 'none') + ')', 'warn');
+            if (isStreaming) stopStreaming();
+        };
+
+        streamSocket.onerror = function() {
+            log('WebSocket error — check relay server', 'error');
+            setLive(false);
+        };
+
+    } catch (err) {
+        log('Stream pipeline failed: ' + err.message, 'error');
+        setLive(false);
+        setStatus('Error — see log');
+
+        // If auth error, clear token
+        if (err.message && (err.message.includes('401') || err.message.toLowerCase().includes('auth') || err.message.toLowerCase().includes('credentials'))) {
+            log('Looks like an auth error — clearing token', 'warn');
+            clearToken();
+            showStartButton('LOGIN & RETRY');
         }
+    }
+}
 
-        // =====================
-        // INIT
-        // =====================
-        async function init() {
-            console.log('Initializing...');
+async function stopStreaming() {
+    if (!isStreaming) return;
+    log('--- Stopping stream ---');
 
-            // Check for OAuth callback
-            checkAuthCallback();
+    setLive(false);
+    setStatus('Stopped');
+    isStreaming = false;
 
-            // Validate token or redirect to auth
-            const isValid = await validateToken();
-            if (!isValid) {
-                console.log('No valid token, redirecting to auth...');
-                redirectToAuth();
-                return;
-            }
+    await releaseWakeLock();
 
-            console.log('Token valid');
+    if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+        try { mediaRecorder.stop(); } catch(e) {}
+    }
+    if (streamSocket) {
+        try { streamSocket.close(); } catch(e) {}
+    }
 
-            // Ensure relay URL is set
-            if (!localStorage.getItem('relayUrl')) {
-                localStorage.setItem('relayUrl', DEFAULT_RELAY);
-            }
+    // Tell relay to stop
+    var relay = localStorage.getItem('relayUrl') || DEFAULT_RELAY;
+    try {
+        var httpRelay = relay.replace('wss://', 'https://').replace('ws://', 'http://');
+        await fetch(httpRelay + '/stop-stream', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ clientId: currentClientId })
+        });
+        log('Relay notified of stop', 'success');
+    } catch (e) {
+        log('Could not notify relay: ' + e.message, 'warn');
+    }
 
-            // Start camera
-            const cameraOk = await startCamera();
-            if (!cameraOk) {
-                console.error('Failed to start camera');
-                return;
-            }
-
-            // Init motion detection
-            initMotion();
-
-            console.log('Ready - set phone down to start streaming');
+    // End YouTube broadcast
+    if (currentBroadcastId && accessToken) {
+        try {
+            await ytFetch(
+                'https://www.googleapis.com/youtube/v3/liveBroadcasts/transition?broadcastStatus=complete&id=' +
+                currentBroadcastId + '&part=id',
+                { method: 'POST' }
+            );
+            log('YouTube broadcast ended', 'success');
+        } catch (e) {
+            log('Could not end broadcast: ' + e.message, 'warn');
         }
+    }
 
-        // Start on load
-        window.onload = init;
-    </script>
+    log('Final stats: ' + chunksSent + ' chunks, ' + formatBytes(bytesSent));
+
+    mediaRecorder = null;
+    streamSocket  = null;
+    currentBroadcastId = null;
+    currentStreamId    = null;
+    currentStreamKey   = null;
+
+    // Allow restart
+    showStartButton('TAP TO RESTART');
+}
+
+// ============================================================
+// MOTION DETECTION  (only used to STOP the stream)
+// ============================================================
+function initMotion() {
+    if (!window.DeviceMotionEvent) {
+        log('DeviceMotion not available on this device', 'warn');
+        return;
+    }
+
+    // iOS 13+ requires permission request (needs user gesture — handled in onStartTap)
+    if (typeof DeviceMotionEvent.requestPermission === 'function') {
+        DeviceMotionEvent.requestPermission()
+            .then(function(state) {
+                if (state === 'granted') {
+                    window.addEventListener('devicemotion', handleMotion);
+                    log('Motion permission granted', 'success');
+                } else {
+                    log('Motion permission denied — picking up phone won\'t auto-stop', 'warn');
+                }
+            })
+            .catch(function(err) {
+                log('Motion permission error: ' + err.message, 'warn');
+            });
+    } else {
+        window.addEventListener('devicemotion', handleMotion);
+        log('Motion listener attached');
+    }
+}
+
+function handleMotion(e) {
+    var a = e.accelerationIncludingGravity;
+    if (!a) return;
+    var movement = Math.abs(Math.sqrt(a.x * a.x + a.y * a.y + a.z * a.z) - 9.8);
+
+    if (movement > 2.0 && isStreaming) {
+        log('Motion detected (movement=' + movement.toFixed(1) + ') — stopping stream', 'warn');
+        stopStreaming();
+    }
+}
+
+// ============================================================
+// WAKE LOCK
+// ============================================================
+async function requestWakeLock() {
+    if (!('wakeLock' in navigator)) {
+        log('Wake Lock API not supported — screen may turn off', 'warn');
+        return;
+    }
+    try {
+        wakeLock = await navigator.wakeLock.request('screen');
+        log('Wake lock acquired — screen will stay on', 'success');
+        wakeLock.addEventListener('release', function() {
+            log('Wake lock released');
+        });
+    } catch (err) {
+        log('Wake lock failed: ' + err.message, 'warn');
+    }
+}
+
+async function releaseWakeLock() {
+    if (wakeLock) {
+        try { await wakeLock.release(); } catch(e) {}
+        wakeLock = null;
+    }
+}
+
+// Re-acquire on visibility change
+document.addEventListener('visibilitychange', async function() {
+    if (document.visibilityState === 'visible' && isStreaming && !wakeLock) {
+        await requestWakeLock();
+    }
+});
+
+// ============================================================
+// UTILITIES
+// ============================================================
+function sleep(ms) { return new Promise(function(r) { setTimeout(r, ms); }); }
+
+function formatBytes(b) {
+    if (b < 1024) return b + ' B';
+    if (b < 1048576) return (b / 1024).toFixed(1) + ' KB';
+    return (b / 1048576).toFixed(1) + ' MB';
+}
+
+// ============================================================
+// MAIN "TAP TO START" HANDLER
+// ============================================================
+async function onStartTap() {
+    hideStartButton();
+    setStatus('Starting…');
+
+    // Auth check
+    var authed = await ensureAuth();
+    if (!authed) {
+        redirectToAuth();
+        return;
+    }
+
+    // Camera + Audio
+    var camOk = await startCameraAndAudio();
+    if (!camOk) {
+        setStatus('Camera failed — check permissions');
+        showStartButton('RETRY');
+        return;
+    }
+
+    // Motion detection (for auto-stop)
+    initMotion();
+
+    // Relay health check
+    var relay = localStorage.getItem('relayUrl') || DEFAULT_RELAY;
+    var httpRelay = relay.replace('wss://', 'https://').replace('ws://', 'http://');
+    log('Checking relay server health…');
+    try {
+        var healthResp = await fetch(httpRelay + '/health');
+        if (healthResp.ok) {
+            var h = await healthResp.json();
+            log('Relay OK — ' + h.activeStreams + ' active streams', 'success');
+        } else {
+            throw new Error('HTTP ' + healthResp.status);
+        }
+    } catch (e) {
+        log('Relay unreachable: ' + e.message, 'error');
+        setStatus('Cannot reach relay server');
+        showStartButton('RETRY');
+        return;
+    }
+
+    // Countdown — gives user time to resume music if it paused
+    if (hasAudio) {
+        setStatus('Audio enabled! If your music stopped, resume it now…');
+        log('5 second countdown — resume your music if it paused', 'warn');
+        for (var i = 5; i > 0; i--) {
+            setStatus('Starting in ' + i + '… (resume music if needed)');
+            await sleep(1000);
+        }
+    } else {
+        setStatus('Starting in 3…');
+        await sleep(1000);
+        setStatus('Starting in 2…');
+        await sleep(1000);
+        setStatus('Starting in 1…');
+        await sleep(1000);
+    }
+
+    // GO
+    setStatus('Connecting…');
+    startStreaming();
+}
+
+// ============================================================
+// INIT  (runs on page load)
+// ============================================================
+async function init() {
+    log('Dance Clips v2 — init');
+    log('Device: ' + navigator.userAgent.slice(0, 80));
+
+    // Ensure relay URL is set
+    if (!localStorage.getItem('relayUrl')) {
+        localStorage.setItem('relayUrl', DEFAULT_RELAY);
+    }
+
+    // Check OAuth callback (returning from Google login)
+    var justAuthed = checkAuthCallback();
+
+    // Load stored token
+    loadToken();
+
+    if (accessToken) {
+        if (isTokenFresh()) {
+            var mins = Math.round((tokenExpiresAt - Date.now()) / 60000);
+            log('Logged in (' + mins + ' min remaining)', 'success');
+        } else {
+            log('Token found but may be expired — will verify on start');
+        }
+    } else {
+        log('Not logged in');
+    }
+
+    // Show the start button
+    if (accessToken) {
+        showStartButton('TAP TO START');
+    } else {
+        showStartButton('TAP TO LOGIN');
+    }
+}
+
+window.onload = init;
+</script>
 </body>
 </html>
