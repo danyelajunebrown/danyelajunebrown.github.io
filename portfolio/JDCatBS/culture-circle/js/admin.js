@@ -250,8 +250,14 @@ async function handleFileUpload(file) {
         progressFill.style.width = '80%';
         uploadStatus.textContent = 'Transcribing with Deepgram...';
 
-        // Transcribe with Deepgram
-        const result = await transcribeAudio(interview.id, file);
+        // Transcribe via Edge Function (keeps API key server-side)
+        const filePath = `${interview.id}/${file.name}`;
+        const { data: result, error: fnError } = await db.functions.invoke('process-audio', {
+            body: { interview_id: interview.id, audio_path: filePath }
+        });
+
+        if (fnError) throw fnError;
+        if (result?.error) throw new Error(result.error);
 
         progressFill.style.width = '100%';
         uploadStatus.textContent = `Complete! ${result.segments} segments from ${result.speakers} speakers.`;
@@ -274,109 +280,6 @@ async function handleFileUpload(file) {
     }
 }
 
-// Transcribe audio using Deepgram API
-async function transcribeAudio(interviewId, audioFile) {
-    console.log('Starting transcription for interview:', interviewId);
-
-    // Update status to transcribing
-    await db
-        .from('interviews')
-        .update({ processing_status: 'transcribing' })
-        .eq('id', interviewId);
-
-    try {
-        // Send to Deepgram with speaker diarization
-        const response = await fetch(
-            'https://api.deepgram.com/v1/listen?model=nova-2&diarize=true&punctuate=true&utterances=true&smart_format=true',
-            {
-                method: 'POST',
-                headers: {
-                    'Authorization': `Token ${CONFIG.DEEPGRAM_API_KEY}`,
-                    'Content-Type': audioFile.type || 'audio/mpeg'
-                },
-                body: audioFile
-            }
-        );
-
-        if (!response.ok) {
-            const errorText = await response.text();
-            throw new Error(`Deepgram API error: ${errorText}`);
-        }
-
-        const transcript = await response.json();
-        console.log('Transcription complete:', transcript);
-
-        // Process utterances into segments
-        const utterances = transcript.results?.utterances || [];
-        const segments = utterances.map((utt, idx) => ({
-            interview_id: interviewId,
-            speaker_label: `Speaker ${utt.speaker + 1}`,
-            start_time_ms: Math.round(utt.start * 1000),
-            end_time_ms: Math.round(utt.end * 1000),
-            content: utt.transcript,
-            confidence: utt.confidence,
-            sequence_order: idx
-        }));
-
-        console.log(`Created ${segments.length} transcript segments`);
-
-        // Insert transcript segments
-        if (segments.length > 0) {
-            const { error: insertError } = await db
-                .from('transcript_segments')
-                .insert(segments);
-
-            if (insertError) throw insertError;
-        }
-
-        // Get unique speakers
-        const speakerLabels = [...new Set(segments.map(s => s.speaker_label))];
-
-        // Calculate word count
-        const wordCount = segments.reduce((acc, seg) => {
-            return acc + (seg.content?.split(/\s+/).length || 0);
-        }, 0);
-
-        // Update interview status
-        await db
-            .from('interviews')
-            .update({
-                processing_status: 'pending_review',
-                audio_deleted: true,
-                audio_deleted_at: new Date().toISOString(),
-                duration_seconds: Math.round(transcript.metadata?.duration || 0),
-                speaker_count: speakerLabels.length,
-                word_count: wordCount
-            })
-            .eq('id', interviewId);
-
-        // Delete audio from storage
-        const { error: deleteError } = await db
-            .storage
-            .from('interview-audio')
-            .remove([`${interviewId}/${audioFile.name}`]);
-
-        if (deleteError) {
-            console.warn('Failed to delete audio file:', deleteError);
-        }
-
-        return { success: true, segments: segments.length, speakers: speakerLabels.length };
-
-    } catch (error) {
-        console.error('Transcription error:', error);
-
-        // Update status to failed
-        await db
-            .from('interviews')
-            .update({
-                processing_status: 'failed',
-                error_message: error.message
-            })
-            .eq('id', interviewId);
-
-        throw error;
-    }
-}
 
 // ============================================
 // LOAD DATA
@@ -659,10 +562,8 @@ async function createNewParticipant() {
         // Log the action
         await logAudit('study_lead', currentUser.id, 'create_participant', 'participant', participant.id, { name, email });
 
-        // TODO: Send email via Edge Function
-        // await db.functions.invoke('send-login-key', { body: { participant_id: participant.id } });
-
-        console.log('Login key for', name, ':', loginKey); // For demo - remove in production
+        // Send login key email via Edge Function
+        await db.functions.invoke('send-login-key', { body: { participant_id: participant.id } });
 
         // Assign to speaker
         if (pendingNewParticipantSpeaker) {
@@ -680,7 +581,7 @@ async function createNewParticipant() {
         }
 
         closeNewParticipantModal();
-        alert(`Participant created! Login key: ${loginKey}\n\n(In production, this would be emailed automatically)`);
+        alert(`Participant created! Login key has been emailed to ${email}.`);
 
     } catch (error) {
         errorEl.textContent = error.message;
@@ -721,12 +622,12 @@ async function saveSpeakerTags() {
             assignments: speakerAssignments
         });
 
-        // TODO: Notify participants via Edge Function
-        // for (const participantId of Object.values(speakerAssignments)) {
-        //     await db.functions.invoke('send-login-key', {
-        //         body: { participant_id: participantId, type: 'new_content' }
-        //     });
-        // }
+        // Notify participants about new content
+        for (const participantId of Object.values(speakerAssignments)) {
+            await db.functions.invoke('send-login-key', {
+                body: { participant_id: participantId, interview_id: currentInterviewId }
+            });
+        }
 
         closeTaggerModal();
         loadInterviews();
@@ -789,12 +690,11 @@ async function loadParticipants() {
 
 async function resendKey(participantId) {
     try {
-        // TODO: Call Edge Function
-        // await db.functions.invoke('send-login-key', { body: { participant_id: participantId, is_resend: true } });
+        await db.functions.invoke('send-login-key', { body: { participant_id: participantId, is_resend: true } });
 
         await logAudit('study_lead', currentUser.id, 'resend_key', 'participant', participantId, {});
 
-        alert('Login key resent! (In production, email would be sent)');
+        alert('Login key resent!');
     } catch (error) {
         alert('Error: ' + error.message);
     }
