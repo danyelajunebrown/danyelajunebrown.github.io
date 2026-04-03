@@ -122,9 +122,11 @@ function buildFFmpegArgs(streamInfo) {
     const args = [];
 
     // Input: piped video (+ possibly audio) from browser
+    // Use larger probesize for fragmented MP4 — audio track metadata may come late
     args.push(
-        '-probesize', '2M',
-        '-analyzeduration', '2M',
+        '-probesize', '5M',
+        '-analyzeduration', '5M',
+        '-fflags', '+genpts+discardcorrupt',
         '-f', inputFormat,
         '-i', 'pipe:0'
     );
@@ -156,18 +158,62 @@ function buildFFmpegArgs(streamInfo) {
         '-b:a', '128k'
     );
 
-    if (!streamInfo.hasAudio) {
-        // Map video from input 0, audio from input 1 (silent)
+    if (streamInfo.hasAudio) {
+        // EXPLICIT mapping — don't let FFmpeg guess
+        // Map video track 0 and audio track 0 from the same input
+        args.push(
+            '-map', '0:v:0',
+            '-map', '0:a:0'
+        );
+    } else {
+        // Map video from input 0, silent audio from input 1
         args.push(
             '-map', '0:v:0',
             '-map', '1:a:0',
             '-shortest'
         );
     }
-    // When hasAudio=true, FFmpeg auto-maps the single input's video+audio tracks
 
     // Output
     args.push(
+        '-f', 'flv',
+        streamInfo.rtmpUrl
+    );
+
+    return args;
+}
+
+// Alternate FFmpeg args: if the muxed input has no audio track, use anullsrc fallback
+function buildFFmpegArgsFallback(streamInfo) {
+    const inputFormat = getInputFormat(streamInfo.mimeType);
+    const args = [];
+
+    args.push(
+        '-probesize', '5M',
+        '-analyzeduration', '5M',
+        '-fflags', '+genpts+discardcorrupt',
+        '-f', inputFormat,
+        '-i', 'pipe:0',
+        // Silent audio fallback
+        '-f', 'lavfi',
+        '-i', 'anullsrc=r=44100:cl=stereo'
+    );
+
+    args.push(
+        '-c:v', 'libx264',
+        '-preset', 'veryfast',
+        '-tune', 'zerolatency',
+        '-g', '60',
+        '-keyint_min', '60',
+        '-b:v', '2500k',
+        '-maxrate', '2500k',
+        '-bufsize', '5000k',
+        '-c:a', 'aac',
+        '-ar', '44100',
+        '-b:a', '128k',
+        '-map', '0:v:0',
+        '-map', '1:a:0',
+        '-shortest',
         '-f', 'flv',
         streamInfo.rtmpUrl
     );
@@ -199,38 +245,79 @@ wss.on('connection', (ws, req) => {
 
         // Initialize FFmpeg on first data
         if (!streamInfo.ffmpeg) {
-            const ffmpegArgs = buildFFmpegArgs(streamInfo);
-            console.log(`[${clientId}] Starting FFmpeg:`);
-            console.log(`  ffmpeg ${ffmpegArgs.join(' ')}`);
+            function spawnFFmpeg(useFallback) {
+                const label = useFallback ? 'FALLBACK (silent audio)' : 'PRIMARY (muxed audio)';
+                const ffmpegArgs = useFallback
+                    ? buildFFmpegArgsFallback(streamInfo)
+                    : buildFFmpegArgs(streamInfo);
 
-            const ffmpeg = spawn('ffmpeg', ffmpegArgs);
+                console.log(`[${clientId}] Starting FFmpeg [${label}]:`);
+                console.log(`  ffmpeg ${ffmpegArgs.join(' ')}`);
 
-            ffmpeg.stderr.on('data', (chunk) => {
-                const line = chunk.toString().trim();
-                if (line) {
-                    // Store recent logs for debug endpoint
-                    streamInfo.ffmpegLogs.push(line);
-                    if (streamInfo.ffmpegLogs.length > 100) {
-                        streamInfo.ffmpegLogs.shift();
+                const ffmpeg = spawn('ffmpeg', ffmpegArgs);
+
+                ffmpeg.stderr.on('data', (chunk) => {
+                    const line = chunk.toString().trim();
+                    if (line) {
+                        streamInfo.ffmpegLogs.push(line);
+                        if (streamInfo.ffmpegLogs.length > 100) {
+                            streamInfo.ffmpegLogs.shift();
+                        }
+                        // Log important lines (skip progress spam)
+                        if (!line.startsWith('frame=') && !line.startsWith('size=')) {
+                            console.log(`[${clientId}] FFmpeg: ${line}`);
+                        }
+
+                        // Detect audio mapping failure — retry with fallback
+                        if (!useFallback && streamInfo.hasAudio &&
+                            (line.includes('Stream map \'0:a:0\' matches no streams') ||
+                             line.includes('Output file does not contain any stream'))) {
+                            console.log(`[${clientId}] Audio track not found in input — retrying with silent audio fallback`);
+                            streamInfo.ffmpegLogs.push('>>> RETRYING WITH SILENT AUDIO FALLBACK');
+                            try { ffmpeg.kill('SIGTERM'); } catch(e) {}
+                            // Respawn with fallback after a short delay
+                            setTimeout(() => {
+                                streamInfo.ffmpeg = spawnFFmpeg(true);
+                                // Re-feed buffered data if we have it
+                                if (streamInfo.initialBuffer && streamInfo.initialBuffer.length > 0) {
+                                    console.log(`[${clientId}] Re-feeding ${streamInfo.initialBuffer.length} buffered chunks`);
+                                    streamInfo.initialBuffer.forEach(buf => {
+                                        if (streamInfo.ffmpeg && streamInfo.ffmpeg.stdin && streamInfo.ffmpeg.stdin.writable) {
+                                            streamInfo.ffmpeg.stdin.write(buf);
+                                        }
+                                    });
+                                }
+                            }, 200);
+                        }
                     }
-                    // Log important lines (skip progress spam)
-                    if (!line.startsWith('frame=') && !line.startsWith('size=')) {
-                        console.log(`[${clientId}] FFmpeg: ${line}`);
+                });
+
+                ffmpeg.on('close', (code) => {
+                    console.log(`[${clientId}] FFmpeg [${label}] exited with code ${code}`);
+                    if (streamInfo.ffmpeg === ffmpeg) {
+                        streamInfo.ffmpeg = null;
                     }
-                }
-            });
+                });
 
-            ffmpeg.on('close', (code) => {
-                console.log(`[${clientId}] FFmpeg exited with code ${code}`);
-                streamInfo.ffmpeg = null;
-            });
+                ffmpeg.on('error', (err) => {
+                    console.error(`[${clientId}] FFmpeg spawn error: ${err.message}`);
+                    streamInfo.ffmpegLogs.push('SPAWN ERROR: ' + err.message);
+                });
 
-            ffmpeg.on('error', (err) => {
-                console.error(`[${clientId}] FFmpeg spawn error: ${err.message}`);
-                streamInfo.ffmpegLogs.push('SPAWN ERROR: ' + err.message);
-            });
+                return ffmpeg;
+            }
 
-            streamInfo.ffmpeg = ffmpeg;
+            // Buffer initial chunks so we can re-feed on fallback retry
+            if (streamInfo.hasAudio) {
+                streamInfo.initialBuffer = [];
+            }
+
+            streamInfo.ffmpeg = spawnFFmpeg(false);
+        }
+
+        // Buffer first few chunks for potential fallback retry
+        if (streamInfo.initialBuffer && streamInfo.chunksReceived <= 10) {
+            streamInfo.initialBuffer.push(Buffer.from(data));
         }
 
         // Write data to FFmpeg stdin

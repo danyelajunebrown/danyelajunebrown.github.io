@@ -74,12 +74,47 @@
             border: none;
             border-radius: 10px 0 0 0;
         }
+
+        /* ---- audio level meter ---- */
+        #audio-meter-wrap {
+            position: fixed;
+            top: 12px; left: 12px; right: 12px;
+            height: 28px;
+            background: rgba(0,0,0,0.5);
+            border-radius: 8px;
+            overflow: hidden;
+            z-index: 90;
+            display: none;
+        }
+        #audio-meter-bar {
+            height: 100%;
+            width: 0%;
+            background: #4ade80;
+            transition: width 0.1s linear;
+            border-radius: 8px;
+        }
+        #audio-meter-label {
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 11px;
+            font-weight: 600;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+        }
     </style>
 </head>
 <body>
 
 <div id="status">Loading&hellip;</div>
 <button id="start-btn" onclick="onStartTap()">TAP TO START</button>
+
+<div id="audio-meter-wrap">
+    <div id="audio-meter-bar"></div>
+    <div id="audio-meter-label">MIC LEVEL</div>
+</div>
 
 <div id="debug"></div>
 <button id="debug-toggle" onclick="toggleDebug()">LOG</button>
@@ -271,6 +306,68 @@ async function ensureAuth() {
 // ============================================================
 // CAMERA + AUDIO
 // ============================================================
+let audioAnalyser = null;   // Web Audio analyser for level meter
+let audioCtx      = null;   // AudioContext kept alive for meter
+
+function startAudioMeter(stream) {
+    try {
+        var AudioCtxClass = window.AudioContext || window.webkitAudioContext;
+        if (!AudioCtxClass) { log('No AudioContext — meter unavailable', 'warn'); return; }
+
+        audioCtx = new AudioCtxClass();
+        audioCtx.resume();
+
+        var source = audioCtx.createMediaStreamSource(stream);
+        audioAnalyser = audioCtx.createAnalyser();
+        audioAnalyser.fftSize = 256;
+        source.connect(audioAnalyser);
+        // Do NOT connect to destination — we don't want to play mic back through speaker
+
+        document.getElementById('audio-meter-wrap').style.display = 'block';
+        pollAudioLevel();
+        log('Audio level meter started', 'success');
+    } catch (e) {
+        log('Audio meter failed: ' + e.message, 'warn');
+    }
+}
+
+function pollAudioLevel() {
+    if (!audioAnalyser) return;
+    var data = new Uint8Array(audioAnalyser.frequencyBinCount);
+    audioAnalyser.getByteFrequencyData(data);
+
+    // RMS-ish level from frequency bins
+    var sum = 0;
+    for (var i = 0; i < data.length; i++) sum += data[i];
+    var avg = sum / data.length;
+    var pct = Math.min(100, Math.round((avg / 128) * 100));
+
+    var bar = document.getElementById('audio-meter-bar');
+    var label = document.getElementById('audio-meter-label');
+    bar.style.width = pct + '%';
+    bar.style.background = pct > 5 ? '#4ade80' : '#f87171';
+    label.textContent = pct > 5 ? 'MIC LIVE — ' + pct + '%' : 'MIC SILENT';
+
+    requestAnimationFrame(pollAudioLevel);
+}
+
+function stopAudioMeter() {
+    audioAnalyser = null;
+    if (audioCtx) { try { audioCtx.close(); } catch(e) {} audioCtx = null; }
+    var wrap = document.getElementById('audio-meter-wrap');
+    if (wrap) wrap.style.display = 'none';
+}
+
+function logTrackDetails(label, tracks) {
+    tracks.forEach(function(t, i) {
+        log(label + '[' + i + ']: kind=' + t.kind +
+            ' enabled=' + t.enabled +
+            ' muted=' + t.muted +
+            ' readyState=' + t.readyState +
+            ' label="' + t.label + '"');
+    });
+}
+
 async function startCameraAndAudio() {
     // --- Step 1: Video only (never affects music) ---
     log('Requesting camera (video only)…');
@@ -280,6 +377,7 @@ async function startCameraAndAudio() {
             audio: false
         });
         log('Camera started', 'success');
+        logTrackDetails('Video track ', videoStream.getVideoTracks());
     } catch (err) {
         log('Camera failed: ' + err.name + ' — ' + err.message, 'error');
         return false;
@@ -291,13 +389,14 @@ async function startCameraAndAudio() {
         if (AudioCtx) {
             var ctx = new AudioCtx();
             await ctx.resume();
-            // play a tiny silent buffer to activate the audio output path
             var buf = ctx.createBuffer(1, ctx.sampleRate, ctx.sampleRate);
             var src = ctx.createBufferSource();
             src.buffer = buf;
             src.connect(ctx.destination);
             src.start();
-            log('Audio session pre-warmed');
+            log('Audio session pre-warmed (sampleRate=' + ctx.sampleRate + ')');
+            // Close this temporary context so it doesn't interfere
+            setTimeout(function() { ctx.close(); }, 500);
         }
     } catch (e) {
         log('Audio warm-up skipped: ' + e.message, 'warn');
@@ -315,16 +414,40 @@ async function startCameraAndAudio() {
             }
         });
 
+        // Diagnose audio tracks
+        var audioTracks = audioStream.getAudioTracks();
+        log('Got ' + audioTracks.length + ' audio track(s)', 'success');
+        logTrackDetails('Audio track ', audioTracks);
+
+        if (audioTracks.length === 0 || audioTracks[0].readyState !== 'live') {
+            log('WARNING: Audio track is not live!', 'error');
+        }
+
+        // Listen for track ending unexpectedly
+        audioTracks.forEach(function(t) {
+            t.onended = function() { log('Audio track ENDED unexpectedly!', 'error'); };
+            t.onmute = function() { log('Audio track MUTED', 'warn'); };
+            t.onunmute = function() { log('Audio track UN-MUTED', 'success'); };
+        });
+
         // Combine video + audio into one stream
         var combined = new MediaStream();
         videoStream.getVideoTracks().forEach(function(t) { combined.addTrack(t); });
-        audioStream.getAudioTracks().forEach(function(t) { combined.addTrack(t); });
+        audioTracks.forEach(function(t) { combined.addTrack(t); });
         videoStream = combined;
         hasAudio = true;
 
+        // Verify combined stream
+        log('Combined stream: ' +
+            videoStream.getVideoTracks().length + ' video, ' +
+            videoStream.getAudioTracks().length + ' audio tracks');
+
+        // Start the visual audio level meter
+        startAudioMeter(audioStream);
+
         log('Microphone enabled!', 'success');
         log('CHECK: Is your music still playing?', 'warn');
-        log('If music stopped → switch to Spotify/Apple Music, press play, then come back here', 'warn');
+        log('If music stopped → switch to your music app, press play, then come back', 'warn');
     } catch (err) {
         log('Mic denied or failed: ' + err.name + ' — ' + err.message, 'warn');
         log('Continuing WITHOUT audio (video only)', 'warn');
@@ -574,6 +697,16 @@ async function startStreaming() {
                 mediaRecorder = new MediaRecorder(videoStream, { videoBitsPerSecond: 2500000 });
             }
 
+            // --- Phase 1 diagnostics: log exactly what MediaRecorder is using ---
+            log('MediaRecorder created:');
+            log('  mimeType: ' + (mediaRecorder.mimeType || '(empty)'));
+            log('  stream video tracks: ' + videoStream.getVideoTracks().length);
+            log('  stream audio tracks: ' + videoStream.getAudioTracks().length);
+            var at = videoStream.getAudioTracks();
+            at.forEach(function(t, i) {
+                log('  audio[' + i + ']: enabled=' + t.enabled + ' muted=' + t.muted + ' state=' + t.readyState);
+            });
+
             mediaRecorder.ondataavailable = function(e) {
                 if (e.data.size > 0 && streamSocket && streamSocket.readyState === WebSocket.OPEN) {
                     streamSocket.send(e.data);
@@ -581,6 +714,10 @@ async function startStreaming() {
                     bytesSent += e.data.size;
                     if (chunksSent % 10 === 0) {
                         log('Sent ' + chunksSent + ' chunks (' + formatBytes(bytesSent) + ')');
+                    }
+                    // Log first chunk details
+                    if (chunksSent === 1) {
+                        log('First chunk: ' + formatBytes(e.data.size) + ' type=' + (e.data.type || '(none)'), 'success');
                     }
                 }
             };
@@ -656,6 +793,7 @@ async function stopStreaming() {
     setStatus('Stopped');
     isStreaming = false;
 
+    stopAudioMeter();
     await releaseWakeLock();
 
     if (mediaRecorder && mediaRecorder.state !== 'inactive') {
@@ -790,6 +928,98 @@ function formatBytes(b) {
 }
 
 // ============================================================
+// PHASE 3: Audio pre-flight test
+// Records a short clip and checks if the blob contains audio
+// ============================================================
+function testAudioCapture() {
+    return new Promise(function(resolve) {
+        try {
+            var testOptions = {};
+            // Use same mimeType detection as the real recorder
+            var candidates = [
+                'video/mp4',
+                'video/webm;codecs=vp9,opus',
+                'video/webm;codecs=vp8,opus',
+                'video/webm'
+            ];
+            for (var i = 0; i < candidates.length; i++) {
+                if (MediaRecorder.isTypeSupported(candidates[i])) {
+                    testOptions.mimeType = candidates[i];
+                    break;
+                }
+            }
+
+            log('Test recorder mimeType: ' + (testOptions.mimeType || '(default)'));
+            var testRec = new MediaRecorder(videoStream, testOptions);
+            var testChunks = [];
+
+            testRec.ondataavailable = function(e) {
+                if (e.data.size > 0) testChunks.push(e.data);
+            };
+
+            testRec.onstop = function() {
+                var blob = new Blob(testChunks, { type: testRec.mimeType });
+                log('Test clip: ' + formatBytes(blob.size) + ' type=' + blob.type);
+
+                // Heuristic: a 2s video-only clip at 720p is ~50-200KB
+                // With audio it's typically larger. But more importantly,
+                // we can check if the blob type mentions audio codecs
+                var hasAudioCodec = blob.type.includes('opus') ||
+                                    blob.type.includes('aac') ||
+                                    blob.type.includes('mp4a');
+                if (hasAudioCodec) {
+                    log('Test clip type includes audio codec — good sign', 'success');
+                }
+
+                // Also try to read the blob header for audio track indicators
+                // For MP4: look for 'mp4a' or 'esds' atoms
+                // For WebM: look for audio track entry
+                var reader = new FileReader();
+                reader.onload = function() {
+                    var arr = new Uint8Array(reader.result);
+                    var str = '';
+                    // Check first 2KB for audio markers
+                    var checkLen = Math.min(arr.length, 2048);
+                    for (var j = 0; j < checkLen; j++) {
+                        if (arr[j] >= 32 && arr[j] <= 126) str += String.fromCharCode(arr[j]);
+                    }
+
+                    var foundAudio = str.includes('mp4a') || str.includes('esds') ||
+                                     str.includes('soun') || str.includes('Audio');
+                    var foundVideo = str.includes('avc1') || str.includes('vide') ||
+                                     str.includes('VP') || str.includes('Video');
+
+                    log('Test clip binary scan: video=' + foundVideo + ' audio=' + foundAudio);
+                    if (foundAudio) {
+                        log('AUDIO TRACK DETECTED in test clip!', 'success');
+                        resolve(true);
+                    } else {
+                        log('No audio track markers found in test clip', 'warn');
+                        resolve(false);
+                    }
+                };
+                reader.onerror = function() {
+                    log('Could not read test clip', 'warn');
+                    resolve(false);
+                };
+                reader.readAsArrayBuffer(blob);
+            };
+
+            testRec.start();
+            setTimeout(function() {
+                if (testRec.state === 'recording') {
+                    testRec.stop();
+                }
+            }, 2000);
+
+        } catch (e) {
+            log('Audio test failed: ' + e.message, 'warn');
+            resolve(false);
+        }
+    });
+}
+
+// ============================================================
 // MAIN "TAP TO START" HANDLER
 // ============================================================
 async function onStartTap() {
@@ -831,6 +1061,19 @@ async function onStartTap() {
         setStatus('Cannot reach relay server');
         showStartButton('RETRY');
         return;
+    }
+
+    // --- Phase 3: Pre-flight audio test ---
+    // Record a 2-second test clip to verify MediaRecorder actually muxes audio
+    if (hasAudio) {
+        log('Running 2s audio pre-flight test…');
+        setStatus('Testing audio capture…');
+        var testPassed = await testAudioCapture();
+        if (!testPassed) {
+            log('Pre-flight: MediaRecorder may not be muxing audio', 'warn');
+            log('Audio meter should still show levels — mic is live, but container may lack audio track', 'warn');
+            log('Relay server will use silent fallback if needed', 'warn');
+        }
     }
 
     // Countdown — gives user time to resume music if it paused
