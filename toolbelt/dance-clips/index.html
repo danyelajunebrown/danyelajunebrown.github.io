@@ -104,6 +104,34 @@
             font-weight: 600;
             text-shadow: 0 1px 2px rgba(0,0,0,0.5);
         }
+        /* ---- now playing bar ---- */
+        #now-playing-bar {
+            position: fixed;
+            top: 44px; left: 12px; right: 12px;
+            padding: 6px 12px;
+            background: rgba(0,0,0,0.6);
+            border-radius: 6px;
+            color: #f0c05a;
+            font-size: 12px;
+            font-weight: 600;
+            z-index: 89;
+            display: none;
+            text-align: center;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        /* ---- YouTube music player ---- */
+        #yt-music-player-wrap {
+            position: fixed;
+            bottom: 60px; left: 8px;
+            width: 160px; height: 90px;
+            z-index: 80;
+            border-radius: 8px;
+            overflow: hidden;
+            opacity: 0.4;
+        }
     </style>
 </head>
 <body>
@@ -116,8 +144,23 @@
     <div id="audio-meter-label">MIC LEVEL</div>
 </div>
 
+<div id="now-playing-bar"><span id="np-song">No music</span></div>
+
+<div id="yt-music-player-wrap">
+    <div id="yt-music-player"></div>
+</div>
+
 <div id="debug"></div>
 <button id="debug-toggle" onclick="toggleDebug()">LOG</button>
+
+<!-- Firebase SDK -->
+<script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
+
+<!-- Queue modules (shared with CoMmUnItY playlist) -->
+<script src="queue-config.js"></script>
+<script src="resolver.js"></script>
+<script src="queue.js"></script>
 
 <script>
 // ============================================================
@@ -147,6 +190,157 @@ let wakeLock           = null;
 let debugCollapsed     = false;
 let chunksSent         = 0;
 let bytesSent          = 0;
+
+// ---- Music queue state ----
+let ytPlayer           = null;
+let ytReady            = false;
+let currentQueue       = [];
+let currentSong        = null;
+let musicPlaying       = false;
+
+// ============================================================
+// DEVOTION — Time-based volume curve
+// ============================================================
+const DEVOTION_START_HOUR = 9;
+const DEVOTION_END_HOUR   = 17;
+const DEVOTION_MAX_VOLUME = 75;
+let devotionVolume        = 0;
+let devotionInterval      = null;
+
+function getDevotionVolume() {
+    var now = new Date();
+    var currentMinutes = now.getHours() * 60 + now.getMinutes();
+    var startMinutes = DEVOTION_START_HOUR * 60;
+    var endMinutes = DEVOTION_END_HOUR * 60;
+    if (currentMinutes <= startMinutes) return 0;
+    if (currentMinutes >= endMinutes) return DEVOTION_MAX_VOLUME;
+    var elapsed = currentMinutes - startMinutes;
+    return Math.round(DEVOTION_MAX_VOLUME * (elapsed / (endMinutes - startMinutes)));
+}
+
+function updateDevotionVolume() {
+    devotionVolume = getDevotionVolume();
+    if (ytReady && ytPlayer && ytPlayer.setVolume) {
+        ytPlayer.setVolume(devotionVolume);
+    }
+    log('Devotion volume: ' + devotionVolume + '%');
+}
+
+function initDevotion() {
+    updateDevotionVolume();
+    devotionInterval = setInterval(updateDevotionVolume, 60000);
+}
+
+// ============================================================
+// MUSIC PLAYER (YouTube IFrame)
+// ============================================================
+function loadMusicPlayer() {
+    return new Promise(function(resolve) {
+        window.onYouTubeIframeAPIReady = function() {
+            ytPlayer = new YT.Player('yt-music-player', {
+                width: '160',
+                height: '90',
+                playerVars: {
+                    autoplay: 0,
+                    controls: 1,
+                    modestbranding: 1,
+                    rel: 0,
+                    playsinline: 1
+                },
+                events: {
+                    onReady: function() {
+                        ytReady = true;
+                        updateDevotionVolume();
+                        log('Music player ready', 'success');
+                        resolve();
+                    },
+                    onStateChange: onMusicStateChange,
+                    onError: onMusicError
+                }
+            });
+        };
+        var tag = document.createElement('script');
+        tag.src = 'https://www.youtube.com/iframe_api';
+        document.head.appendChild(tag);
+    });
+}
+
+function onMusicStateChange(event) {
+    if (event.data === YT.PlayerState.ENDED) {
+        log('Song ended — advancing queue');
+        advanceMusicQueue();
+    } else if (event.data === YT.PlayerState.PLAYING) {
+        musicPlaying = true;
+    } else if (event.data === YT.PlayerState.PAUSED) {
+        musicPlaying = false;
+    }
+}
+
+function onMusicError(event) {
+    log('Music player error (code ' + event.data + ') — skipping', 'warn');
+    setTimeout(advanceMusicQueue, 2000);
+}
+
+function handleQueueUpdate(queue) {
+    currentQueue = queue;
+    // If nothing is currently playing, play the next waiting song
+    var playing = queue.find(function(s) { return s.status === 'playing'; });
+    if (!playing) {
+        playNextSong();
+    }
+}
+
+function playNextSong() {
+    var next = currentQueue.find(function(s) { return s.status === 'waiting'; });
+    if (!next) {
+        currentSong = null;
+        musicPlaying = false;
+        updateNowPlaying(null);
+        return;
+    }
+
+    // Skip non-YouTube songs automatically
+    if (!next.youtubeId) {
+        log('Skipping "' + next.title + '" (no YouTube match)', 'warn');
+        updateSongStatus(next.id, 'played');
+        setTimeout(playNextSong, 500);
+        return;
+    }
+
+    currentSong = next;
+    updateSongStatus(next.id, 'playing');
+    setNowPlaying(next.id);
+    updateNowPlaying(next);
+
+    log('Playing: ' + next.title + (next.artist ? ' — ' + next.artist : ''), 'success');
+
+    if (ytReady && ytPlayer && ytPlayer.loadVideoById) {
+        ytPlayer.loadVideoById(next.youtubeId);
+        updateDevotionVolume();
+    }
+}
+
+function advanceMusicQueue() {
+    if (currentSong) {
+        updateSongStatus(currentSong.id, 'played');
+    }
+    currentSong = null;
+    setTimeout(playNextSong, 1500);
+}
+
+function updateNowPlaying(song) {
+    var bar = document.getElementById('now-playing-bar');
+    var label = document.getElementById('np-song');
+    if (song) {
+        label.textContent = song.title + (song.artist ? ' — ' + song.artist : '');
+        bar.style.display = 'block';
+    } else {
+        bar.style.display = 'none';
+    }
+}
+
+// Skip current song (callable from console for manual control)
+window.skipSong = advanceMusicQueue;
 
 // ============================================================
 // DEBUG / LOGGING  (on-screen so you can see it on the phone)
@@ -1076,22 +1270,16 @@ async function onStartTap() {
         }
     }
 
-    // Countdown — gives user time to resume music if it paused
-    if (hasAudio) {
-        setStatus('Audio enabled! If your music stopped, resume it now…');
-        log('5 second countdown — resume your music if it paused', 'warn');
-        for (var i = 5; i > 0; i--) {
-            setStatus('Starting in ' + i + '… (resume music if needed)');
-            await sleep(1000);
-        }
-    } else {
-        setStatus('Starting in 3…');
-        await sleep(1000);
-        setStatus('Starting in 2…');
-        await sleep(1000);
-        setStatus('Starting in 1…');
-        await sleep(1000);
+    // Countdown
+    if (musicPlaying) {
+        log('Music playing from THE QUEUE — mic will capture room audio', 'success');
     }
+    setStatus('Starting in 3…');
+    await sleep(1000);
+    setStatus('Starting in 2…');
+    await sleep(1000);
+    setStatus('Starting in 1…');
+    await sleep(1000);
 
     // GO
     setStatus('Connecting…');
@@ -1102,7 +1290,7 @@ async function onStartTap() {
 // INIT  (runs on page load)
 // ============================================================
 async function init() {
-    log('Dance Clips v2 — init');
+    log('Dance Clips v3 — init (with music queue)');
     log('Device: ' + navigator.userAgent.slice(0, 80));
 
     // Ensure relay URL is set
@@ -1125,6 +1313,23 @@ async function init() {
         }
     } else {
         log('Not logged in');
+    }
+
+    // Initialize music queue (Firebase + YouTube player)
+    try {
+        if (typeof initFirebase === 'function' && initFirebase()) {
+            log('Firebase connected — music queue active', 'success');
+            log('Submit songs: ' + SITE_URL + '/submit/', 'success');
+            loadMusicPlayer();
+            initDevotion();
+            resetPlayingToWaiting().then(function() {
+                onQueueChange(handleQueueUpdate);
+            });
+        } else {
+            log('Music queue unavailable — streaming only', 'warn');
+        }
+    } catch (e) {
+        log('Music queue init failed: ' + e.message, 'warn');
     }
 
     // Show the start button
