@@ -139,19 +139,11 @@ function buildFFmpegArgs(streamInfo) {
         );
     }
 
-    // Video encoding
-    args.push(
-        '-c:v', 'libx264',
-        '-preset', 'veryfast',
-        '-tune', 'zerolatency',
-        '-g', '60',
-        '-keyint_min', '60',
-        '-b:v', '2500k',
-        '-maxrate', '2500k',
-        '-bufsize', '5000k'
-    );
+    // Video: COPY — phone already encodes H.264, just remux to FLV
+    // Re-encoding was causing 0.52x speed on the droplet, leading to buffer overflow after ~10min
+    args.push('-c:v', 'copy');
 
-    // Audio encoding
+    // Audio: re-encode to AAC 44100Hz (cheap, ensures YouTube compatibility)
     args.push(
         '-c:a', 'aac',
         '-ar', '44100',
@@ -160,7 +152,7 @@ function buildFFmpegArgs(streamInfo) {
 
     if (streamInfo.hasAudio) {
         // EXPLICIT mapping — don't let FFmpeg guess
-        // Map video track 0 and audio track 0 from the same input
+        // Note: iOS MP4 puts audio as stream 0, video as stream 1
         args.push(
             '-map', '0:v:0',
             '-map', '0:a:0'
@@ -200,14 +192,7 @@ function buildFFmpegArgsFallback(streamInfo) {
     );
 
     args.push(
-        '-c:v', 'libx264',
-        '-preset', 'veryfast',
-        '-tune', 'zerolatency',
-        '-g', '60',
-        '-keyint_min', '60',
-        '-b:v', '2500k',
-        '-maxrate', '2500k',
-        '-bufsize', '5000k',
+        '-c:v', 'copy',  // passthrough — no re-encoding
         '-c:a', 'aac',
         '-ar', '44100',
         '-b:a', '128k',
@@ -302,6 +287,15 @@ wss.on('connection', (ws, req) => {
                 ffmpeg.on('error', (err) => {
                     console.error(`[${clientId}] FFmpeg spawn error: ${err.message}`);
                     streamInfo.ffmpegLogs.push('SPAWN ERROR: ' + err.message);
+                });
+
+                // Prevent EPIPE crash — if FFmpeg dies, don't let stdin write crash Node
+                ffmpeg.stdin.on('error', (err) => {
+                    if (err.code === 'EPIPE') {
+                        console.warn(`[${clientId}] FFmpeg stdin EPIPE (FFmpeg exited) — ignoring`);
+                    } else {
+                        console.error(`[${clientId}] FFmpeg stdin error: ${err.message}`);
+                    }
                 });
 
                 return ffmpeg;
