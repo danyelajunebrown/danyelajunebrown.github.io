@@ -133,68 +133,7 @@
             opacity: 0.4;
         }
 
-        /* ---- stream health bar ---- */
-        #health-bar {
-            position: fixed;
-            top: 0; left: 0; right: 0;
-            height: 4px;
-            background: transparent;
-            z-index: 95;
-        }
-        #health-bar-fill {
-            height: 100%;
-            width: 0%;
-            background: #4ade80;
-            transition: width 1s linear;
-        }
-        #health-stats {
-            position: fixed;
-            top: 6px; right: 12px;
-            font-size: 10px;
-            color: rgba(255,255,255,0.5);
-            font-family: 'SF Mono', Menlo, monospace;
-            z-index: 91;
-        }
-
-        /* ---- controls toolbar (before stream starts) ---- */
-        #controls {
-            position: fixed;
-            bottom: 160px;
-            left: 0; right: 0;
-            display: none;
-            justify-content: center;
-            gap: 12px;
-            z-index: 85;
-            flex-wrap: wrap;
-            padding: 0 20px;
-        }
-        .ctrl-btn {
-            padding: 10px 16px;
-            font-size: 12px;
-            font-weight: 600;
-            background: rgba(255,255,255,0.12);
-            border: 2px solid rgba(255,255,255,0.3);
-            border-radius: 10px;
-            color: white;
-            cursor: pointer;
-        }
-        .ctrl-btn:active { background: rgba(255,255,255,0.3); }
-
-        /* ---- volume slider ---- */
-        #vol-override {
-            position: fixed;
-            bottom: 155px; left: 12px; right: 12px;
-            display: none;
-            align-items: center;
-            gap: 8px;
-            z-index: 86;
-            padding: 8px 12px;
-            background: rgba(0,0,0,0.6);
-            border-radius: 8px;
-        }
-        #vol-override label { color: #f0c05a; font-size: 11px; font-weight: 600; white-space: nowrap; }
-        #vol-slider { flex: 1; accent-color: #f0c05a; }
-        #vol-value { color: white; font-size: 11px; width: 30px; text-align: right; }
+        /* health stats + volume override — hidden inside debug log only */
     </style>
 </head>
 <body>
@@ -211,22 +150,6 @@
 
 <div id="yt-music-player-wrap">
     <div id="yt-music-player"></div>
-</div>
-
-<div id="health-bar"><div id="health-bar-fill"></div></div>
-<div id="health-stats"></div>
-
-<div id="controls">
-    <button class="ctrl-btn" onclick="toggleCamera()">FLIP CAM</button>
-    <button class="ctrl-btn" onclick="cycleQuality()">QUALITY: 720p</button>
-    <button class="ctrl-btn" onclick="toggleVolOverride()">VOLUME</button>
-    <button class="ctrl-btn" onclick="shareSubmitLink()">SHARE QUEUE</button>
-</div>
-
-<div id="vol-override">
-    <label>VOL</label>
-    <input type="range" id="vol-slider" min="0" max="100" value="50" oninput="onVolSlider(this.value)">
-    <span id="vol-value">50%</span>
 </div>
 
 <div id="debug"></div>
@@ -470,19 +393,24 @@ function showStartButton(label) {
     btn.textContent = label || 'TAP TO START';
     btn.style.display = 'block';
     document.getElementById('status').style.display = 'none';
-    document.getElementById('controls').style.display = 'flex';
 }
 
 function hideStartButton() {
     document.getElementById('start-btn').style.display = 'none';
     document.getElementById('status').style.display = 'block';
-    document.getElementById('controls').style.display = 'none';
-    document.getElementById('vol-override').style.display = 'none';
 }
 
 function setLive(live) {
-    if (live) document.body.classList.add('live');
-    else document.body.classList.remove('live');
+    if (live) {
+        document.body.classList.add('live');
+        // Clean screen — hide everything except the color
+        document.getElementById('status').style.display = 'none';
+        document.getElementById('audio-meter-wrap').style.display = 'none';
+        document.getElementById('now-playing-bar').style.display = 'none';
+        document.getElementById('yt-music-player-wrap').style.opacity = '0';
+    } else {
+        document.body.classList.remove('live');
+    }
 }
 
 // ============================================================
