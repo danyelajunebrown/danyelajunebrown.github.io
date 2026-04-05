@@ -201,9 +201,9 @@ let musicPlaying       = false;
 // ============================================================
 // DEVOTION — Time-based volume curve
 // ============================================================
-const DEVOTION_START_HOUR = 9;
-const DEVOTION_END_HOUR   = 17;
-const DEVOTION_MAX_VOLUME = 75;
+const DEVOTION_START_HOUR = 9;       // 9:00 AM — volume begins at 0%
+const DEVOTION_END_HOUR   = 19.667;  // ~7:40 PM — same rate continues to 100%
+const DEVOTION_MAX_VOLUME = 100;
 let devotionVolume        = 0;
 let devotionInterval      = null;
 
