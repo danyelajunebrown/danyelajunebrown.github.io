@@ -810,13 +810,17 @@
           // Start cooldown (skip for admin)
           if (localStorage.getItem('songqueue_admin') !== 'true') {
             startCooldownUI(RATE_LIMIT_MS);
+          } else {
+            // Admin: re-enable input immediately
+            disableInput(false);
           }
 
-          // Hide success after 4 seconds
+          // Hide success after 2s for admin, 4s for normal
+          var successDelay = localStorage.getItem('songqueue_admin') === 'true' ? 1500 : 4000;
           setTimeout(() => {
             hideStatus("success");
             hideSongPreview();
-          }, 4000);
+          }, successDelay);
         } catch (error) {
           hideStatus("loading");
           hideSongPreview();
