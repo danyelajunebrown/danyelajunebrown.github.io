@@ -1591,7 +1591,11 @@ async function init() {
             log('Submit songs: ' + SITE_URL + '/submit/', 'success');
             loadMusicPlayer();
             initDevotion();
-            resetPlayingToWaiting().then(function() {
+            // Clean up old played songs, reset stuck playing songs, then listen
+            clearOldSongs().then(function(n) {
+                if (n > 0) log('Cleared ' + n + ' old songs from queue');
+                return resetPlayingToWaiting();
+            }).then(function() {
                 onQueueChange(handleQueueUpdate);
             });
         } else {

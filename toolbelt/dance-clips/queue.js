@@ -138,6 +138,25 @@ async function clearQueue() {
   await nowPlayingRef.remove();
 }
 
+// Clear played songs older than maxAgeMs (default 8 hours)
+async function clearOldSongs(maxAgeMs) {
+  maxAgeMs = maxAgeMs || 8 * 60 * 60 * 1000;
+  const cutoff = Date.now() - maxAgeMs;
+  const snapshot = await queueRef.orderByChild("submittedAt").endAt(cutoff).once("value");
+  const removals = {};
+  snapshot.forEach((child) => {
+    if (child.val().status === "played") {
+      removals[child.key] = null;
+    }
+  });
+  const count = Object.keys(removals).length;
+  if (count > 0) {
+    await queueRef.update(removals);
+    console.log("Cleared " + count + " old played songs");
+  }
+  return count;
+}
+
 // Reset any "playing" songs back to "waiting" (for host page reload)
 async function resetPlayingToWaiting() {
   const snapshot = await queueRef

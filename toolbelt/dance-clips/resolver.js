@@ -101,6 +101,43 @@ function cleanTitle(title, artist) {
 }
 
 // ============================================
+// YOUTUBE SEARCH FALLBACK
+// ============================================
+// When Odesli can't find a YouTube match, search YouTube by title+artist
+// Uses Invidious API (free YouTube proxy, no key needed)
+
+const INVIDIOUS_INSTANCES = [
+  "https://vid.puffyan.us",
+  "https://invidious.snopyta.org",
+  "https://inv.tux.pizza"
+];
+
+async function searchYouTube(title, artist) {
+  const query = (artist ? artist + " " : "") + title;
+
+  for (const instance of INVIDIOUS_INSTANCES) {
+    try {
+      const resp = await fetch(
+        `${instance}/api/v1/search?q=${encodeURIComponent(query)}&type=video&sort_by=relevance`,
+        { signal: AbortSignal.timeout(5000) }
+      );
+      if (!resp.ok) continue;
+      const results = await resp.json();
+      if (results && results.length > 0 && results[0].videoId) {
+        return {
+          videoId: results[0].videoId,
+          title: results[0].title || title,
+          artist: results[0].author || artist
+        };
+      }
+    } catch (e) {
+      continue; // try next instance
+    }
+  }
+  return null;
+}
+
+// ============================================
 // MAIN RESOLVER FUNCTION
 // ============================================
 // Takes any music URL, returns normalized song data with YouTube ID
@@ -184,7 +221,22 @@ async function resolveLink(url) {
       };
     }
 
-    // No YouTube match — manual play fallback
+    // No YouTube match from Odesli — try YouTube search fallback
+    const searchResult = await searchYouTube(title, artist);
+    if (searchResult && searchResult.videoId) {
+      console.log("Odesli had no YouTube match, but search found:", searchResult.videoId);
+      return {
+        title: cleanTitle(title, artist),
+        artist,
+        youtubeId: searchResult.videoId,
+        thumbnailUrl: `https://img.youtube.com/vi/${searchResult.videoId}/mqdefault.jpg`,
+        originalUrl: url,
+        platform,
+        manualPlay: false,
+      };
+    }
+
+    // Search also failed — manual play fallback
     return {
       title: cleanTitle(title, artist),
       artist,
