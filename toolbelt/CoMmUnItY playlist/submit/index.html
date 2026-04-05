@@ -727,15 +727,17 @@
         if (isAdmin) {
           document.title = 'DJ MODE — THE QUEUE';
           console.log('Admin mode: rate limit bypassed');
-          // Override rate limit functions so addToQueue() skips them
+          // Override ALL rate limit functions
           checkRateLimit = async function() { return 0; };
           updateRateLimit = async function() {};
+          startCooldownUI = function() {};
+          checkInitialCooldown = function() {};
         }
 
         // Listen to queue for display
         onQueueChange(handleQueueDisplay);
 
-        // Check if already rate-limited on page load
+        // Check if already rate-limited on page load (skipped for admin)
         checkInitialCooldown();
 
         // Allow Enter key to submit
