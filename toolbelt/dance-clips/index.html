@@ -1463,6 +1463,32 @@ async function onStartTap() {
     hideStartButton();
     setStatus('Starting…');
 
+    // Warm up YouTube player with user gesture — iOS requires this to unlock audio
+    if (ytReady && ytPlayer) {
+        try {
+            // Playing then immediately pausing "unlocks" the audio context on iOS
+            if (ytPlayer.getPlayerState && ytPlayer.getPlayerState() !== YT.PlayerState.PLAYING) {
+                // If there's a song queued, start it now (chained to tap gesture)
+                if (currentSong && currentSong.youtubeId) {
+                    log('Unlocking YouTube audio (tap gesture)…');
+                    ytPlayer.playVideo();
+                } else {
+                    // Load a silent/short clip to unlock, will be replaced by real song
+                    log('Warming up YouTube audio session…');
+                    ytPlayer.mute();
+                    ytPlayer.loadVideoById({ videoId: 'jNQXAC9IVRw', startSeconds: 0 }); // shortest YT video
+                    setTimeout(function() {
+                        ytPlayer.stopVideo();
+                        ytPlayer.unMute();
+                        updateDevotionVolume();
+                    }, 500);
+                }
+            }
+        } catch(e) {
+            log('YouTube warm-up: ' + e.message, 'warn');
+        }
+    }
+
     // Auth check
     var authed = await ensureAuth();
     if (!authed) {

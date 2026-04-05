@@ -719,6 +719,19 @@
 
         initFirebase();
 
+        // Admin mode — bypass rate limit. Access via ?admin=true
+        if (new URLSearchParams(window.location.search).get('admin') === 'true') {
+          localStorage.setItem('songqueue_admin', 'true');
+        }
+        var isAdmin = localStorage.getItem('songqueue_admin') === 'true';
+        if (isAdmin) {
+          document.title = 'DJ MODE — THE QUEUE';
+          console.log('Admin mode: rate limit bypassed');
+          // Override rate limit functions so addToQueue() skips them
+          checkRateLimit = async function() { return 0; };
+          updateRateLimit = async function() {};
+        }
+
         // Listen to queue for display
         onQueueChange(handleQueueDisplay);
 
@@ -739,6 +752,7 @@
       // --- Check initial cooldown ---
 
       async function checkInitialCooldown() {
+        if (localStorage.getItem('songqueue_admin') === 'true') return; // admin bypasses cooldown
         try {
           const remaining = await checkRateLimit();
           if (remaining > 0) {
@@ -791,8 +805,10 @@
           // Clear input
           input.value = "";
 
-          // Start cooldown
-          startCooldownUI(RATE_LIMIT_MS);
+          // Start cooldown (skip for admin)
+          if (localStorage.getItem('songqueue_admin') !== 'true') {
+            startCooldownUI(RATE_LIMIT_MS);
+          }
 
           // Hide success after 4 seconds
           setTimeout(() => {
