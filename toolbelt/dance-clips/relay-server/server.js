@@ -14,6 +14,27 @@ const wss = new WebSocket.Server({ server });
 // Store active streams
 const activeStreams = new Map();
 
+// Store client-side logs (keyed by clientId)
+const clientLogs = new Map();
+
+// ============================================================
+// STALE STREAM CLEANUP — remove streams with no data for 60s
+// ============================================================
+setInterval(() => {
+    const now = Date.now();
+    for (const [id, info] of activeStreams.entries()) {
+        const lastData = info.lastDataAt || new Date(info.startedAt).getTime();
+        const staleSec = Math.round((now - lastData) / 1000);
+        if (staleSec > 60) {
+            console.log(`[${id}] Stale stream (${staleSec}s no data) — cleaning up`);
+            if (info.ffmpeg) {
+                try { info.ffmpeg.stdin.end(); info.ffmpeg.kill('SIGTERM'); } catch(e) {}
+            }
+            activeStreams.delete(id);
+        }
+    }
+}, 15000); // check every 15s
+
 // Health check endpoint
 app.get('/health', (req, res) => {
     res.json({
@@ -27,7 +48,8 @@ app.get('/health', (req, res) => {
             bytesReceived: info.bytesReceived,
             chunksReceived: info.chunksReceived,
             ffmpegRunning: !!(info.ffmpeg && !info.ffmpeg.killed),
-            startedAt: info.startedAt
+            startedAt: info.startedAt,
+            lastDataSecsAgo: Math.round((Date.now() - (info.lastDataAt || 0)) / 1000)
         }))
     });
 });
@@ -48,6 +70,45 @@ app.get('/debug/:clientId', (req, res) => {
         ffmpegLogs: info.ffmpegLogs.slice(-20), // last 20 log lines
         startedAt: info.startedAt
     });
+});
+
+// ============================================================
+// CLIENT-SIDE LOG REPORTING
+// ============================================================
+// Client POSTs its state periodically. We store the latest snapshot
+// so it can be read remotely via GET.
+
+app.post('/client-log', (req, res) => {
+    const { clientId, logs, state } = req.body;
+    if (!clientId) return res.status(400).json({ error: 'clientId required' });
+
+    clientLogs.set(clientId, {
+        logs: (logs || []).slice(-50), // keep last 50 entries
+        state: state || {},
+        receivedAt: new Date().toISOString()
+    });
+
+    // Expire old client logs after 30 minutes
+    setTimeout(() => { clientLogs.delete(clientId); }, 30 * 60 * 1000);
+
+    res.json({ ok: true });
+});
+
+app.get('/client-log/:clientId', (req, res) => {
+    const entry = clientLogs.get(req.params.clientId);
+    if (!entry) {
+        return res.status(404).json({ error: 'No client logs for this ID' });
+    }
+    res.json(entry);
+});
+
+// List all client log IDs
+app.get('/client-logs', (req, res) => {
+    const ids = Array.from(clientLogs.keys()).map(id => ({
+        clientId: id,
+        receivedAt: clientLogs.get(id).receivedAt
+    }));
+    res.json({ clients: ids });
 });
 
 // Determine FFmpeg input format from browser mimeType
@@ -85,7 +146,8 @@ app.post('/start-stream', (req, res) => {
         bytesReceived: 0,
         chunksReceived: 0,
         ffmpegLogs: [],
-        startedAt: new Date().toISOString()
+        startedAt: new Date().toISOString(),
+        lastDataAt: Date.now()
     };
     activeStreams.set(clientId, streamInfo);
 
@@ -223,6 +285,7 @@ wss.on('connection', (ws, req) => {
         // Track stats
         streamInfo.bytesReceived += data.length;
         streamInfo.chunksReceived++;
+        streamInfo.lastDataAt = Date.now();
 
         if (streamInfo.chunksReceived % 30 === 0) {
             console.log(`[${clientId}] ${streamInfo.chunksReceived} chunks, ${formatBytes(streamInfo.bytesReceived)} total`);

@@ -132,6 +132,69 @@
             overflow: hidden;
             opacity: 0.4;
         }
+
+        /* ---- stream health bar ---- */
+        #health-bar {
+            position: fixed;
+            top: 0; left: 0; right: 0;
+            height: 4px;
+            background: transparent;
+            z-index: 95;
+        }
+        #health-bar-fill {
+            height: 100%;
+            width: 0%;
+            background: #4ade80;
+            transition: width 1s linear;
+        }
+        #health-stats {
+            position: fixed;
+            top: 6px; right: 12px;
+            font-size: 10px;
+            color: rgba(255,255,255,0.5);
+            font-family: 'SF Mono', Menlo, monospace;
+            z-index: 91;
+        }
+
+        /* ---- controls toolbar (before stream starts) ---- */
+        #controls {
+            position: fixed;
+            bottom: 160px;
+            left: 0; right: 0;
+            display: none;
+            justify-content: center;
+            gap: 12px;
+            z-index: 85;
+            flex-wrap: wrap;
+            padding: 0 20px;
+        }
+        .ctrl-btn {
+            padding: 10px 16px;
+            font-size: 12px;
+            font-weight: 600;
+            background: rgba(255,255,255,0.12);
+            border: 2px solid rgba(255,255,255,0.3);
+            border-radius: 10px;
+            color: white;
+            cursor: pointer;
+        }
+        .ctrl-btn:active { background: rgba(255,255,255,0.3); }
+
+        /* ---- volume slider ---- */
+        #vol-override {
+            position: fixed;
+            bottom: 155px; left: 12px; right: 12px;
+            display: none;
+            align-items: center;
+            gap: 8px;
+            z-index: 86;
+            padding: 8px 12px;
+            background: rgba(0,0,0,0.6);
+            border-radius: 8px;
+        }
+        #vol-override label { color: #f0c05a; font-size: 11px; font-weight: 600; white-space: nowrap; }
+        #vol-slider { flex: 1; accent-color: #f0c05a; }
+        #vol-value { color: white; font-size: 11px; width: 30px; text-align: right; }
     </style>
 </head>
 <body>
@@ -148,6 +211,22 @@
 
 <div id="yt-music-player-wrap">
     <div id="yt-music-player"></div>
+</div>
+
+<div id="health-bar"><div id="health-bar-fill"></div></div>
+<div id="health-stats"></div>
+
+<div id="controls">
+    <button class="ctrl-btn" onclick="toggleCamera()">FLIP CAM</button>
+    <button class="ctrl-btn" onclick="cycleQuality()">QUALITY: 720p</button>
+    <button class="ctrl-btn" onclick="toggleVolOverride()">VOLUME</button>
+    <button class="ctrl-btn" onclick="shareSubmitLink()">SHARE QUEUE</button>
+</div>
+
+<div id="vol-override">
+    <label>VOL</label>
+    <input type="range" id="vol-slider" min="0" max="100" value="50" oninput="onVolSlider(this.value)">
+    <span id="vol-value">50%</span>
 </div>
 
 <div id="debug"></div>
@@ -391,11 +470,14 @@ function showStartButton(label) {
     btn.textContent = label || 'TAP TO START';
     btn.style.display = 'block';
     document.getElementById('status').style.display = 'none';
+    document.getElementById('controls').style.display = 'flex';
 }
 
 function hideStartButton() {
     document.getElementById('start-btn').style.display = 'none';
     document.getElementById('status').style.display = 'block';
+    document.getElementById('controls').style.display = 'none';
+    document.getElementById('vol-override').style.display = 'none';
 }
 
 function setLive(live) {
@@ -567,7 +649,7 @@ async function startCameraAndAudio() {
     log('Requesting camera (video only)…');
     try {
         videoStream = await navigator.mediaDevices.getUserMedia({
-            video: { facingMode: 'user', width: { ideal: 1280 }, height: { ideal: 720 } },
+            video: { facingMode: currentFacing, width: { ideal: videoWidth }, height: { ideal: videoHeight } },
             audio: false
         });
         log('Camera started', 'success');
@@ -955,15 +1037,16 @@ async function startStreaming() {
             })();
         };
 
-        streamSocket.onclose = function(e) {
-            log('WebSocket closed (code=' + e.code + ' reason=' + (e.reason || 'none') + ')', 'warn');
-            if (isStreaming) stopStreaming();
-        };
+        streamSocket.onclose = handleSocketClose;
 
         streamSocket.onerror = function() {
             log('WebSocket error — check relay server', 'error');
             setLive(false);
         };
+
+        // Start monitoring
+        startHealthMonitor();
+        startClientLogging();
 
     } catch (err) {
         log('Stream pipeline failed: ' + err.message, 'error');
@@ -988,6 +1071,9 @@ async function stopStreaming() {
     isStreaming = false;
 
     stopAudioMeter();
+    stopHealthMonitor();
+    stopClientLogging();
+    reconnectAttempts = 0;
     await releaseWakeLock();
 
     if (mediaRecorder && mediaRecorder.state !== 'inactive') {
@@ -1119,6 +1205,235 @@ function formatBytes(b) {
     if (b < 1024) return b + ' B';
     if (b < 1048576) return (b / 1024).toFixed(1) + ' KB';
     return (b / 1048576).toFixed(1) + ' MB';
+}
+
+// ============================================================
+// REMOTE CLIENT LOGGING — POSTs state to relay every 30s
+// ============================================================
+let clientLogInterval = null;
+
+function startClientLogging() {
+    if (clientLogInterval) return;
+    clientLogInterval = setInterval(sendClientLog, 30000);
+    sendClientLog(); // send immediately
+}
+
+function sendClientLog() {
+    if (!currentClientId) return;
+    var relay = localStorage.getItem('relayUrl') || DEFAULT_RELAY;
+    var httpRelay = relay.replace('wss://', 'https://').replace('ws://', 'http://');
+    var state = {
+        isStreaming: isStreaming,
+        hasAudio: hasAudio,
+        musicPlaying: musicPlaying,
+        currentSong: currentSong ? currentSong.title : null,
+        chunksSent: chunksSent,
+        bytesSent: bytesSent,
+        audioTracks: videoStream ? videoStream.getAudioTracks().map(function(t) {
+            return { enabled: t.enabled, muted: t.muted, readyState: t.readyState };
+        }) : [],
+        devotionVolume: devotionVolume,
+        socketState: streamSocket ? streamSocket.readyState : -1,
+        recorderState: mediaRecorder ? mediaRecorder.state : 'none'
+    };
+    try {
+        fetch(httpRelay + '/client-log', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                clientId: currentClientId,
+                logs: logEntries.slice(-30),
+                state: state
+            })
+        }).catch(function() {}); // fire and forget
+    } catch(e) {}
+}
+
+function stopClientLogging() {
+    if (clientLogInterval) { clearInterval(clientLogInterval); clientLogInterval = null; }
+}
+
+// ============================================================
+// WEBSOCKET AUTO-RECONNECT
+// ============================================================
+let reconnectAttempts = 0;
+const MAX_RECONNECT = 5;
+
+function handleSocketClose(e) {
+    log('WebSocket closed (code=' + e.code + ' reason=' + (e.reason || 'none') + ')', 'warn');
+
+    // If we were streaming and it wasn't a clean close, try to reconnect
+    if (isStreaming && e.code !== 1000 && reconnectAttempts < MAX_RECONNECT) {
+        reconnectAttempts++;
+        var delay = Math.min(2000 * reconnectAttempts, 10000);
+        log('Reconnecting in ' + (delay/1000) + 's (attempt ' + reconnectAttempts + '/' + MAX_RECONNECT + ')…', 'warn');
+
+        setTimeout(function() {
+            if (!isStreaming) return;
+            var relay = localStorage.getItem('relayUrl') || DEFAULT_RELAY;
+            log('Reconnecting WebSocket…');
+            streamSocket = new WebSocket(relay + '?clientId=' + currentClientId);
+            streamSocket.onopen = function() {
+                log('WebSocket reconnected!', 'success');
+                reconnectAttempts = 0;
+            };
+            streamSocket.onclose = handleSocketClose;
+            streamSocket.onerror = function() {
+                log('WebSocket reconnect error', 'error');
+            };
+        }, delay);
+    } else if (isStreaming) {
+        log('Max reconnect attempts reached — stopping stream', 'error');
+        stopStreaming();
+    }
+}
+
+// ============================================================
+// STREAM HEALTH INDICATOR
+// ============================================================
+let healthInterval = null;
+let lastChunkCount = 0;
+let streamStartTime = 0;
+
+function startHealthMonitor() {
+    streamStartTime = Date.now();
+    lastChunkCount = 0;
+    healthInterval = setInterval(updateHealth, 2000);
+}
+
+function stopHealthMonitor() {
+    if (healthInterval) { clearInterval(healthInterval); healthInterval = null; }
+    document.getElementById('health-stats').textContent = '';
+    document.getElementById('health-bar-fill').style.width = '0%';
+}
+
+function updateHealth() {
+    var chunksPerSec = ((chunksSent - lastChunkCount) / 2).toFixed(1);
+    lastChunkCount = chunksSent;
+    var elapsed = Math.round((Date.now() - streamStartTime) / 1000);
+    var mins = Math.floor(elapsed / 60);
+    var secs = elapsed % 60;
+    var timeStr = mins + ':' + (secs < 10 ? '0' : '') + secs;
+
+    var statsEl = document.getElementById('health-stats');
+    statsEl.textContent = timeStr + ' | ' + formatBytes(bytesSent) + ' | ' + chunksPerSec + ' c/s';
+
+    // Health bar — green if data flowing, red if stalled
+    var bar = document.getElementById('health-bar-fill');
+    if (parseFloat(chunksPerSec) > 0) {
+        bar.style.width = '100%';
+        bar.style.background = '#4ade80';
+    } else {
+        bar.style.width = '100%';
+        bar.style.background = '#f87171';
+    }
+}
+
+// ============================================================
+// CAMERA TOGGLE (front/back)
+// ============================================================
+let currentFacing = 'user'; // 'user' = front, 'environment' = back
+
+async function toggleCamera() {
+    currentFacing = (currentFacing === 'user') ? 'environment' : 'user';
+    log('Switching to ' + (currentFacing === 'user' ? 'front' : 'back') + ' camera…');
+
+    try {
+        var newVideoStream = await navigator.mediaDevices.getUserMedia({
+            video: { facingMode: currentFacing, width: { ideal: videoWidth }, height: { ideal: videoHeight } },
+            audio: false
+        });
+
+        // Replace video track in the combined stream
+        var oldTrack = videoStream.getVideoTracks()[0];
+        var newTrack = newVideoStream.getVideoTracks()[0];
+
+        if (mediaRecorder && mediaRecorder.state === 'recording') {
+            // Can't swap tracks mid-recording on iOS — log a warning
+            log('Camera will switch on next stream start (cannot swap mid-recording on iOS)', 'warn');
+            newTrack.stop();
+        } else {
+            if (oldTrack) oldTrack.stop();
+            videoStream.removeTrack(oldTrack);
+            videoStream.addTrack(newTrack);
+            log('Camera switched to ' + (currentFacing === 'user' ? 'front' : 'back'), 'success');
+        }
+    } catch (err) {
+        log('Camera switch failed: ' + err.message, 'error');
+        // revert
+        currentFacing = (currentFacing === 'user') ? 'environment' : 'user';
+    }
+}
+
+// ============================================================
+// VIDEO QUALITY SELECTOR
+// ============================================================
+let videoWidth = 1280;
+let videoHeight = 720;
+let qualityIndex = 1; // 0=480p, 1=720p, 2=1080p
+var QUALITIES = [
+    { label: '480p', w: 854, h: 480 },
+    { label: '720p', w: 1280, h: 720 },
+    { label: '1080p', w: 1920, h: 1080 }
+];
+
+function cycleQuality() {
+    qualityIndex = (qualityIndex + 1) % QUALITIES.length;
+    var q = QUALITIES[qualityIndex];
+    videoWidth = q.w;
+    videoHeight = q.h;
+    var btn = document.querySelector('#controls .ctrl-btn:nth-child(2)');
+    if (btn) btn.textContent = 'QUALITY: ' + q.label;
+    log('Quality set to ' + q.label + ' (applies on next stream start)');
+}
+
+// ============================================================
+// VOLUME OVERRIDE
+// ============================================================
+let volOverrideActive = false;
+
+function toggleVolOverride() {
+    var el = document.getElementById('vol-override');
+    volOverrideActive = !volOverrideActive;
+    el.style.display = volOverrideActive ? 'flex' : 'none';
+    if (volOverrideActive) {
+        var slider = document.getElementById('vol-slider');
+        slider.value = devotionVolume || 50;
+        document.getElementById('vol-value').textContent = slider.value + '%';
+    }
+}
+
+function onVolSlider(val) {
+    document.getElementById('vol-value').textContent = val + '%';
+    if (ytReady && ytPlayer && ytPlayer.setVolume) {
+        ytPlayer.setVolume(parseInt(val));
+    }
+    // Pause the Devotion auto-update while override is active
+    if (devotionInterval) {
+        clearInterval(devotionInterval);
+        devotionInterval = null;
+        log('Volume override: ' + val + '% (Devotion paused)');
+    }
+}
+
+// ============================================================
+// SHARE SUBMIT LINK
+// ============================================================
+function shareSubmitLink() {
+    var url = (typeof SITE_URL !== 'undefined' ? SITE_URL : 'https://danyelajunebrown.github.io/toolbelt/CoMmUnItY%20playlist') + '/submit/';
+
+    if (navigator.share) {
+        navigator.share({ title: 'Add songs to the queue!', url: url }).catch(function() {});
+    } else if (navigator.clipboard) {
+        navigator.clipboard.writeText(url).then(function() {
+            log('Submit link copied to clipboard!', 'success');
+            setStatus('Link copied!');
+            setTimeout(function() { setStatus(''); }, 2000);
+        });
+    } else {
+        log('Submit URL: ' + url, 'success');
+        prompt('Copy this link:', url);
+    }
 }
 
 // ============================================================
