@@ -143,7 +143,7 @@
 
 <div id="audio-meter-wrap">
     <div id="audio-meter-bar"></div>
-    <div id="audio-meter-label">MIC LEVEL</div>
+    <div id="audio-meter-label">AUDIO LEVEL</div>
 </div>
 
 <div id="now-playing-bar"><span id="np-song">No music</span></div>
@@ -154,6 +154,7 @@
 
 <div id="debug"></div>
 <button id="debug-toggle" onclick="toggleDebug()">LOG</button>
+<button id="mic-toggle-btn" onclick="toggleMic()" style="position:fixed;bottom:0;left:0;padding:6px 14px;background:rgba(0,0,0,0.6);color:#aaa;font-size:11px;z-index:101;border:none;border-radius:0 10px 0 0;display:none;">MIC OFF</button>
 
 <!-- Firebase SDK -->
 <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
@@ -181,6 +182,8 @@ let accessToken       = null;
 let tokenExpiresAt    = 0;
 let videoStream       = null;   // MediaStream (video, possibly + audio)
 let hasAudio          = false;  // did we get mic access?
+let micEnabled        = false;  // true only if real mic is active
+let syntheticAudioCtx = null;   // AudioContext for synthetic track (kept alive)
 let streamSocket      = null;   // WebSocket to relay
 let mediaRecorder     = null;
 let isStreaming       = false;
@@ -408,8 +411,13 @@ function setLive(live) {
         document.getElementById('audio-meter-wrap').style.display = 'none';
         document.getElementById('now-playing-bar').style.display = 'none';
         document.getElementById('yt-music-player-wrap').style.opacity = '0';
+        // Show mic toggle (small, bottom-left corner)
+        var micBtn = document.getElementById('mic-toggle-btn');
+        if (micBtn) micBtn.style.display = 'block';
     } else {
         document.body.classList.remove('live');
+        var micBtn = document.getElementById('mic-toggle-btn');
+        if (micBtn) micBtn.style.display = 'none';
     }
 }
 
@@ -572,6 +580,30 @@ function logTrackDetails(label, tracks) {
     });
 }
 
+// Create a synthetic silent audio track via Web Audio API.
+// This gives MediaRecorder a valid audio track WITHOUT calling getUserMedia,
+// so Bluetooth stays on A2DP (music playback mode) instead of switching to HFP.
+function createSyntheticAudioTrack() {
+    var AudioCtx = window.AudioContext || window.webkitAudioContext;
+    if (!AudioCtx) return null;
+
+    syntheticAudioCtx = new AudioCtx();
+    // Create a silent oscillator (gain = 0)
+    var osc = syntheticAudioCtx.createOscillator();
+    var gain = syntheticAudioCtx.createGain();
+    gain.gain.value = 0; // completely silent
+    osc.connect(gain);
+    var dest = syntheticAudioCtx.createMediaStreamDestination();
+    gain.connect(dest);
+    osc.start();
+
+    var track = dest.stream.getAudioTracks()[0];
+    log('Synthetic audio track created: enabled=' + track.enabled +
+        ' state=' + track.readyState +
+        ' sampleRate=' + syntheticAudioCtx.sampleRate, 'success');
+    return dest.stream;
+}
+
 async function startCameraAndAudio() {
     // --- Step 1: Video only (never affects music) ---
     log('Requesting camera (video only)…');
@@ -587,28 +619,78 @@ async function startCameraAndAudio() {
         return false;
     }
 
-    // --- Step 2: Try to warm up audio session (may help preserve bg music) ---
+    // --- Step 2: Synthetic silent audio (preserves Bluetooth A2DP) ---
+    // Instead of getUserMedia({ audio }), which forces iOS to switch Bluetooth
+    // from A2DP (music) to HFP (phone-call mode), we create a silent audio track
+    // via Web Audio API. The relay server handles audio encoding regardless.
+    log('Creating synthetic audio track (no mic — Bluetooth preserved)…');
     try {
-        var AudioCtx = window.AudioContext || window.webkitAudioContext;
-        if (AudioCtx) {
-            var ctx = new AudioCtx();
-            await ctx.resume();
-            var buf = ctx.createBuffer(1, ctx.sampleRate, ctx.sampleRate);
-            var src = ctx.createBufferSource();
-            src.buffer = buf;
-            src.connect(ctx.destination);
-            src.start();
-            log('Audio session pre-warmed (sampleRate=' + ctx.sampleRate + ')');
-            // Close this temporary context so it doesn't interfere
-            setTimeout(function() { ctx.close(); }, 500);
+        var syntheticStream = createSyntheticAudioTrack();
+        if (syntheticStream) {
+            var audioTracks = syntheticStream.getAudioTracks();
+
+            // Listen for track ending unexpectedly
+            audioTracks.forEach(function(t) {
+                t.onended = function() {
+                    log('Synthetic audio track ENDED — attempting recovery…', 'error');
+                    recoverAudioTrack();
+                };
+            });
+
+            // Combine video + synthetic audio into one stream
+            var combined = new MediaStream();
+            videoStream.getVideoTracks().forEach(function(t) { combined.addTrack(t); });
+            audioTracks.forEach(function(t) { combined.addTrack(t); });
+            videoStream = combined;
+            hasAudio = true;
+            micEnabled = false;
+
+            log('Combined stream: ' +
+                videoStream.getVideoTracks().length + ' video, ' +
+                videoStream.getAudioTracks().length + ' audio tracks');
+            log('Bluetooth audio preserved — no mic permission requested', 'success');
+        } else {
+            log('Synthetic audio unavailable — stream will use relay silent fallback', 'warn');
+            hasAudio = false;
         }
     } catch (e) {
-        log('Audio warm-up skipped: ' + e.message, 'warn');
+        log('Synthetic audio failed: ' + e.message, 'warn');
+        hasAudio = false;
     }
 
-    // --- Step 3: Request microphone ---
-    log('Requesting microphone…');
-    log('(Your music may pause briefly — this is normal on iOS)');
+    return true;
+}
+
+// Recover audio track if it dies mid-stream
+function recoverAudioTrack() {
+    if (!videoStream || !isStreaming) return;
+    try {
+        var newSynthetic = createSyntheticAudioTrack();
+        if (!newSynthetic) return;
+
+        // Remove dead audio tracks
+        videoStream.getAudioTracks().forEach(function(t) {
+            videoStream.removeTrack(t);
+            try { t.stop(); } catch(e) {}
+        });
+
+        // Add fresh synthetic track
+        newSynthetic.getAudioTracks().forEach(function(t) {
+            videoStream.addTrack(t);
+            t.onended = function() {
+                log('Recovered audio track ENDED again', 'error');
+                recoverAudioTrack();
+            };
+        });
+        log('Audio track recovered with new synthetic track', 'success');
+    } catch (e) {
+        log('Audio recovery failed: ' + e.message, 'error');
+    }
+}
+
+// Opt-in: enable real microphone (will disrupt Bluetooth)
+async function enableMicrophone() {
+    log('Enabling microphone (may disrupt Bluetooth)…', 'warn');
     try {
         var audioStream = await navigator.mediaDevices.getUserMedia({
             audio: {
@@ -618,47 +700,60 @@ async function startCameraAndAudio() {
             }
         });
 
-        // Diagnose audio tracks
         var audioTracks = audioStream.getAudioTracks();
-        log('Got ' + audioTracks.length + ' audio track(s)', 'success');
-        logTrackDetails('Audio track ', audioTracks);
+        log('Got ' + audioTracks.length + ' mic track(s)', 'success');
+        logTrackDetails('Mic track ', audioTracks);
 
         if (audioTracks.length === 0 || audioTracks[0].readyState !== 'live') {
-            log('WARNING: Audio track is not live!', 'error');
+            log('WARNING: Mic track is not live!', 'error');
+            return;
         }
 
-        // Listen for track ending unexpectedly
+        // Replace synthetic track with real mic
+        videoStream.getAudioTracks().forEach(function(t) {
+            videoStream.removeTrack(t);
+            try { t.stop(); } catch(e) {}
+        });
+        if (syntheticAudioCtx) {
+            try { syntheticAudioCtx.close(); } catch(e) {}
+            syntheticAudioCtx = null;
+        }
+
         audioTracks.forEach(function(t) {
-            t.onended = function() { log('Audio track ENDED unexpectedly!', 'error'); };
-            t.onmute = function() { log('Audio track MUTED', 'warn'); };
-            t.onunmute = function() { log('Audio track UN-MUTED', 'success'); };
+            videoStream.addTrack(t);
+            t.onended = function() { log('Mic track ENDED!', 'error'); };
+            t.onmute = function() { log('Mic track MUTED', 'warn'); };
+            t.onunmute = function() { log('Mic track UN-MUTED', 'success'); };
         });
 
-        // Combine video + audio into one stream
-        var combined = new MediaStream();
-        videoStream.getVideoTracks().forEach(function(t) { combined.addTrack(t); });
-        audioTracks.forEach(function(t) { combined.addTrack(t); });
-        videoStream = combined;
+        micEnabled = true;
         hasAudio = true;
-
-        // Verify combined stream
-        log('Combined stream: ' +
-            videoStream.getVideoTracks().length + ' video, ' +
-            videoStream.getAudioTracks().length + ' audio tracks');
 
         // Start the visual audio level meter
         startAudioMeter(audioStream);
 
-        log('Microphone enabled!', 'success');
-        log('CHECK: Is your music still playing?', 'warn');
-        log('If music stopped → switch to your music app, press play, then come back', 'warn');
-    } catch (err) {
-        log('Mic denied or failed: ' + err.name + ' — ' + err.message, 'warn');
-        log('Continuing WITHOUT audio (video only)', 'warn');
-        hasAudio = false;
-    }
+        log('Microphone ENABLED — Bluetooth may have switched to HFP', 'success');
 
-    return true;
+        // Update mic button appearance
+        var micBtn = document.getElementById('mic-toggle-btn');
+        if (micBtn) {
+            micBtn.textContent = 'MIC ON';
+            micBtn.style.background = 'rgba(74,222,128,0.3)';
+            micBtn.style.borderColor = 'rgba(74,222,128,0.7)';
+        }
+    } catch (err) {
+        log('Mic denied: ' + err.name + ' — ' + err.message, 'error');
+    }
+}
+
+function toggleMic() {
+    if (micEnabled) {
+        log('Mic is already on. To disable, restart the stream.', 'warn');
+        return;
+    }
+    if (confirm('Enabling the mic may disrupt Bluetooth audio.\n\nYour music might pause or switch output.\n\nContinue?')) {
+        enableMicrophone();
+    }
 }
 
 // ============================================================
@@ -975,6 +1070,7 @@ async function startStreaming() {
         // Start monitoring
         startHealthMonitor();
         startClientLogging();
+        startAudioHealthMonitor();
 
     } catch (err) {
         log('Stream pipeline failed: ' + err.message, 'error');
@@ -1001,8 +1097,16 @@ async function stopStreaming() {
     stopAudioMeter();
     stopHealthMonitor();
     stopClientLogging();
+    stopAudioHealthMonitor();
     reconnectAttempts = 0;
     await releaseWakeLock();
+
+    // Clean up synthetic audio
+    if (syntheticAudioCtx) {
+        try { syntheticAudioCtx.close(); } catch(e) {}
+        syntheticAudioCtx = null;
+    }
+    micEnabled = false;
 
     if (mediaRecorder && mediaRecorder.state !== 'inactive') {
         try { mediaRecorder.stop(); } catch(e) {}
@@ -1094,19 +1198,66 @@ function handleMotion(e) {
 // ============================================================
 // WAKE LOCK
 // ============================================================
+let noSleepVideo = null; // fallback video element for wake lock
+
 async function requestWakeLock() {
-    if (!('wakeLock' in navigator)) {
-        log('Wake Lock API not supported — screen may turn off', 'warn');
-        return;
+    // Try native Wake Lock API first
+    if ('wakeLock' in navigator) {
+        try {
+            wakeLock = await navigator.wakeLock.request('screen');
+            log('Wake lock acquired (native API)', 'success');
+            wakeLock.addEventListener('release', function() {
+                log('Wake lock released — trying NoSleep fallback');
+                startNoSleepFallback();
+            });
+            return;
+        } catch (err) {
+            log('Wake lock denied: ' + err.message + ' — using NoSleep fallback', 'warn');
+        }
+    } else {
+        log('Wake Lock API not supported — using NoSleep fallback', 'warn');
     }
+
+    // Fallback: hidden video loop (NoSleep pattern)
+    // A tiny looping video prevents iOS from sleeping the screen
+    startNoSleepFallback();
+}
+
+function startNoSleepFallback() {
+    if (noSleepVideo) return; // already running
     try {
-        wakeLock = await navigator.wakeLock.request('screen');
-        log('Wake lock acquired — screen will stay on', 'success');
-        wakeLock.addEventListener('release', function() {
-            log('Wake lock released');
+        noSleepVideo = document.createElement('video');
+        noSleepVideo.setAttribute('playsinline', '');
+        noSleepVideo.setAttribute('muted', '');
+        noSleepVideo.muted = true;
+        noSleepVideo.loop = true;
+        noSleepVideo.style.position = 'fixed';
+        noSleepVideo.style.left = '-9999px';
+        noSleepVideo.style.width = '1px';
+        noSleepVideo.style.height = '1px';
+        noSleepVideo.style.opacity = '0.01';
+
+        // Generate a tiny silent MP4 inline (base64-encoded 0.1s silent video)
+        // This is a minimal valid MP4 with a single blank frame
+        noSleepVideo.src = 'data:video/mp4;base64,AAAAIGZ0eXBpc29tAAACAGlzb21pc28yYXZjMW1wNDEAAAAIZnJlZQAAAxBtZGF0AAACrgYF//+q3EXpvebZSLeWLNgg2SPu73gyNjQgLSBjb3JlIDE0OCByMjY0MyA1YzY1NzA0IC0gSC4yNjQvTVBFRy00IEFWQyBjb2RlYyAtIENvcHlsZWZ0IDIwMDMtMjAxNSAtIGh0dHA6Ly93d3cudmlkZW9sYW4ub3JnL3gyNjQuaHRtbCAtIG9wdGlvbnM6IGNhYmFjPTEgcmVmPTMgZGVibG9jaz0xOjA6MCBhbmFseXNlPTB4MzoweDExMyBtZT1oZXggc3VibWU9NyBwc3k9MSBwc3lfcmQ9MS4wMDowLjAwIG1peGVkX3JlZj0xIG1lX3JhbmdlPTE2IGNocm9tYV9tZT0xIHRyZWxsaXM9MSA4eDhkY3Q9MSBjcW09MCBkZWFkem9uZT0yMSwxMSBmYXN0X3Bza2lwPTEgY2hyb21hX3FwX29mZnNldD0tMiB0aHJlYWRzPTEgbG9va2FoZWFkX3RocmVhZHM9MSBzbGljZWRfdGhyZWFkcz0wIG5yPTAgZGVjaW1hdGU9MSBpbnRlcmxhY2VkPTAgYmx1cmF5X2NvbXBhdD0wIGNvbnN0cmFpbmVkX2ludHJhPTAgYmZyYW1lcz0zIGJfcHlyYW1pZD0yIGJfYWRhcHQ9MSBiX2JpYXM9MCBkaXJlY3Q9MSB3ZWlnaHRiPTEgb3Blbl9nb3A9MCB3ZWlnaHRwPTIga2V5aW50PTI1MCBrZXlpbnRfbWluPTEgc2NlbmVjdXQ9NDAgaW50cmFfcmVmcmVzaD0wIHJjX2xvb2thaGVhZD00MCByYz1jcmYgbWJ0cmVlPTEgY3JmPTIzLjAgcWNvbXA9MC42MCBxcG1pbj0wIHFwbWF4PTY5IHFwc3RlcD00IGlwX3JhdGlvPTEuNDAgYXE9MToxLjAwAIAAAAAaZYiEAD//8m+P5OXfBeLGOfKE3xkODvFZuBEAAAMAdBBBBi44';
+        document.body.appendChild(noSleepVideo);
+
+        noSleepVideo.play().then(function() {
+            log('NoSleep fallback active — screen will stay on', 'success');
+        }).catch(function(e) {
+            log('NoSleep fallback failed: ' + e.message, 'warn');
+            // Still keep trying on next visibility change
         });
-    } catch (err) {
-        log('Wake lock failed: ' + err.message, 'warn');
+    } catch (e) {
+        log('NoSleep setup error: ' + e.message, 'warn');
+    }
+}
+
+function stopNoSleepFallback() {
+    if (noSleepVideo) {
+        noSleepVideo.pause();
+        if (noSleepVideo.parentNode) noSleepVideo.parentNode.removeChild(noSleepVideo);
+        noSleepVideo = null;
     }
 }
 
@@ -1115,12 +1266,19 @@ async function releaseWakeLock() {
         try { await wakeLock.release(); } catch(e) {}
         wakeLock = null;
     }
+    stopNoSleepFallback();
 }
 
 // Re-acquire on visibility change
 document.addEventListener('visibilitychange', async function() {
-    if (document.visibilityState === 'visible' && isStreaming && !wakeLock) {
-        await requestWakeLock();
+    if (document.visibilityState === 'visible' && isStreaming) {
+        if (!wakeLock) await requestWakeLock();
+        // Also resume synthetic audio context if suspended
+        if (syntheticAudioCtx && syntheticAudioCtx.state === 'suspended') {
+            syntheticAudioCtx.resume().then(function() {
+                log('Synthetic audio context resumed after visibility change', 'success');
+            });
+        }
     }
 });
 
@@ -1153,13 +1311,16 @@ function sendClientLog() {
     var state = {
         isStreaming: isStreaming,
         hasAudio: hasAudio,
+        micEnabled: micEnabled,
         musicPlaying: musicPlaying,
         currentSong: currentSong ? currentSong.title : null,
         chunksSent: chunksSent,
         bytesSent: bytesSent,
         audioTracks: videoStream ? videoStream.getAudioTracks().map(function(t) {
-            return { enabled: t.enabled, muted: t.muted, readyState: t.readyState };
+            return { enabled: t.enabled, muted: t.muted, readyState: t.readyState, label: t.label };
         }) : [],
+        syntheticAudioCtx: syntheticAudioCtx ? syntheticAudioCtx.state : 'none',
+        wakeLock: wakeLock ? 'native' : (noSleepVideo ? 'nosleep' : 'none'),
         devotionVolume: devotionVolume,
         socketState: streamSocket ? streamSocket.readyState : -1,
         recorderState: mediaRecorder ? mediaRecorder.state : 'none'
@@ -1179,6 +1340,56 @@ function sendClientLog() {
 
 function stopClientLogging() {
     if (clientLogInterval) { clearInterval(clientLogInterval); clientLogInterval = null; }
+}
+
+// ============================================================
+// AUDIO HEALTH MONITOR — logs every 30s so you don't have to
+// ============================================================
+let audioHealthInterval = null;
+
+function startAudioHealthMonitor() {
+    if (audioHealthInterval) return;
+    audioHealthInterval = setInterval(checkAudioHealth, 30000);
+    log('Audio health monitor started (30s interval)', 'success');
+}
+
+function stopAudioHealthMonitor() {
+    if (audioHealthInterval) { clearInterval(audioHealthInterval); audioHealthInterval = null; }
+}
+
+function checkAudioHealth() {
+    if (!isStreaming || !videoStream) return;
+
+    var audioTracks = videoStream.getAudioTracks();
+    var trackInfo = audioTracks.length > 0
+        ? 'track=' + audioTracks[0].readyState +
+          ' enabled=' + audioTracks[0].enabled +
+          ' muted=' + audioTracks[0].muted
+        : 'NO AUDIO TRACKS';
+
+    var ctxState = syntheticAudioCtx ? syntheticAudioCtx.state : 'n/a';
+    var recState = mediaRecorder ? mediaRecorder.state : 'none';
+    var socketState = streamSocket ? ['CONNECTING','OPEN','CLOSING','CLOSED'][streamSocket.readyState] : 'none';
+
+    var status = 'Audio health: ' + trackInfo +
+        ' | ctx=' + ctxState +
+        ' | rec=' + recState +
+        ' | ws=' + socketState +
+        ' | mic=' + (micEnabled ? 'ON' : 'OFF(synthetic)');
+
+    // Detect problems and auto-recover
+    if (audioTracks.length === 0 || (audioTracks[0].readyState === 'ended')) {
+        log(status, 'error');
+        log('Audio track dead — recovering…', 'warn');
+        recoverAudioTrack();
+    } else if (syntheticAudioCtx && syntheticAudioCtx.state === 'suspended') {
+        log(status, 'warn');
+        syntheticAudioCtx.resume().then(function() {
+            log('AudioContext resumed from suspended state', 'success');
+        });
+    } else {
+        log(status, 'success');
+    }
 }
 
 // ============================================================
@@ -1529,19 +1740,20 @@ async function onStartTap() {
     // --- Phase 3: Pre-flight audio test ---
     // Record a 2-second test clip to verify MediaRecorder actually muxes audio
     if (hasAudio) {
-        log('Running 2s audio pre-flight test…');
+        log('Running 2s audio pre-flight test (synthetic audio)…');
         setStatus('Testing audio capture…');
         var testPassed = await testAudioCapture();
         if (!testPassed) {
-            log('Pre-flight: MediaRecorder may not be muxing audio', 'warn');
-            log('Audio meter should still show levels — mic is live, but container may lack audio track', 'warn');
-            log('Relay server will use silent fallback if needed', 'warn');
+            log('Pre-flight: MediaRecorder may not be muxing synthetic audio', 'warn');
+            log('Relay server will use silent fallback if needed — stream will still work', 'warn');
+        } else {
+            log('Pre-flight passed — synthetic audio muxing OK', 'success');
         }
     }
 
     // Countdown
     if (musicPlaying) {
-        log('Music playing from THE QUEUE — mic will capture room audio', 'success');
+        log('Music playing from THE QUEUE — Bluetooth audio preserved (no mic)', 'success');
     }
     setStatus('Starting in 3…');
     await sleep(1000);
