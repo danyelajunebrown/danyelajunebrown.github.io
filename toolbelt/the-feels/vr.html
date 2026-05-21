@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Feels</title>
+    <script src="https://aframe.io/releases/1.6.0/aframe.min.js"></script>
+    <script src="https://unpkg.com/@supabase/supabase-js@2.39.7/dist/umd/supabase.js"></script>
+    <style>
+        html, body { margin: 0; height: 100%; background: #000; overflow: hidden; }
+        * { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+
+        /* the single tap-to-begin surface — the only UI in the whole experience */
+        #tap {
+            position: fixed; inset: 0; z-index: 9999;
+            display: flex; align-items: center; justify-content: center;
+            background: #000; color: #6a6a8a; cursor: pointer;
+            font-weight: 300; letter-spacing: 3px; font-size: 15px;
+            text-transform: uppercase; text-align: center; padding: 24px;
+        }
+        #tap span { animation: breathe 3.6s ease-in-out infinite; }
+        @keyframes breathe { 0%,100% { opacity: 0.25; } 50% { opacity: 0.7; } }
+        .gone { display: none !important; }
+    </style>
+</head>
+<body>
+
+    <!-- The only screen anyone ever sees before the walk. Tap anywhere. -->
+    <div id="tap"><span id="tapMsg">the feels</span></div>
+
+    <a-scene
+        renderer="colorManagement: true; antialias: true"
+        vr-mode-ui="enabled: false"
+        ar-mode-ui="enabled: false"
+        device-orientation-permission-ui="enabled: false"
+        webxr="referenceSpaceType: local-floor"
+        feels-walk>
+
+        <!-- camera; in AR the headset drives it. Color wash is parented to it. -->
+        <a-camera id="cam" look-controls="enabled: false" wasd-controls="enabled: false">
+            <a-plane id="tint" position="0 0 -0.3" width="8" height="8"
+                     material="shader: flat; color: #000000; opacity: 0; transparent: true; side: double"></a-plane>
+        </a-camera>
+
+        <!-- the current emotion's name; repositioned each time a new zone is entered -->
+        <a-entity id="word" visible="false">
+            <a-plane id="wordBg" position="0 0 -0.03" width="3" height="0.9"
+                     material="shader: flat; color: #05050c; opacity: 0.55; transparent: true"></a-plane>
+            <a-text id="wordText" value="" align="center" anchor="center"
+                    color="#ffffff" width="6"></a-text>
+        </a-entity>
+    </a-scene>
+
+    <script>
+    // ---------- Supabase ----------
+    const { createClient } = window.supabase;
+    const supabaseClient = createClient(
+        'https://bczevwhzlammcjomuqrg.supabase.co',
+        'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJjemV2d2h6bGFtbWNqb211cXJnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTg1NzkzMzQsImV4cCI6MjA3NDE1NTMzNH0.m8dgNY4UdUWvCTCe1_Zn2Ifbzym9dS7NMk7jxTg0_T4'
+    );
+
+    // ---------- Kiosk credentials (silent sign-in, no login dialogue) ----------
+    // WARNING: this file is public on GitHub Pages. Anyone can read this password.
+    // Use a unique password / a dedicated kiosk-only account.
+    const KIOSK_EMAIL    = 'danyelebrown@gmail.com';
+    const KIOSK_PASSWORD = 'Eatad1ck!';
+
+    async function ensureSession() {
+        const { data: { session } } = await supabaseClient.auth.getSession();
+        if (session) return;                       // already signed in (cached in localStorage)
+        const { error } = await supabaseClient.auth.signInWithPassword({
+            email: KIOSK_EMAIL, password: KIOSK_PASSWORD
+        });
+        if (error) throw error;
+    }
+
+    // ---------- Emotion family -> color (mirrors index.html wheel) ----------
+    const emotionWheelData = {
+        "Happy":     { color: "#FFE680", middleEmotions: [
+            {name:"Playful",   outerEmotions:["Aroused","Cheeky"]},
+            {name:"Content",   outerEmotions:["Free","Joyful"]},
+            {name:"Interested",outerEmotions:["Inquisitive","Curious"]},
+            {name:"Proud",     outerEmotions:["Successful","Confident"]},
+            {name:"Accepted",  outerEmotions:["Respected","Valued"]},
+            {name:"Powerful",  outerEmotions:["Courageous","Creative"]},
+            {name:"Peaceful",  outerEmotions:["Loving","Thankful"]},
+            {name:"Trusting",  outerEmotions:["Sensitive","Intimate"]},
+            {name:"Optimistic",outerEmotions:["Hopeful","Inspired"]}]},
+        "Surprised": { color: "#DDA0DD", middleEmotions: [
+            {name:"Startled",outerEmotions:["Shocked","Dismayed"]},
+            {name:"Confused",outerEmotions:["Disillusioned","Perplexed"]},
+            {name:"Amazed",  outerEmotions:["Awe","Astonished"]},
+            {name:"Excited", outerEmotions:["Eager","Energetic"]}]},
+        "Disgusted": { color: "#90EE90", middleEmotions: [
+            {name:"Disapproving",outerEmotions:["Judgmental","Embarrassed"]},
+            {name:"Disappointed",outerEmotions:["Appalled","Revolted"]},
+            {name:"Awful",       outerEmotions:["Nauseated","Detestable"]},
+            {name:"Avoidance",   outerEmotions:["Hesitant","Aversion"]}]},
+        "Bad":       { color: "#D3D3D3", middleEmotions: [
+            {name:"Bored",    outerEmotions:["Indifferent","Apathetic"]},
+            {name:"Busy",     outerEmotions:["Pressured","Rushed"]},
+            {name:"Stressed", outerEmotions:["Overwhelmed","Out of control"]},
+            {name:"Tired",    outerEmotions:["Sleepy","Unfocussed"]}]},
+        "Fearful":   { color: "#FFB347", middleEmotions: [
+            {name:"Scared",    outerEmotions:["Helpless","Frightened"]},
+            {name:"Anxious",   outerEmotions:["Overwhelmed","Worried"]},
+            {name:"Insecure",  outerEmotions:["Inadequate","Inferior"]},
+            {name:"Weak",      outerEmotions:["Worthless","Insignificant"]},
+            {name:"Rejected",  outerEmotions:["Excluded","Persecuted"]},
+            {name:"Threatened",outerEmotions:["Nervous","Exposed"]}]},
+        "Angry":     { color: "#FF6B6B", middleEmotions: [
+            {name:"Let down",   outerEmotions:["Betrayed","Resentful"]},
+            {name:"Humiliated", outerEmotions:["Disrespected","Ridiculed"]},
+            {name:"Bitter",     outerEmotions:["Indignant","Violated"]},
+            {name:"Mad",        outerEmotions:["Furious","Jealous"]},
+            {name:"Aggressive", outerEmotions:["Provoked","Hostile"]},
+            {name:"Frustrated", outerEmotions:["Infuriated","Annoyed"]},
+            {name:"Distant",    outerEmotions:["Withdrawn","Numb"]},
+            {name:"Critical",   outerEmotions:["Skeptical","Dismissive"]}]},
+        "Sad":       { color: "#87CEEB", middleEmotions: [
+            {name:"Hurt",      outerEmotions:["Embarrassed","Disappointed"]},
+            {name:"Depressed", outerEmotions:["Inferior","Empty"]},
+            {name:"Guilty",    outerEmotions:["Remorseful","Ashamed"]},
+            {name:"Despair",   outerEmotions:["Grief","Powerless"]},
+            {name:"Vulnerable",outerEmotions:["Fragile","Victimized"]},
+            {name:"Lonely",    outerEmotions:["Isolated","Abandoned"]}]}
+    };
+    const DEFAULT_COLOR = "#9d8cff";
+    const colorMap = {};
+    Object.entries(emotionWheelData).forEach(([fam, d]) => {
+        colorMap[fam.toLowerCase()] = d.color;
+        d.middleEmotions.forEach(m => {
+            colorMap[m.name.toLowerCase()] = d.color;
+            m.outerEmotions.forEach(o => { colorMap[o.toLowerCase()] = d.color; });
+        });
+    });
+    // free-text entries in the DB that aren't exact wheel names
+    colorMap['anxiety'] = colorMap['anxious'];
+    colorMap['tired or disappointed'] = colorMap['tired'];
+
+    const feelingColor = (f) => colorMap[(f || "").toLowerCase()] || DEFAULT_COLOR;
+
+    // ---------- Path: distance between the two real-world coordinates ----------
+    // start 42.003567,-73.921784  ->  end 42.003286,-73.923837  ==  172.5 m (haversine)
+    const PATH_LENGTH = 172.5;
+
+    // built at load: [{ feeling, intensity, hex, startM, endM }]
+    let segments = [];
+
+    function buildSegments(entries) {
+        const now = Date.now();
+        const ts = entries.map(e => new Date(e.timestamp).getTime());
+        // duration of each instance = time of NEXT entry minus this one; last extends to now
+        const durations = entries.map((e, i) => {
+            const end = (i < entries.length - 1) ? ts[i + 1] : now;
+            return Math.max(0, end - ts[i]);
+        });
+        let total = durations.reduce((a, b) => a + b, 0);
+        if (total <= 0) { durations.fill(1); total = durations.length; }  // all-equal fallback
+
+        let acc = 0;
+        segments = entries.map((e, i) => {
+            const startM = (acc / total) * PATH_LENGTH;
+            acc += durations[i];
+            const endM = (acc / total) * PATH_LENGTH;
+            const intensity = Math.min(5, Math.max(1, parseInt(e.intensity) || 1));
+            return {
+                feeling: (e.feeling || '—').toString(),
+                intensity,
+                hex: feelingColor(e.feeling),
+                startM, endM
+            };
+        });
+    }
+
+    // ---------- The walk: maps physical position -> emotion timeline ----------
+    AFRAME.registerComponent('feels-walk', {
+        init: function () {
+            const THREE = AFRAME.THREE;
+            this.cam     = document.getElementById('cam');
+            this.tintMat = null;
+            this.word    = document.getElementById('word');
+            this.wordTxt = document.getElementById('wordText');
+            this.wordBg  = document.getElementById('wordBg');
+
+            this.started = false;
+            this.origin  = null;          // head position when the walk begins
+            this.forward = new THREE.Vector3();   // horizontal start->end direction
+            this.headPos = new THREE.Vector3();
+            this.tmp     = new THREE.Vector3();
+            this.quat    = new THREE.Quaternion();
+
+            this.segIdx  = -1;
+            this.curCol  = new THREE.Color('#000000');
+            this.tgtCol  = new THREE.Color('#000000');
+            this.curOpac = 0;
+            this.tgtOpac = 0;
+
+            // capture the starting pose the moment AR begins
+            this.el.sceneEl.addEventListener('enter-vr', () => { this.started = true; this.origin = null; });
+            this.el.sceneEl.addEventListener('enter-ar', () => { this.started = true; this.origin = null; });
+        },
+
+        tick: function () {
+            if (!this.started || !segments.length) return;
+            const THREE = AFRAME.THREE;
+
+            if (!this.tintMat) {
+                const m = document.getElementById('tint').getObject3D('mesh');
+                if (m) this.tintMat = m.material; else return;
+            }
+
+            const camObj = this.cam.object3D;
+            camObj.getWorldPosition(this.headPos);
+
+            // first frame of the walk: lock the origin and the path direction
+            if (!this.origin) {
+                this.origin = this.headPos.clone();
+                camObj.getWorldQuaternion(this.quat);
+                this.forward.set(0, 0, -1).applyQuaternion(this.quat);
+                this.forward.y = 0;
+                if (this.forward.lengthSq() < 1e-6) this.forward.set(0, 0, -1);
+                this.forward.normalize();
+            }
+
+            // progress = how far along the start->end line the walker has moved
+            this.tmp.copy(this.headPos).sub(this.origin);
+            let progress = this.tmp.dot(this.forward);
+            progress = Math.max(0, Math.min(PATH_LENGTH, progress));
+
+            // which emotion block is the walker standing in?
+            let idx = this.segIdx;
+            if (idx < 0 || idx >= segments.length ||
+                progress < segments[idx].startM || progress >= segments[idx].endM) {
+                idx = 0;
+                for (let i = 0; i < segments.length; i++) {
+                    if (progress >= segments[i].startM && progress < segments[i].endM) { idx = i; break; }
+                    if (i === segments.length - 1) idx = i;   // clamp to last at the very end
+                }
+            }
+
+            if (idx !== this.segIdx) {
+                this.segIdx = idx;
+                const s = segments[idx];
+                this.tgtCol.set(s.hex);
+                this.tgtOpac = 0.14 + s.intensity * 0.082;     // intensity -> wash strength
+
+                // drop the emotion's name a few metres ahead, at eye level
+                this.wordTxt.setAttribute('value', s.feeling);
+                const w = Math.min(6, Math.max(2, s.feeling.length * 0.28 + 0.7));
+                this.wordBg.setAttribute('width', w);
+                const wp = this.word.object3D.position;
+                wp.copy(this.headPos).addScaledVector(this.forward, 4);
+                wp.y = this.origin.y;
+                this.word.setAttribute('visible', true);
+            }
+
+            // smooth crossfade so crossing a boundary is felt, not jarring
+            const k = 0.07;
+            this.curCol.lerp(this.tgtCol, k);
+            this.curOpac += (this.tgtOpac - this.curOpac) * k;
+            this.tintMat.color.copy(this.curCol);
+            this.tintMat.opacity = this.curOpac;
+
+            // keep the word facing the walker
+            if (this.word.getAttribute('visible')) {
+                const wo = this.word.object3D;
+                wo.lookAt(this.headPos.x, wo.position.y, this.headPos.z);
+                wo.rotateY(Math.PI);   // a-text faces +Z, so flip to face the walker
+            }
+        }
+    });
+
+    // ---------- Load every entry, build the path, arm the tap ----------
+    async function loadEntries() {
+        // Pulls every row. Depends on Supabase RLS permitting anon SELECT on diary_entries.
+        const { data, error } = await supabaseClient
+            .from('diary_entries')
+            .select('feeling, intensity, timestamp')
+            .order('timestamp', { ascending: true });
+        if (error) throw error;
+        return data || [];
+    }
+
+    function startAR() {
+        const scene = document.querySelector('a-scene');
+        const go = () => {
+            document.getElementById('tap').classList.add('gone');
+            scene.enterAR().catch(() => scene.enterVR().catch(() => {}));
+        };
+        if (scene.hasLoaded) go();
+        else scene.addEventListener('loaded', go, { once: true });
+    }
+
+    window.addEventListener('DOMContentLoaded', async () => {
+        const tap = document.getElementById('tap');
+        const msg = document.getElementById('tapMsg');
+        try {
+            await ensureSession();                 // silent sign-in, no dialogue
+            const entries = await loadEntries();
+            if (!entries.length) {
+                msg.textContent = 'no feelings found';
+                tap.style.cursor = 'default';
+                return;
+            }
+            buildSegments(entries);
+            // ready — a single tap anywhere begins the walk
+            tap.addEventListener('click', startAR, { once: true });
+
+            // live refresh: re-pull every 60s so a feeling logged today (or while
+            // someone is mid-walk) reshapes the path without relaunching.
+            setInterval(async () => {
+                try {
+                    const fresh = await loadEntries();
+                    if (fresh.length) buildSegments(fresh);
+                } catch (e) { /* keep the current path if a refresh fails */ }
+            }, 60000);
+        } catch (err) {
+            msg.textContent = 'could not load';
+            tap.style.cursor = 'default';
+        }
+    });
+    </script>
+</body>
+</html>
