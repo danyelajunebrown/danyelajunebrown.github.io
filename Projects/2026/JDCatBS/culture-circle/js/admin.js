@@ -8,14 +8,6 @@ let speakerAssignments = {};
 // INITIALIZATION
 // ============================================
 document.addEventListener('DOMContentLoaded', async () => {
-    // Check for existing session
-    const { data: { session } } = await db.auth.getSession();
-    if (session) {
-        currentUser = session.user;
-        showMainApp();
-        loadAllData();
-    }
-
     // Auth state changes
     db.auth.onAuthStateChange((event, session) => {
         if (event === 'SIGNED_IN' && session) {
@@ -27,6 +19,32 @@ document.addEventListener('DOMContentLoaded', async () => {
             showAuthScreen();
         }
     });
+
+    // PASSWORD GATE TEMPORARILY DISABLED.
+    // The database still requires an authenticated session (row-level
+    // security), so instead of an email/password login we sign in
+    // anonymously and go straight to the dashboard.
+    // TODO: restore the proper login screen and tighten security later.
+    const { data: { session } } = await db.auth.getSession();
+    if (session) {
+        currentUser = session.user;
+        showMainApp();
+        loadAllData();
+    } else {
+        const { error } = await db.auth.signInAnonymously();
+        if (error) {
+            // Anonymous sign-in is not enabled for this Supabase project.
+            // Enable it: Supabase dashboard > Authentication > Providers >
+            // Anonymous sign-ins > toggle on. Until then, fall back to login.
+            console.error('Anonymous sign-in failed:', error.message);
+            showAuthScreen();
+            const errEl = document.getElementById('authError');
+            if (errEl) {
+                errEl.textContent =
+                    'Auto-login is off. Enable "Anonymous sign-ins" in Supabase, or log in below.';
+            }
+        }
+    }
 
     setupEventListeners();
 });
@@ -162,7 +180,7 @@ function showAuthScreen() {
 function showMainApp() {
     document.getElementById('authScreen').classList.add('hidden');
     document.getElementById('mainApp').classList.remove('hidden');
-    document.getElementById('userEmail').textContent = currentUser.email;
+    document.getElementById('userEmail').textContent = currentUser.email || 'Study Lead';
 }
 
 // ============================================
@@ -251,7 +269,7 @@ async function handleFileUpload(file) {
         uploadStatus.textContent = 'Transcribing with Deepgram...';
 
         // Transcribe via Edge Function (keeps API key server-side)
-        const filePath = `${interview.id}/${file.name}`;
+        // filePath already declared above during the storage upload step
         const { data: result, error: fnError } = await db.functions.invoke('process-audio', {
             body: { interview_id: interview.id, audio_path: filePath }
         });
