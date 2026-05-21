@@ -59,20 +59,10 @@
         'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJjemV2d2h6bGFtbWNqb211cXJnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTg1NzkzMzQsImV4cCI6MjA3NDE1NTMzNH0.m8dgNY4UdUWvCTCe1_Zn2Ifbzym9dS7NMk7jxTg0_T4'
     );
 
-    // ---------- Kiosk credentials (silent sign-in, no login dialogue) ----------
-    // WARNING: this file is public on GitHub Pages. Anyone can read this password.
-    // Use a unique password / a dedicated kiosk-only account.
-    const KIOSK_EMAIL    = 'danyelebrown@gmail.com';
-    const KIOSK_PASSWORD = 'Eatad1ck!';
-
-    async function ensureSession() {
-        const { data: { session } } = await supabaseClient.auth.getSession();
-        if (session) return;                       // already signed in (cached in localStorage)
-        const { error } = await supabaseClient.auth.signInWithPassword({
-            email: KIOSK_EMAIL, password: KIOSK_PASSWORD
-        });
-        if (error) throw error;
-    }
+    // ---------- Whose feelings the kiosk shows ----------
+    // No password is stored. Anonymous READ-only access is granted by a Supabase
+    // RLS policy scoped to this user_id (see deploy notes). Nobody can edit/delete.
+    const KIOSK_USER_ID = 'ee04c688-d857-45f8-849c-2f072053cf28';
 
     // ---------- Emotion family -> color (mirrors index.html wheel) ----------
     const emotionWheelData = {
@@ -273,10 +263,11 @@
 
     // ---------- Load every entry, build the path, arm the tap ----------
     async function loadEntries() {
-        // Pulls every row. Depends on Supabase RLS permitting anon SELECT on diary_entries.
+        // Read-only pull. Returns rows only if the RLS policy permits anon SELECT.
         const { data, error } = await supabaseClient
             .from('diary_entries')
             .select('feeling, intensity, timestamp')
+            .eq('user_id', KIOSK_USER_ID)
             .order('timestamp', { ascending: true });
         if (error) throw error;
         return data || [];
@@ -296,7 +287,6 @@
         const tap = document.getElementById('tap');
         const msg = document.getElementById('tapMsg');
         try {
-            await ensureSession();                 // silent sign-in, no dialogue
             const entries = await loadEntries();
             if (!entries.length) {
                 msg.textContent = 'no feelings found';

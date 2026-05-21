@@ -118,6 +118,11 @@
             color: white;
         }
 
+        .user-actions {
+            display: flex;
+            gap: 8px;
+        }
+
         .form-step {
             display: none;
             margin-bottom: 25px;
@@ -747,7 +752,10 @@
             <div id="appSection" class="hidden">
                 <div class="user-info" id="userInfo">
                     <span class="user-email" id="userEmail"></span>
-                    <button class="logout-btn" id="logoutBtn">Logout</button>
+                    <div class="user-actions">
+                        <button class="logout-btn" id="changePwBtn">Change Password</button>
+                        <button class="logout-btn" id="logoutBtn">Logout</button>
+                    </div>
                 </div>
 
                 <form id="reportForm">
@@ -1041,6 +1049,7 @@
         const authSubmitBtn = document.getElementById('authSubmitBtn');
         const userEmail = document.getElementById('userEmail');
         const logoutBtn = document.getElementById('logoutBtn');
+        const changePwBtn = document.getElementById('changePwBtn');
         const form = document.getElementById('reportForm');
         const feelingsWheel = document.getElementById('feelingsWheel');
         const selectedFeelingDisplay = document.getElementById('selectedFeeling');
@@ -1184,6 +1193,7 @@
             signupTab.addEventListener('click', () => switchAuthMode(false));
             authForm.addEventListener('submit', handleAuth);
             logoutBtn.addEventListener('click', handleLogout);
+            changePwBtn.addEventListener('click', handleChangePassword);
             
             let isDragging = false;
             let startAngle = 0;
@@ -1383,6 +1393,28 @@
             reports = [];
             showAuth();
             showSuccess('Logged out successfully!');
+        }
+
+        async function handleChangePassword() {
+            const pw1 = prompt('Enter a new password (at least 6 characters):');
+            if (pw1 === null) return;                 // cancelled
+            if (pw1.length < 6) {
+                showError('Password must be at least 6 characters.');
+                return;
+            }
+            const pw2 = prompt('Re-enter the new password to confirm:');
+            if (pw2 === null) return;                 // cancelled
+            if (pw1 !== pw2) {
+                showError('Passwords did not match. Nothing was changed.');
+                return;
+            }
+            try {
+                const { error } = await supabaseClient.auth.updateUser({ password: pw1 });
+                if (error) throw error;
+                showSuccess('Password changed successfully.');
+            } catch (err) {
+                showError('Could not change password: ' + (err.message || 'unknown error'));
+            }
         }
 
         function showAuth() {
