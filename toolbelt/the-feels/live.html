@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>The Feels — Live</title>
+    <script src="https://unpkg.com/@supabase/supabase-js@2.39.7/dist/umd/supabase.js"></script>
+    <style>
+        html, body { margin: 0; height: 100%; overflow: hidden; background: #0a0a14; }
+        * { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+
+        /* full-screen color flood — mirrors what the headset wearer is inside */
+        #stage {
+            position: fixed; inset: 0;
+            background: #0a0a14;
+            transition: background-color 0.45s ease;
+            display: flex; flex-direction: column;
+            align-items: center; justify-content: center;
+        }
+        #word {
+            color: #fff; font-weight: 300; font-size: 13vw;
+            letter-spacing: 1px; text-align: center; padding: 0 6vw;
+            text-shadow: 0 2px 24px rgba(0,0,0,0.55);
+        }
+        #date {
+            color: rgba(255,255,255,0.6); font-size: 3.6vw;
+            letter-spacing: 2px; margin-top: 2vh; text-transform: uppercase;
+        }
+
+        /* the whole 240-day path; a dot marks where the wearer is */
+        #track { position: fixed; left: 0; right: 0; bottom: 0; height: 70px; }
+        #bar { display: block; width: 100%; height: 16px; position: absolute; bottom: 28px; }
+        #dot {
+            position: absolute; bottom: 22px; width: 0; height: 0;
+            transform: translateX(-50%);
+            transition: left 0.45s ease;
+        }
+        #dot::after {
+            content: ''; position: absolute; left: 0; bottom: 0;
+            width: 18px; height: 18px; transform: translateX(-50%);
+            border-radius: 50%; background: #fff;
+            box-shadow: 0 0 14px rgba(255,255,255,0.9);
+        }
+        #caption {
+            position: absolute; left: 0; right: 0; bottom: 6px;
+            text-align: center; color: rgba(255,255,255,0.45);
+            font-size: 11px; letter-spacing: 2px; text-transform: uppercase;
+        }
+
+        /* shown until a live signal arrives, and again if the wearer stops */
+        #idle {
+            position: fixed; inset: 0; z-index: 10;
+            display: flex; align-items: center; justify-content: center;
+            background: #0a0a14; color: #6a6a8a;
+            font-weight: 300; letter-spacing: 3px; font-size: 15px;
+            text-transform: uppercase; text-align: center; padding: 24px;
+            transition: opacity 0.6s ease;
+        }
+        #idle span { animation: breathe 3.6s ease-in-out infinite; }
+        @keyframes breathe { 0%,100% { opacity: 0.3; } 50% { opacity: 0.75; } }
+        .hidden { opacity: 0; pointer-events: none; }
+    </style>
+</head>
+<body>
+
+    <div id="stage">
+        <div id="word"></div>
+        <div id="date"></div>
+    </div>
+
+    <div id="track">
+        <canvas id="bar"></canvas>
+        <div id="dot"></div>
+        <div id="caption">the feels — a year of feeling</div>
+    </div>
+
+    <div id="idle"><span id="idleMsg">waiting for the walk</span></div>
+
+    <script>
+    const { createClient } = window.supabase;
+    const supabaseClient = createClient(
+        'https://bczevwhzlammcjomuqrg.supabase.co',
+        'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJjemV2d2h6bGFtbWNqb211cXJnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTg1NzkzMzQsImV4cCI6MjA3NDE1NTMzNH0.m8dgNY4UdUWvCTCe1_Zn2Ifbzym9dS7NMk7jxTg0_T4'
+    );
+    const KIOSK_USER_ID = 'ee04c688-d857-45f8-849c-2f072053cf28';
+
+    // ---------- Emotion family -> color (mirrors index.html wheel) ----------
+    const emotionWheelData = {
+        "Happy":     { color: "#FFE680", middleEmotions: [
+            {name:"Playful",   outerEmotions:["Aroused","Cheeky"]},
+            {name:"Content",   outerEmotions:["Free","Joyful"]},
+            {name:"Interested",outerEmotions:["Inquisitive","Curious"]},
+            {name:"Proud",     outerEmotions:["Successful","Confident"]},
+            {name:"Accepted",  outerEmotions:["Respected","Valued"]},
+            {name:"Powerful",  outerEmotions:["Courageous","Creative"]},
+            {name:"Peaceful",  outerEmotions:["Loving","Thankful"]},
+            {name:"Trusting",  outerEmotions:["Sensitive","Intimate"]},
+            {name:"Optimistic",outerEmotions:["Hopeful","Inspired"]}]},
+        "Surprised": { color: "#DDA0DD", middleEmotions: [
+            {name:"Startled",outerEmotions:["Shocked","Dismayed"]},
+            {name:"Confused",outerEmotions:["Disillusioned","Perplexed"]},
+            {name:"Amazed",  outerEmotions:["Awe","Astonished"]},
+            {name:"Excited", outerEmotions:["Eager","Energetic"]}]},
+        "Disgusted": { color: "#90EE90", middleEmotions: [
+            {name:"Disapproving",outerEmotions:["Judgmental","Embarrassed"]},
+            {name:"Disappointed",outerEmotions:["Appalled","Revolted"]},
+            {name:"Awful",       outerEmotions:["Nauseated","Detestable"]},
+            {name:"Avoidance",   outerEmotions:["Hesitant","Aversion"]}]},
+        "Bad":       { color: "#D3D3D3", middleEmotions: [
+            {name:"Bored",    outerEmotions:["Indifferent","Apathetic"]},
+            {name:"Busy",     outerEmotions:["Pressured","Rushed"]},
+            {name:"Stressed", outerEmotions:["Overwhelmed","Out of control"]},
+            {name:"Tired",    outerEmotions:["Sleepy","Unfocussed"]}]},
+        "Fearful":   { color: "#FFB347", middleEmotions: [
+            {name:"Scared",    outerEmotions:["Helpless","Frightened"]},
+            {name:"Anxious",   outerEmotions:["Overwhelmed","Worried"]},
+            {name:"Insecure",  outerEmotions:["Inadequate","Inferior"]},
+            {name:"Weak",      outerEmotions:["Worthless","Insignificant"]},
+            {name:"Rejected",  outerEmotions:["Excluded","Persecuted"]},
+            {name:"Threatened",outerEmotions:["Nervous","Exposed"]}]},
+        "Angry":     { color: "#FF6B6B", middleEmotions: [
+            {name:"Let down",   outerEmotions:["Betrayed","Resentful"]},
+            {name:"Humiliated", outerEmotions:["Disrespected","Ridiculed"]},
+            {name:"Bitter",     outerEmotions:["Indignant","Violated"]},
+            {name:"Mad",        outerEmotions:["Furious","Jealous"]},
+            {name:"Aggressive", outerEmotions:["Provoked","Hostile"]},
+            {name:"Frustrated", outerEmotions:["Infuriated","Annoyed"]},
+            {name:"Distant",    outerEmotions:["Withdrawn","Numb"]},
+            {name:"Critical",   outerEmotions:["Skeptical","Dismissive"]}]},
+        "Sad":       { color: "#87CEEB", middleEmotions: [
+            {name:"Hurt",      outerEmotions:["Embarrassed","Disappointed"]},
+            {name:"Depressed", outerEmotions:["Inferior","Empty"]},
+            {name:"Guilty",    outerEmotions:["Remorseful","Ashamed"]},
+            {name:"Despair",   outerEmotions:["Grief","Powerless"]},
+            {name:"Vulnerable",outerEmotions:["Fragile","Victimized"]},
+            {name:"Lonely",    outerEmotions:["Isolated","Abandoned"]}]}
+    };
+    const DEFAULT_COLOR = "#9d8cff";
+    const colorMap = {};
+    Object.entries(emotionWheelData).forEach(([fam, d]) => {
+        colorMap[fam.toLowerCase()] = d.color;
+        d.middleEmotions.forEach(m => {
+            colorMap[m.name.toLowerCase()] = d.color;
+            m.outerEmotions.forEach(o => { colorMap[o.toLowerCase()] = d.color; });
+        });
+    });
+    colorMap['anxiety'] = colorMap['anxious'];
+    colorMap['tired or disappointed'] = colorMap['tired'];
+    const feelingColor = (f) => colorMap[(f || "").toLowerCase()] || DEFAULT_COLOR;
+
+    // dark-base mix so intensity (1-5) reads on the spectator screen too
+    function envColor(hex, intensity) {
+        const r0 = 10, g0 = 10, b0 = 20;
+        const r = parseInt(hex.slice(1,3),16), g = parseInt(hex.slice(3,5),16), b = parseInt(hex.slice(5,7),16);
+        const t = 0.30 + intensity * 0.14;
+        const mix = (a,c) => Math.round(a + (c - a) * t);
+        return `rgb(${mix(r0,r)}, ${mix(g0,g)}, ${mix(b0,b)})`;
+    }
+
+    // ---------- Build the same timeline the headset walks ----------
+    let segments = [];   // { feeling, intensity, hex, startF, endF, ts }
+
+    function buildSegments(entries) {
+        const now = Date.now();
+        const ts = entries.map(e => new Date(e.timestamp).getTime());
+        const durations = entries.map((e, i) =>
+            Math.max(0, ((i < entries.length - 1) ? ts[i + 1] : now) - ts[i]));
+        let total = durations.reduce((a, b) => a + b, 0);
+        if (total <= 0) { durations.fill(1); total = durations.length; }
+
+        let acc = 0;
+        segments = entries.map((e, i) => {
+            const startF = acc / total;
+            acc += durations[i];
+            const intensity = Math.min(5, Math.max(1, parseInt(e.intensity) || 1));
+            return {
+                feeling: (e.feeling || '—').toString(),
+                intensity,
+                hex: feelingColor(e.feeling),
+                startF, endF: acc / total,
+                ts: ts[i]
+            };
+        });
+        drawBar();
+    }
+
+    // ---------- The timeline bar ----------
+    const bar = document.getElementById('bar');
+    function drawBar() {
+        if (!segments.length) return;
+        const w = bar.clientWidth, h = bar.clientHeight || 16;
+        bar.width = w; bar.height = h;
+        const ctx = bar.getContext('2d');
+        ctx.clearRect(0, 0, w, h);
+        segments.forEach(s => {
+            const x = s.startF * w, ww = Math.max(1, (s.endF - s.startF) * w);
+            ctx.fillStyle = s.hex;
+            ctx.fillRect(x, 0, ww + 0.5, h);
+        });
+    }
+    window.addEventListener('resize', drawBar);
+
+    // ---------- Render a live position ----------
+    const stage = document.getElementById('stage');
+    const wordEl = document.getElementById('word');
+    const dateEl = document.getElementById('date');
+    const dotEl = document.getElementById('dot');
+    const idle = document.getElementById('idle');
+    let lastSignal = 0;
+
+    const monthFmt = new Intl.DateTimeFormat('en', { month: 'long', year: 'numeric' });
+
+    function render(progress) {
+        if (!segments.length) return;
+        lastSignal = Date.now();
+        idle.classList.add('hidden');
+
+        progress = Math.max(0, Math.min(1, progress));
+        let seg = segments[segments.length - 1];
+        for (let i = 0; i < segments.length; i++) {
+            if (progress >= segments[i].startF && progress < segments[i].endF) { seg = segments[i]; break; }
+        }
+        stage.style.backgroundColor = envColor(seg.hex, seg.intensity);
+        wordEl.textContent = seg.feeling;
+        dateEl.textContent = monthFmt.format(new Date(seg.ts));
+        dotEl.style.left = (progress * 100) + '%';
+    }
+
+    // idle if no signal for 6s
+    setInterval(() => {
+        if (Date.now() - lastSignal > 6000) {
+            idle.classList.remove('hidden');
+            document.getElementById('idleMsg').textContent =
+                lastSignal ? 'the walk has paused' : 'waiting for the walk';
+        }
+    }, 1000);
+
+    // ---------- Boot ----------
+    async function loadEntries() {
+        const { data, error } = await supabaseClient
+            .from('diary_entries')
+            .select('feeling, intensity, timestamp')
+            .eq('user_id', KIOSK_USER_ID)
+            .order('timestamp', { ascending: true });
+        if (error) throw error;
+        return data || [];
+    }
+
+    (async () => {
+        try {
+            buildSegments(await loadEntries());
+        } catch (e) {
+            document.getElementById('idleMsg').textContent = 'could not load';
+        }
+        // keep the timeline current even while spectating
+        setInterval(async () => {
+            try {
+                const fresh = await loadEntries();
+                if (fresh.length) buildSegments(fresh);
+            } catch (e) {}
+        }, 60000);
+
+        // subscribe to the headset's live position
+        supabaseClient.channel('feels-live')
+            .on('broadcast', { event: 'state' }, ({ payload }) => {
+                if (payload && typeof payload.progress === 'number') render(payload.progress);
+            })
+            .subscribe();
+    })();
+    </script>
+</body>
+</html>

@@ -186,6 +186,11 @@
             this.curOpac = 0;
             this.tgtOpac = 0;
 
+            // live spectator broadcast — onlookers' live.html subscribes to this
+            this.liveChannel = supabaseClient.channel('feels-live');
+            this.liveChannel.subscribe();
+            this.lastBroadcast = 0;
+
             // capture the starting pose the moment AR begins
             this.el.sceneEl.addEventListener('enter-vr', () => { this.started = true; this.origin = null; });
             this.el.sceneEl.addEventListener('enter-ar', () => { this.started = true; this.origin = null; });
@@ -217,6 +222,16 @@
             this.tmp.copy(this.headPos).sub(this.origin);
             let progress = this.tmp.dot(this.forward);
             progress = Math.max(0, Math.min(PATH_LENGTH, progress));
+
+            // broadcast position to spectators ~4x/sec (payload is just a fraction)
+            const nowMs = performance.now();
+            if (nowMs - this.lastBroadcast > 250) {
+                this.lastBroadcast = nowMs;
+                this.liveChannel.send({
+                    type: 'broadcast', event: 'state',
+                    payload: { progress: progress / PATH_LENGTH }
+                });
+            }
 
             // which emotion block is the walker standing in?
             let idx = this.segIdx;

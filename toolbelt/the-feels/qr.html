@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Feels — Scan to Watch</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <style>
+        html, body { margin: 0; height: 100%; }
+        * { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+        body {
+            background: radial-gradient(circle at 50% 35%, #1b1b3a 0%, #0a0a14 70%);
+            display: flex; flex-direction: column;
+            align-items: center; justify-content: center;
+            min-height: 100%; color: #e8e6ff; text-align: center; padding: 6vh 24px;
+            box-sizing: border-box;
+        }
+        h1 { font-weight: 300; letter-spacing: 4px; font-size: 30px; margin: 0 0 6px; }
+        .sub { opacity: 0.6; font-size: 15px; margin-bottom: 36px; }
+        #qr {
+            background: #fff; padding: 22px; border-radius: 20px;
+            display: inline-block; line-height: 0;
+            box-shadow: 0 12px 50px rgba(0,0,0,0.5);
+        }
+        .url { margin-top: 26px; font-size: 13px; opacity: 0.5; word-break: break-all; }
+        .cta { margin-top: 8px; font-size: 17px; font-weight: 600; letter-spacing: 1px; }
+        @media print { body { background: #fff; color: #000; } #qr { box-shadow: none; } }
+    </style>
+</head>
+<body>
+    <h1>THE FEELS</h1>
+    <div class="sub">someone is walking a year of their feelings</div>
+    <div id="qr"></div>
+    <div class="cta">Scan to watch it live</div>
+    <div class="url" id="url"></div>
+
+    <script>
+        // point at live.html next to this file, whatever the host
+        const liveUrl = new URL('live.html', location.href).href;
+        document.getElementById('url').textContent = liveUrl;
+        new QRCode(document.getElementById('qr'), {
+            text: liveUrl,
+            width: 320, height: 320,
+            colorDark: '#0a0a14', colorLight: '#ffffff',
+            correctLevel: QRCode.CorrectLevel.M
+        });
+    </script>
+</body>
+</html>
