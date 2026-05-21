@@ -3,15 +3,16 @@
 ## Technologies Used
 
 ### Frontend
-- **HTML5** - Two standalone single-page documents
+- **HTML5** - Four standalone single-page documents
 - **CSS3** - Flexbox, grid, animations
 - **Vanilla JavaScript** - All application logic
 
 ### External Libraries (all CDN, no npm build)
-- **Supabase JS SDK** (v2.39.7) - Authentication & database
+- **Supabase JS SDK** (v2.39.7) - Auth, database, Realtime broadcast
 - **html2canvas** (v1.4.1) - DOM to canvas capture for PDF
 - **jsPDF** (v2.5.1) - PDF generation
 - **A-Frame** (v1.6.0) - WebXR framework for the VR/AR kiosk
+- **qrcodejs** (v1.0.0) - QR code rendering for `qr.html`
 
 ### Development Environment
 - Visual Studio Code, Git
@@ -19,7 +20,7 @@
 - Meta Quest 3 browser for the VR kiosk (WebXR needs HTTPS — i.e. deployed)
 
 ## Setup
-- `index.html` and `vr.html`, each with embedded CSS and JS
+- `index.html`, `vr.html`, `live.html`, `qr.html` — each with embedded CSS and JS
 - CDN-loaded dependencies
 - Hosted on GitHub Pages (`danyelajunebrown.github.io/toolbelt/the-feels/`)
 - Supabase project `bczevwhzlammcjomuqrg` for backend
@@ -32,9 +33,11 @@
 - Kiosk owner user_id: `ee04c688-d857-45f8-849c-2f072053cf28`
 
 ## Browser / Device APIs
-- Canvas API (html2canvas), Drag-and-Drop API, Touch events
+- Canvas API (html2canvas + the spectator timeline bar), Drag-and-Drop, Touch
 - LocalStorage (via Supabase session)
 - **WebXR** `immersive-ar` — passthrough + inside-out SLAM head tracking on Quest 3
+- **Supabase Realtime** broadcast channel `feels-live` — carries the wearer's
+  path progress to spectators (ephemeral, no DB writes, anon key)
 
 ## Constraints
 - WebXR requires HTTPS and a user gesture to enter an immersive session
@@ -43,6 +46,10 @@
   unverified and must be tested on the real path
 - A web page cannot make itself the only app on the headset; true kiosk lockdown
   is a Quest OS / device-management setting
+- WebXR blocks page access to the passthrough camera; the spectator view is a
+  synced companion render, not literal headset video
+- Realtime broadcast must be enabled on the Supabase project for `live.html` to
+  receive updates (untested end-to-end)
 
 ## Security Notes
 - The Supabase anon key is public by design (safe in client code)
