@@ -56,7 +56,20 @@ Two standalone HTML pages, vanilla JavaScript, all client-side. No build step.
 - Read-only — nobody can insert/edit/delete even with the public anon key
 - Re-pulls every 60s so a newly logged feeling reshapes the path live
 
+## Live Spectator View (`live.html` + `qr.html`)
+- Onlookers cannot get the real passthrough video (WebXR blocks camera access),
+  so the spectator view is a synced companion, not a literal video stream
+- `vr.html` broadcasts the wearer's path progress (a 0-1 fraction) over a
+  Supabase Realtime channel `feels-live`, ~4x/sec
+- `live.html` loads the same timeline itself (read-only RLS), subscribes to the
+  channel, and floods the phone screen with the wearer's current emotion color +
+  name, plus a dot moving along the full year-long path bar
+- Payload is just `{ progress }` — `live.html` derives emotion/color/date locally
+- `qr.html` renders a QR pointing to `live.html` for onlookers to scan
+- Goes idle ("waiting for the walk" / "paused") if no signal for 6s
+
 ## Data Flow
 - All emotion data in Supabase `diary_entries` (feeling, intensity, timestamp, user_id)
 - Diary app: fetched by date range, grouped by weekday client-side
-- Kiosk: full history fetched oldest→newest, converted to proportional path blocks
+- Kiosk + spectator: full history fetched oldest→newest, converted to proportional
+  path blocks; spectator position arrives via Realtime broadcast

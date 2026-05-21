@@ -8,7 +8,9 @@
 - [x] PDF generation - fixed
 - [x] Change-password action in app header
 - [x] VR/AR kiosk (`vr.html`) built
+- [x] Live spectator view (`live.html` + `qr.html`) built
 - [ ] VR kiosk verified on a real Meta Quest 3 / real path
+- [ ] Spectator broadcast verified end-to-end (headset -> live.html)
 
 ## VR/AR Kiosk - BUILT
 
@@ -31,6 +33,12 @@
 - [x] RLS policy "Kiosk anon read-only" added in Supabase (verified: 399 rows)
 - [x] Leaked password rotated; old one confirmed dead
 - [x] Change-password feature added to `index.html`
+
+### Live spectator view
+- [x] `vr.html` broadcasts path progress over Supabase Realtime (~4x/sec)
+- [x] `live.html` subscribes, floods screen with current emotion + path dot
+- [x] `qr.html` renders a scannable QR linking to `live.html`
+- [ ] Verify Realtime broadcast actually reaches spectators end-to-end
 
 ### Remaining / to verify
 - [ ] Real Quest 3 walk-through on the physical path

@@ -16,6 +16,10 @@ through every logged feeling.
   - Emotion name floats ahead, repositions per zone
   - Single-tap start, no other UI
   - Live refresh every 60s
+  - Broadcasts path progress over Supabase Realtime for spectators
+- `live.html`: spectator companion view — subscribes to the broadcast, floods a
+  phone screen with the wearer's current emotion + a dot on the full path
+- `qr.html`: scannable QR pointing onlookers to `live.html`
 - `index.html`: added a Change Password action to the header
 
 ## Auth / security resolution
@@ -37,9 +41,10 @@ through every logged feeling.
 ## Next Steps
 1. User runs the experience on a real Quest 3 along the physical path
 2. Report back: does SLAM tracking hold over ~172m? does color track position?
-3. Likely tuning: color-wash opacity curve (washes out over bright passthrough)
-4. Optional: add a real change-password UX beyond the prompt()-based one
-5. Optional: investigate Quest OS-level kiosk lockdown ("only app on headset")
+3. Verify Supabase Realtime broadcast reaches `live.html` (untested live)
+4. Likely tuning: color-wash opacity curve (washes out over bright passthrough)
+5. Optional: add a real change-password UX beyond the prompt()-based one
+6. Optional: investigate Quest OS-level kiosk lockdown ("only app on headset")
 
 ## Open risks
 - Quest 3 SLAM tracking is room-scale rated; ~172m outdoor walk is unverified
