@@ -1,66 +1,62 @@
 # System Patterns
 
 ## Architecture
-Single-page HTML application with vanilla JavaScript. All client-side rendering.
+Two standalone HTML pages, vanilla JavaScript, all client-side. No build step.
+- `index.html` — the diary card app
+- `vr.html` — the Meta Quest 3 passthrough-AR kiosk
 
-## Key Components
+## Diary App (`index.html`)
 
 ### Authentication
-- Supabase Auth for user management
-- Session persistence via Supabase
+- Supabase Auth for user management; session persisted by the SDK
+- Change-password action in the header calls `supabase.auth.updateUser({ password })`
 
 ### Feelings Wheel
-- SVG-based rotating wheel
-- Touch and mouse drag support
+- SVG-based rotating wheel, touch + mouse drag
 - Hierarchical emotion selection (inner/middle/outer rings)
+- `emotionWheelData` defines 7 families, each with a color, middle, and outer emotions
 
 ### Diary Card Generation
-- Weekly report with date range selection
-- Drag-and-drop entry reorganization
+- Weekly report with date-range selection
+- Drag-and-drop entry reorganization (updates timestamps in DB)
 - Entries grouped by day of week
 
-### PDF Generation Flow
-1. User clicks "Download PDF" button
-2. Success/error alerts are hidden
-3. Container is temporarily expanded to show full content
-4. html2canvas captures with scrollWidth/scrollHeight
-5. Canvas is converted to PNG image
-6. jsPDF creates landscape A4 PDF
-7. Content is centered both horizontally and vertically
-8. PDF is saved
+### PDF Generation (fixed)
+- Hide alerts → expand container → html2canvas at scrollWidth/scrollHeight
+- jsPDF landscape A4, content centered both axes
 
-## FIXED: PDF Implementation
+## VR/AR Kiosk (`vr.html`)
 
-### Previous Issues (Now Fixed)
-1. "Generating PDF" message appeared on output - alerts not hidden
-2. Diary card truncated - only viewport captured, not full scrollable content
-3. Content shifted left - incorrect centering calculation
-4. Empty space on right/bottom - wrong scaling logic
+### Stack
+- A-Frame 1.6.0, WebXR `immersive-ar` (passthrough), `referenceSpaceType: local-floor`
 
-### Current Implementation (Fixed)
-```javascript
-// 1. Hide overlays
-successAlertEl.style.display = 'none';
-errorAlertEl.style.display = 'none';
+### Concept
+- The wearer physically walks a ~172.5m real-world path
+  (start `42.003567,-73.921784` → end `42.003286,-73.923837`, haversine distance)
+- Every `diary_entries` row becomes a back-to-back block along the path
+- Block length ∝ how long that feeling was felt = next entry's timestamp minus
+  this one's; the most recent entry extends to "now"
+- The headset's own SLAM tracking measures distance walked; progress = the
+  walker's displacement projected onto the captured start→end direction
+- No GPS (Quest 3 has none) and no auto-movement — the walk is fully wearer-driven
 
-// 2. Expand container for full capture
-reportText.style.overflow = 'visible';
-reportText.style.maxHeight = 'none';
-reportText.style.height = 'auto';
+### Rendering
+- The `feels-walk` A-Frame component reads head position each tick, finds the
+  current emotion block, and crossfades a camera-parented translucent plane
+  (the "color wash") to that emotion's color
+- Color from `emotionWheelData`; wash opacity scales with intensity (1-5)
+- The current emotion's name floats ahead, repositioned on each zone change
+- NOTE: a translucent wash over bright passthrough content reads weaker than
+  over dark content (compositing contrast), so daylight scenes mute the color
 
-// 3. Capture with full dimensions
-const canvas = await html2canvas(reportText, {
-    windowWidth: scrollWidth,
-    windowHeight: scrollHeight
-});
-
-// 4. Proper centering
-const x = (pageWidth - imgWidth) / 2;
-const y = (pageHeight - imgHeight) / 2;
-```
+### Data access (no stored password)
+- Reads `diary_entries` anonymously, scoped by `KIOSK_USER_ID`
+- Supabase RLS policy "Kiosk anon read-only": grants `anon` SELECT on
+  `diary_entries` where `user_id = ee04c688-d857-45f8-849c-2f072053cf28`
+- Read-only — nobody can insert/edit/delete even with the public anon key
+- Re-pulls every 60s so a newly logged feeling reshapes the path live
 
 ## Data Flow
-- Diary entries stored in Supabase `diary_entries` table
-- Fetched by date range for weekly reports
-- Client-side grouping by day of week
-- Drag-and-drop updates timestamps in database
+- All emotion data in Supabase `diary_entries` (feeling, intensity, timestamp, user_id)
+- Diary app: fetched by date range, grouped by weekday client-side
+- Kiosk: full history fetched oldest→newest, converted to proportional path blocks

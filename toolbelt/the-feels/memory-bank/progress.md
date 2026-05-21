@@ -5,39 +5,47 @@
 - [x] Feelings wheel interaction working
 - [x] User authentication with Supabase
 - [x] Diary card generation with drag-and-drop
-- [x] PDF generation - **FIXED**
+- [x] PDF generation - fixed
+- [x] Change-password action in app header
+- [x] VR/AR kiosk (`vr.html`) built
+- [ ] VR kiosk verified on a real Meta Quest 3 / real path
 
-## PDF Generation Fix - COMPLETED
+## VR/AR Kiosk - BUILT
 
-### Phase 1: Preparation & Debug Setup
-- [x] Identified root causes of all 4 issues
-- [x] Documented the fixes needed
+### Done
+- [x] A-Frame 1.6.0 passthrough-AR scene
+- [x] Pull every `diary_entries` row, oldest → newest
+- [x] Duration model: block length ∝ (next timestamp − this timestamp);
+      most recent entry extends to "now"
+- [x] Path scaled to 172.5m (haversine distance of the two real coordinates)
+- [x] Wearer-controlled movement via headset SLAM tracking; progress projected
+      onto the captured start→end direction (no GPS, no auto-glide)
+- [x] Per-emotion color flood of the passthrough view; opacity ∝ intensity (1-5)
+- [x] Floating emotion name, repositioned on each zone change
+- [x] Single-tap kiosk start, no other UI
+- [x] Live refresh every 60s
+- [x] Colors sourced from `emotionWheelData`; 3 free-text feelings aliased
 
-### Phase 2: Fix Content Capture
-- [x] Implemented container expansion before capture
-- [x] Used html2canvas scrollWidth/scrollHeight options
-- [x] Verified full content will be captured
+### Auth / security
+- [x] Removed embedded password; kiosk uses read-only RLS instead
+- [x] RLS policy "Kiosk anon read-only" added in Supabase (verified: 399 rows)
+- [x] Leaked password rotated; old one confirmed dead
+- [x] Change-password feature added to `index.html`
 
-### Phase 3: Fix PDF Layout & Centering
-- [x] Calculate proper aspect ratio from canvas
-- [x] Implement correct scaling to fit A4
-- [x] Center content horizontally AND vertically
+### Remaining / to verify
+- [ ] Real Quest 3 walk-through on the physical path
+- [ ] Confirm SLAM tracking holds over ~172m
+- [ ] Tune color-wash opacity if it washes out in daylight
+- [ ] (Optional) Quest OS-level kiosk lockdown
 
-### Phase 4: Clean Up Overlays
-- [x] Hide success/error alerts before capture
-- [x] Restore alert visibility after capture
-
-### Phase 5: Testing & Verification
-- [x] Code reviewed and approved for production
-
-## Issues Fixed
-1. ✅ "Generating PDF" message appearing on PDF - FIXED (alerts hidden before capture)
-2. ✅ Diary card truncated - FIXED (expanded container + scroll dimensions)
-3. ✅ Content shifted left - FIXED (proper centering calculation)
-4. ✅ Empty space on right/bottom - FIXED (aspect-ratio-based scaling)
+## PDF Generation Fix - COMPLETED (prior work)
+- [x] Alerts hidden before capture
+- [x] Container expanded; html2canvas uses scroll dimensions
+- [x] Aspect-ratio scaling, content centered both axes
 
 ## Implementation Details
-- Main code in: `/index.html`
-- PDF function: `downloadDiaryCardPDF()`
-- Uses html2canvas + jsPDF libraries via CDN
-- User manually applied the fix code to their file
+- `index.html` - diary app; PDF function `downloadDiaryCardPDF()`,
+  change-password `handleChangePassword()`
+- `vr.html` - kiosk; `feels-walk` A-Frame component drives the color flood
+- Backend: Supabase project `bczevwhzlammcjomuqrg`, table `diary_entries`
+- ~399 entries spanning Sep 2025 – May 2026
