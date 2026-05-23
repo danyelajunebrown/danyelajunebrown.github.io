@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Art Portfolio</title>
+    <script src="https://cdn.jsdelivr.net/npm/heic2any@0.0.4/dist/heic2any.min.js"></script>
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
     <style>
 * {
     margin: 0;
@@ -414,6 +416,118 @@ body {
     font-weight: bold;
 }
 
+/* Vertical Carousel */
+.carousel-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 800;
+    background: #000;
+    display: none;
+}
+
+.carousel-overlay.active {
+    display: block;
+}
+
+.carousel-track {
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    position: relative;
+}
+
+.carousel-slide {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transition: opacity 0.6s ease, transform 0.6s ease;
+    transform: translateY(40px);
+    pointer-events: none;
+}
+
+.carousel-slide.active {
+    opacity: 1;
+    transform: translateY(0);
+    pointer-events: all;
+}
+
+.carousel-slide.exit-up {
+    opacity: 0;
+    transform: translateY(-40px);
+}
+
+.carousel-slide.exit-down {
+    opacity: 0;
+    transform: translateY(40px);
+}
+
+.carousel-slide img,
+.carousel-slide video {
+    max-width: 90vw;
+    max-height: 85vh;
+    object-fit: contain;
+}
+
+.carousel-slide iframe {
+    width: 80vw;
+    height: 70vh;
+    border: none;
+}
+
+.carousel-dots {
+    position: fixed;
+    right: 20px;
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 900;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.carousel-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.3);
+    cursor: pointer;
+    transition: all 0.3s ease;
+    border: none;
+    padding: 0;
+}
+
+.carousel-dot.active {
+    background: white;
+    transform: scale(1.4);
+}
+
+.carousel-close {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 900;
+    background: none;
+    border: 1px solid rgba(255,255,255,0.3);
+    color: white;
+    font-size: 18px;
+    padding: 8px 14px;
+    cursor: pointer;
+    transition: border-color 0.3s;
+}
+
+.carousel-close:hover {
+    border-color: white;
+}
+
 @media (max-width: 768px) {
     .super-user-interface {
         flex-direction: column;
@@ -447,6 +561,13 @@ body {
     <div class="background-media" id="backgroundMedia"></div>
     <div class="floating-container" id="floatingContainer"></div>
     <div class="project-info" id="projectInfo"></div>
+
+    <!-- Vertical Carousel -->
+    <div class="carousel-overlay" id="carouselOverlay">
+        <div class="carousel-track" id="carouselTrack"></div>
+        <div class="carousel-dots" id="carouselDots"></div>
+        <button class="carousel-close" id="carouselClose">&times;</button>
+    </div>
 
     <!-- Invisible Password Field -->
     <input type="text" id="passwordField" autocomplete="off">
@@ -486,6 +607,11 @@ body {
 
             <button class="btn btn-primary" id="uploadBtn" style="width: 100%; padding: 6px; font-size: 12px;">UPLOAD</button>
             <div id="uploadStatus" style="margin-top: 6px; font-size: 11px; color: rgba(255,255,255,0.6);"></div>
+
+            <div id="mediaManager" style="display:none; margin-top:10px; padding-top:10px; border-top:1px solid rgba(255,255,255,0.2);">
+                <div style="font-size:11px; margin-bottom:6px; opacity:0.8; text-transform:uppercase; letter-spacing:1px;">MEDIA ORDER (drag to reorder):</div>
+                <div id="mediaList" style="max-height:180px; overflow-y:auto;"></div>
+            </div>
         </div>
 
         <div class="scoring-panel">
@@ -548,37 +674,23 @@ body {
     </div>
 
     <script>
-        // Configuration - credentials stored in localStorage, never in source code
+        // Configuration
         const CONFIG = {
-            password: 'Eatad1ck!',
-            repo: 'danyelajunebrown/danyelajunebrown.github.io',
-            branch: 'main',
+            passwordHash: 'a055ea9c25e9b7866b4a1e76b3d274edfe5ca1940cd39fa51a051e748f44f35d',
             r2BucketUrl: 'https://pub-f9bb84bd43c343799213e3bfbc9436c5.r2.dev',
             r2WorkerUrl: 'https://r2-upload-handler.db7613.workers.dev/'
         };
 
-        // Get credentials from localStorage (only GitHub token needed now, R2 handled by worker)
-        function getCredentials() {
-            return {
-                githubToken: localStorage.getItem('github_token')
-            };
-        }
+        // Supabase
+        const SUPABASE_URL = 'https://qbbgrsdofmhiqeusguoq.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFiYmdyc2RvZm1oaXFldXNndW9xIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkzOTc4MTksImV4cCI6MjA5NDk3MzgxOX0.zT_YwQlALesrlqPwXvQpzZ05JJyK0nvLP1RDxlb5_fM';
+        const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-        // Check if credentials are set
-        function hasCredentials() {
-            const creds = getCredentials();
-            return !!creds.githubToken;
-        }
-
-        // Prompt for credentials on first use (only GitHub token now)
-        function promptForCredentials() {
-            const githubToken = prompt('Enter your GitHub Personal Access Token:');
-            
-            if (githubToken) {
-                localStorage.setItem('github_token', githubToken);
-                return true;
-            }
-            return false;
+        async function hashString(str) {
+            const encoder = new TextEncoder();
+            const data = encoder.encode(str);
+            const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+            return Array.from(new Uint8Array(hashBuffer)).map(b => b.toString(16).padStart(2, '0')).join('');
         }
 
         const THEMES = ['autonomy', 'access', 'affect', 'black', 'neurogender'];
@@ -595,30 +707,65 @@ body {
         let currentScoringIndex = 0;
         let unscoredWorks = [];
 
-        // Load projects from JSON
+        // Load projects from Supabase (fallback to JSON)
         async function loadProjects() {
             try {
-                const response = await fetch('projects.json');
-                const data = await response.json();
-                projects = data.projects;
-                
-                // Migrate old single-file format to new multi-file format
-                projects.forEach(project => {
-                    if (project.mediaUrl && !project.mediaUrls) {
-                        project.mediaUrls = [project.mediaUrl];
-                        project.mediaTypes = [project.mediaType || 'image'];
-                    }
-                    if (!project.mediaUrls) {
-                        project.mediaUrls = [];
-                        project.mediaTypes = [];
-                    }
+                const { data: projectRows, error: pErr } = await db
+                    .from('portfolio_projects')
+                    .select('*')
+                    .order('created_at', { ascending: false });
+                if (pErr) throw pErr;
+
+                const { data: mediaRows, error: mErr } = await db
+                    .from('portfolio_media')
+                    .select('*')
+                    .order('sort_order', { ascending: true });
+                if (mErr) throw mErr;
+
+                const mediaByProject = {};
+                mediaRows.forEach(m => {
+                    if (!mediaByProject[m.project_id]) mediaByProject[m.project_id] = [];
+                    mediaByProject[m.project_id].push(m);
                 });
-                
-                console.log('Loaded projects:', projects.length, 'total');
+
+                projects = projectRows.map(p => ({
+                    id: p.id,
+                    title: p.title,
+                    date: p.date || '',
+                    year: p.year,
+                    materials: p.materials || [],
+                    description: p.description || '',
+                    mediaUrls: (mediaByProject[p.id] || []).map(m => m.url),
+                    mediaTypes: (mediaByProject[p.id] || []).map(m => m.media_type),
+                    scores: {
+                        dearness: p.score_dearness,
+                        completeness: p.score_completeness,
+                        cost: p.score_cost,
+                        themes: p.score_themes || [],
+                        genres: p.score_genres || []
+                    }
+                }));
+
+                console.log('Loaded projects from Supabase:', projects.length);
                 initializeFloatingTitles();
                 populateProjectSelect();
             } catch (error) {
-                console.error('Error loading projects:', error);
+                console.error('Supabase load failed, falling back to JSON:', error);
+                try {
+                    const response = await fetch('projects.json');
+                    const data = await response.json();
+                    projects = data.projects;
+                    projects.forEach(project => {
+                        if (!project.mediaUrls) {
+                            project.mediaUrls = project.mediaUrl ? [project.mediaUrl] : [];
+                            project.mediaTypes = project.mediaType ? [project.mediaType] : [];
+                        }
+                    });
+                    initializeFloatingTitles();
+                    populateProjectSelect();
+                } catch (e) {
+                    console.error('JSON fallback also failed:', e);
+                }
             }
         }
 
@@ -734,50 +881,233 @@ body {
 
         function selectProject(index) {
             const project = projects[index];
-            const backgroundMedia = document.getElementById('backgroundMedia');
-            const projectInfo = document.getElementById('projectInfo');
-            
+
             floatingElements.forEach((element, i) => {
                 element.element.classList.toggle('selected', i === index);
             });
-            
+
             currentSelectedIndex = index;
-            
-            // Handle both old single-file and new multi-file projects
-            const mediaUrls = project.mediaUrls || (project.mediaUrl ? [project.mediaUrl] : []);
-            const mediaTypes = project.mediaTypes || (project.mediaType ? [project.mediaType] : []);
-            
-            let mediaHTML = '';
-            
-            // Show all media files
-            mediaUrls.forEach((url, i) => {
-                const type = mediaTypes[i] || 'image';
-                
-                switch (type) {
+            openCarousel(index);
+
+            if (superUserActive) {
+                document.getElementById('workTitle').textContent = project.title;
+                showMediaManager(project);
+            }
+        }
+
+        // ==========================================
+        // Vertical Carousel
+        // ==========================================
+        let carouselIndex = 0;
+        let carouselMedia = [];
+        let carouselScrollLocked = false;
+
+        function openCarousel(projectIndex) {
+            const project = projects[projectIndex];
+            const mediaUrls = project.mediaUrls || [];
+            const mediaTypes = project.mediaTypes || [];
+
+            if (mediaUrls.length === 0) return;
+
+            carouselMedia = mediaUrls.map((url, i) => ({ url, type: mediaTypes[i] || 'image' }));
+            carouselIndex = 0;
+
+            const track = document.getElementById('carouselTrack');
+            track.innerHTML = carouselMedia.map((m, i) => {
+                let content = '';
+                switch (m.type) {
                     case 'image':
-                        mediaHTML += `<img src="${url}" alt="${project.title}" style="max-width: 100%; max-height: 100%; object-fit: contain;">`;
-                        break;
-                    case 'youtube':
-                        mediaHTML += `<iframe src="https://www.youtube.com/embed/${url}?autoplay=1&mute=1&loop=1&playlist=${url}" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>`;
+                        if (m.url.toLowerCase().endsWith('.heic')) {
+                            content = `<img data-heic-src="${m.url}" alt="" style="opacity:0.3;">`;
+                        } else {
+                            content = `<img src="${m.url}" alt="">`;
+                        }
                         break;
                     case 'video':
-                        mediaHTML += `<video autoplay loop style="max-width: 100%; max-height: 100%; object-fit: contain;"><source src="${url}" type="video/mp4"></video>`;
+                        content = `<video controls><source src="${m.url}" type="video/mp4"></video>`;
+                        break;
+                    case 'youtube':
+                        content = `<iframe src="https://www.youtube.com/embed/${m.url}?autoplay=0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>`;
                         break;
                     case 'pdf':
-                        mediaHTML += `<div style="background: linear-gradient(45deg, #333, #666); display: flex; align-items: center; justify-content: center; font-size: 48px; color: white;">PDF</div>`;
+                        content = `<iframe src="${m.url}" style="width:80vw;height:85vh;background:white;"></iframe>`;
                         break;
                 }
-            });
-            
-            backgroundMedia.innerHTML = `<div style="display: flex; flex-wrap: wrap; gap: 20px; width: 100%; height: 100%; justify-content: center; align-items: center;">${mediaHTML}</div>`;
-            backgroundMedia.classList.add('active');
-            
+                return `<div class="carousel-slide${i === 0 ? ' active' : ''}">${content}</div>`;
+            }).join('');
+
+            // Dots (only if more than 1 item)
+            const dots = document.getElementById('carouselDots');
+            if (carouselMedia.length > 1) {
+                dots.innerHTML = carouselMedia.map((_, i) =>
+                    `<button class="carousel-dot${i === 0 ? ' active' : ''}" data-index="${i}"></button>`
+                ).join('');
+                dots.style.display = 'flex';
+            } else {
+                dots.innerHTML = '';
+                dots.style.display = 'none';
+            }
+
+            document.getElementById('carouselOverlay').classList.add('active');
+
+            // Info panel
+            const projectInfo = document.getElementById('projectInfo');
             projectInfo.innerHTML = `
                 <div class="info-title">${project.title}</div>
-                <div class="info-year">${project.year}</div>
-                <div class="info-materials">${project.materials ? project.materials.join(', ') : project.media}</div>
+                <div class="info-year">${project.date || project.year}</div>
+                <div class="info-materials">${project.materials ? project.materials.join(', ') : ''}</div>
+                ${project.description ? `<div style="margin-top:8px;font-size:14px;opacity:0.7;">${project.description}</div>` : ''}
             `;
             projectInfo.classList.add('show');
+            projectInfo.style.zIndex = '900';
+
+            // Convert HEIC images
+            track.querySelectorAll('[data-heic-src]').forEach(async img => {
+                try {
+                    const resp = await fetch(img.dataset.heicSrc);
+                    const blob = await resp.blob();
+                    const jpeg = await heic2any({ blob, toType: 'image/jpeg', quality: 0.8 });
+                    img.src = URL.createObjectURL(Array.isArray(jpeg) ? jpeg[0] : jpeg);
+                    img.style.opacity = '1';
+                } catch (e) {
+                    console.error('HEIC conversion failed:', e);
+                    img.alt = 'HEIC format - view on Safari';
+                    img.style.opacity = '1';
+                }
+            });
+        }
+
+        function closeCarousel() {
+            document.getElementById('carouselOverlay').classList.remove('active');
+            document.getElementById('projectInfo').classList.remove('show');
+            document.getElementById('projectInfo').style.zIndex = '';
+            document.querySelectorAll('#carouselTrack video').forEach(v => v.pause());
+            document.querySelectorAll('#carouselTrack iframe').forEach(f => f.src = '');
+            currentSelectedIndex = -1;
+            floatingElements.forEach(el => el.element.classList.remove('selected'));
+        }
+
+        function goToSlide(newIndex) {
+            if (newIndex < 0 || newIndex >= carouselMedia.length || newIndex === carouselIndex) return;
+            if (carouselScrollLocked) return;
+            carouselScrollLocked = true;
+
+            const slides = document.querySelectorAll('.carousel-slide');
+            const dots = document.querySelectorAll('.carousel-dot');
+            const direction = newIndex > carouselIndex ? 'up' : 'down';
+
+            // Pause media on exiting slide
+            slides[carouselIndex].querySelectorAll('video').forEach(v => v.pause());
+
+            slides[carouselIndex].classList.remove('active');
+            slides[carouselIndex].classList.add(direction === 'up' ? 'exit-up' : 'exit-down');
+
+            const prevIndex = carouselIndex;
+            carouselIndex = newIndex;
+
+            setTimeout(() => {
+                slides[prevIndex].classList.remove('exit-up', 'exit-down');
+                slides[carouselIndex].classList.add('active');
+                dots.forEach((d, i) => d.classList.toggle('active', i === carouselIndex));
+                carouselScrollLocked = false;
+            }, 150);
+        }
+
+        // Wheel navigation
+        document.getElementById('carouselOverlay').addEventListener('wheel', (e) => {
+            e.preventDefault();
+            if (e.deltaY > 0) goToSlide(carouselIndex + 1);
+            else goToSlide(carouselIndex - 1);
+        }, { passive: false });
+
+        // Touch swipe
+        let touchStartY = 0;
+        document.getElementById('carouselOverlay').addEventListener('touchstart', (e) => {
+            touchStartY = e.touches[0].clientY;
+        }, { passive: true });
+        document.getElementById('carouselOverlay').addEventListener('touchend', (e) => {
+            const deltaY = touchStartY - e.changedTouches[0].clientY;
+            if (Math.abs(deltaY) > 50) {
+                if (deltaY > 0) goToSlide(carouselIndex + 1);
+                else goToSlide(carouselIndex - 1);
+            }
+        });
+
+        // Dot clicks
+        document.getElementById('carouselDots').addEventListener('click', (e) => {
+            if (e.target.classList.contains('carousel-dot')) {
+                goToSlide(parseInt(e.target.dataset.index));
+            }
+        });
+
+        // Close
+        document.getElementById('carouselClose').addEventListener('click', closeCarousel);
+
+        // ==========================================
+        // Media Manager (super-user mode)
+        // ==========================================
+        function showMediaManager(project) {
+            const manager = document.getElementById('mediaManager');
+            const list = document.getElementById('mediaList');
+
+            if (!project || !project.mediaUrls || !project.mediaUrls.length) {
+                manager.style.display = 'none';
+                return;
+            }
+
+            manager.style.display = 'block';
+            list.innerHTML = project.mediaUrls.map((url, i) => {
+                const shortUrl = url.length > 35 ? '...' + url.slice(-35) : url;
+                return `<div draggable="true" data-idx="${i}" style="display:flex; align-items:center; gap:6px; padding:4px 6px; margin:2px 0; background:rgba(255,255,255,0.05); font-size:11px; cursor:grab; border:1px solid transparent; transition:border-color 0.2s;">
+                    <span style="opacity:0.4;">&#9776;</span>
+                    <span style="color:rgba(255,255,255,0.5); min-width:40px;">${project.mediaTypes[i]}</span>
+                    <span style="flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${shortUrl}</span>
+                    <button onclick="deleteMedia(${i})" style="background:none; border:none; color:rgba(255,100,100,0.8); cursor:pointer; font-size:14px; padding:0 4px;">&times;</button>
+                </div>`;
+            }).join('');
+
+            // Drag-to-reorder
+            let dragIdx = null;
+            list.querySelectorAll('[draggable]').forEach(el => {
+                el.addEventListener('dragstart', () => {
+                    dragIdx = parseInt(el.dataset.idx);
+                    el.style.opacity = '0.4';
+                });
+                el.addEventListener('dragend', () => {
+                    el.style.opacity = '1';
+                });
+                el.addEventListener('dragover', (e) => {
+                    e.preventDefault();
+                    el.style.borderColor = 'rgba(255,255,255,0.5)';
+                });
+                el.addEventListener('dragleave', () => {
+                    el.style.borderColor = 'transparent';
+                });
+                el.addEventListener('drop', async (e) => {
+                    e.preventDefault();
+                    el.style.borderColor = 'transparent';
+                    const dropIdx = parseInt(el.dataset.idx);
+                    if (dragIdx === null || dragIdx === dropIdx) return;
+
+                    const proj = projects[currentSelectedIndex];
+                    const [movedUrl] = proj.mediaUrls.splice(dragIdx, 1);
+                    const [movedType] = proj.mediaTypes.splice(dragIdx, 1);
+                    proj.mediaUrls.splice(dropIdx, 0, movedUrl);
+                    proj.mediaTypes.splice(dropIdx, 0, movedType);
+
+                    await saveMediaForProject(proj.id, proj.mediaUrls, proj.mediaTypes);
+                    showMediaManager(proj);
+                });
+            });
+        }
+
+        async function deleteMedia(index) {
+            const proj = projects[currentSelectedIndex];
+            if (!proj) return;
+            proj.mediaUrls.splice(index, 1);
+            proj.mediaTypes.splice(index, 1);
+            await saveMediaForProject(proj.id, proj.mediaUrls, proj.mediaTypes);
+            showMediaManager(proj);
         }
 
         // Password field handling
@@ -789,10 +1119,19 @@ body {
             console.log('Password field ready - type anywhere on page');
         });
         
-        // Route ALL keypresses to password field when super-user is inactive
+        // Route keypresses to password field when super-user is inactive and carousel is closed
         document.addEventListener('keydown', (e) => {
+            const carouselActive = document.getElementById('carouselOverlay').classList.contains('active');
+
+            // Carousel keyboard navigation
+            if (carouselActive) {
+                if (e.key === 'ArrowDown' || e.key === ' ') { e.preventDefault(); goToSlide(carouselIndex + 1); }
+                if (e.key === 'ArrowUp') { e.preventDefault(); goToSlide(carouselIndex - 1); }
+                if (e.key === 'Escape') closeCarousel();
+                return;
+            }
+
             if (!superUserActive && document.activeElement !== passwordField) {
-                // Don't steal focus from super-user interface
                 if (!document.getElementById('superUserInterface').contains(document.activeElement)) {
                     passwordField.focus();
                 }
@@ -807,23 +1146,12 @@ body {
         });
         
         // Listen for input
-        passwordField.addEventListener('input', function(e) {
-            console.log('Typing detected:', e.target.value.length, 'characters');
-            
-            if (e.target.value === CONFIG.password) {
+        passwordField.addEventListener('input', async function(e) {
+            const hash = await hashString(e.target.value);
+
+            if (hash === CONFIG.passwordHash) {
                 console.log('Password correct! Activating super-user mode...');
-                
-                // Check if credentials are set
-                if (!hasCredentials()) {
-                    const credentialsSet = promptForCredentials();
-                    if (!credentialsSet) {
-                        alert('Credentials required for upload/save functionality');
-                        e.target.value = '';
-                        passwordField.focus();
-                        return;
-                    }
-                }
-                
+
                 e.target.style.display = 'none';
                 document.getElementById('superUserInterface').classList.add('show');
                 superUserActive = true;
@@ -854,7 +1182,6 @@ body {
             // Remove dummy works
             projects = projects.filter(p => !p.isDummy);
             initializeFloatingTitles();
-            saveProjectsToGitHub();
         }
 
         // Upload functionality
@@ -991,17 +1318,10 @@ body {
                         fileToUpload = await compressVideo(fileToUpload);
                     }
                     
-                    // Upload to GitHub or R2 based on size
-                    const fileSizeMB = fileToUpload.size / (1024 * 1024);
+                    // Upload to R2
                     let mediaUrl = '';
-                    
-                    if (fileSizeMB < 5) {
-                        status.textContent = `Uploading ${i + 1} to GitHub...`;
-                        mediaUrl = await uploadToGitHub(fileToUpload);
-                    } else {
-                        status.textContent = `Uploading ${i + 1} to R2...`;
-                        mediaUrl = await uploadToR2(fileToUpload);
-                    }
+                    status.textContent = `Uploading ${i + 1} to R2...`;
+                    mediaUrl = await uploadToR2(fileToUpload);
                     
                     mediaUrls.push(mediaUrl);
                     mediaTypes.push(mediaType);
@@ -1011,9 +1331,10 @@ body {
                 const newTitle = document.getElementById('newTitleInput').value.trim();
                 const selectedProject = projectSelect.value;
                 
+                let targetProject;
                 if (newTitle && !selectedProject) {
-                    // Creating new project with multiple files
-                    const newProject = {
+                    // Creating new project
+                    targetProject = {
                         id: generateId(),
                         title: newTitle,
                         date: document.getElementById('dateInput').value,
@@ -1030,27 +1351,25 @@ body {
                             genres: []
                         }
                     };
-                    
-                    projects.push(newProject);
+                    projects.push(targetProject);
                 } else if (selectedProject) {
-                    // Attaching to existing project - append new files
-                    const project = projects.find(p => p.id === selectedProject);
-                    if (project) {
-                        // Convert old single media to arrays if needed
-                        if (!Array.isArray(project.mediaUrls)) {
-                            project.mediaUrls = project.mediaUrl ? [project.mediaUrl] : [];
-                            project.mediaTypes = project.mediaType ? [project.mediaType] : [];
+                    // Attaching to existing project
+                    targetProject = projects.find(p => p.id === selectedProject);
+                    if (targetProject) {
+                        if (!Array.isArray(targetProject.mediaUrls)) {
+                            targetProject.mediaUrls = [];
+                            targetProject.mediaTypes = [];
                         }
-                        // Append new files
-                        project.mediaUrls.push(...mediaUrls);
-                        project.mediaTypes.push(...mediaTypes);
+                        targetProject.mediaUrls.push(...mediaUrls);
+                        targetProject.mediaTypes.push(...mediaTypes);
                     }
                 } else {
                     status.textContent = 'Please enter a title or select an existing project';
                     return;
                 }
-                
-                await saveProjectsToGitHub();
+
+                await saveProject(targetProject);
+                await saveMediaForProject(targetProject.id, targetProject.mediaUrls, targetProject.mediaTypes);
                 initializeFloatingTitles();
                 populateProjectSelect();
                 
@@ -1080,19 +1399,10 @@ body {
         }
 
         async function compressVideo(file) {
-            // Simple client-side video compression simulation
-            // In production, you'd use ffmpeg.wasm or similar
-            // For now, just return the file (you can implement actual compression later)
             return file;
         }
 
-        async function uploadToGitHub(file) {
-            // DEPRECATED - Use R2 for all files now
-            // This function kept for backwards compatibility only
-            throw new Error('GitHub uploads are disabled. All files must use R2.');
-        }
-
-               async function uploadToR2(file) {
+        async function uploadToR2(file) {
             const CHUNK_SIZE = 50 * 1024 * 1024; // 50MB chunks
             const fileId = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
             const totalChunks = Math.ceil(file.size / CHUNK_SIZE);
@@ -1144,45 +1454,38 @@ body {
             }
         }
 
-        async function saveProjectsToGitHub() {
-            const creds = getCredentials();
-            const content = JSON.stringify({ projects }, null, 2);
-            const base64Content = btoa(unescape(encodeURIComponent(content)));
-            
-            try {
-                // Get current file SHA
-                const getResponse = await fetch(`https://api.github.com/repos/${CONFIG.repo}/contents/projects.json`, {
-                    headers: {
-                        'Authorization': `token ${creds.githubToken}`
-                    }
+        async function saveProject(project) {
+            const { error } = await db
+                .from('portfolio_projects')
+                .upsert({
+                    id: project.id,
+                    title: project.title,
+                    date: project.date,
+                    year: project.year,
+                    materials: project.materials,
+                    description: project.description,
+                    score_dearness: project.scores.dearness,
+                    score_completeness: project.scores.completeness,
+                    score_cost: project.scores.cost,
+                    score_themes: project.scores.themes,
+                    score_genres: project.scores.genres
                 });
-                
-                let sha = null;
-                if (getResponse.ok) {
-                    const getData = await getResponse.json();
-                    sha = getData.sha;
-                }
-                
-                // Update file
-                const putResponse = await fetch(`https://api.github.com/repos/${CONFIG.repo}/contents/projects.json`, {
-                    method: 'PUT',
-                    headers: {
-                        'Authorization': `token ${creds.githubToken}`,
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        message: 'Update projects.json',
-                        content: base64Content,
-                        sha: sha,
-                        branch: CONFIG.branch
-                    })
-                });
-                
-                if (!putResponse.ok) throw new Error('Failed to save to GitHub');
-                
-                console.log('Projects saved to GitHub');
-            } catch (error) {
-                console.error('Error saving to GitHub:', error);
+            if (error) console.error('Save project error:', error);
+        }
+
+        async function saveMediaForProject(projectId, mediaUrls, mediaTypes) {
+            await db.from('portfolio_media').delete().eq('project_id', projectId);
+
+            const rows = mediaUrls.map((url, i) => ({
+                project_id: projectId,
+                url: url,
+                media_type: mediaTypes[i],
+                sort_order: i
+            }));
+
+            if (rows.length > 0) {
+                const { error } = await db.from('portfolio_media').insert(rows);
+                if (error) console.error('Save media error:', error);
             }
         }
 
@@ -1351,8 +1654,8 @@ body {
                 .map(cb => cb.value);
             work.scores.genres = genresChecked;
             
-            await saveProjectsToGitHub();
-            
+            await saveProject(work);
+
             currentScoringIndex++;
             loadNextWorkToScore();
         });
