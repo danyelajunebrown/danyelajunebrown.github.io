@@ -585,6 +585,7 @@
             <!-- Tabs -->
             <div class="tabs">
                 <button class="tab active" data-tab="interviews">INTERVIEWS</button>
+                <button class="tab" data-tab="zoom">ZOOM IMPORT</button>
                 <button class="tab" data-tab="participants">PARTICIPANTS</button>
                 <button class="tab" data-tab="audit">AUDIT LOG</button>
             </div>
@@ -598,6 +599,13 @@
                         <p>Drag & drop audio file or click to browse</p>
                         <p class="hint">Supported: .mp3, .wav, .m4a (max 500MB)</p>
                         <input type="file" id="audioInput" accept="audio/*" hidden />
+                    </div>
+                    <div style="margin-top: 10px; display: flex; align-items: center; gap: 8px;">
+                        <label for="providerSelect" class="hint">Transcription provider:</label>
+                        <select id="providerSelect" style="padding: 4px 8px;">
+                            <option value="deepgram" selected>Deepgram (nova-2)</option>
+                            <option value="assemblyai">AssemblyAI</option>
+                        </select>
                     </div>
                     <div id="uploadProgress" class="progress-container hidden">
                         <div class="progress-bar">
@@ -624,6 +632,34 @@
                         <div class="empty-state">
                             <p>No completed interviews yet</p>
                         </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Zoom Import Tab -->
+            <div id="zoom" class="tab-content">
+                <div class="card">
+                    <h2>ZOOM CLOUD RECORDINGS</h2>
+                    <p class="hint">
+                        Imports per-participant audio so speaker identity comes from Zoom,
+                        not acoustic diarization. Requires "Record a separate audio file for
+                        each participant" enabled in Zoom recording settings.
+                    </p>
+                    <div style="display: flex; gap: 8px; align-items: center; margin: 10px 0;">
+                        <label class="hint">From:</label>
+                        <input type="date" id="zoomFrom" />
+                        <label class="hint">To:</label>
+                        <input type="date" id="zoomTo" />
+                        <label class="hint">Provider:</label>
+                        <select id="zoomProviderSelect">
+                            <option value="deepgram" selected>Deepgram</option>
+                            <option value="assemblyai">AssemblyAI</option>
+                        </select>
+                        <button id="loadZoomBtn" class="btn btn-primary">LOAD RECORDINGS</button>
+                    </div>
+                    <p id="zoomStatus" class="hint"></p>
+                    <div id="zoomList">
+                        <div class="empty-state"><p>Click "LOAD RECORDINGS" to fetch from Zoom</p></div>
                     </div>
                 </div>
             </div>

@@ -101,6 +101,9 @@ function setupEventListeners() {
     document.getElementById('cancelNewParticipantBtn').addEventListener('click', closeNewParticipantModal);
     document.getElementById('createParticipantBtn').addEventListener('click', createNewParticipant);
 
+    // Zoom Import
+    document.getElementById('loadZoomBtn').addEventListener('click', loadZoomRecordings);
+
     // Audit
     document.getElementById('auditActorFilter').addEventListener('change', loadAuditLog);
     document.getElementById('auditResourceFilter').addEventListener('change', loadAuditLog);
@@ -196,6 +199,7 @@ function switchTab(tabId) {
     // Load data for the tab
     if (tabId === 'participants') loadParticipants();
     if (tabId === 'audit') loadAuditLog();
+    if (tabId === 'zoom') initZoomTab();
 }
 
 // ============================================
@@ -265,13 +269,14 @@ async function handleFileUpload(file) {
 
         if (uploadError) throw uploadError;
 
+        const provider = document.getElementById('providerSelect')?.value || 'deepgram';
         progressFill.style.width = '80%';
-        uploadStatus.textContent = 'Transcribing with Deepgram...';
+        uploadStatus.textContent = `Transcribing with ${provider}...`;
 
         // Transcribe via Edge Function (keeps API key server-side)
         // filePath already declared above during the storage upload step
         const { data: result, error: fnError } = await db.functions.invoke('process-audio', {
-            body: { interview_id: interview.id, audio_path: filePath }
+            body: { interview_id: interview.id, audio_path: filePath, provider }
         });
 
         if (fnError) throw fnError;
@@ -923,9 +928,115 @@ async function exportAuditLog() {
     URL.revokeObjectURL(url);
 }
 
+// ============================================
+// ZOOM IMPORT
+// ============================================
+function initZoomTab() {
+    // Default date range: last 30 days
+    const fromEl = document.getElementById('zoomFrom');
+    const toEl = document.getElementById('zoomTo');
+    if (!fromEl.value) {
+        const today = new Date();
+        const monthAgo = new Date(today.getTime() - 30 * 24 * 60 * 60 * 1000);
+        fromEl.value = monthAgo.toISOString().slice(0, 10);
+        toEl.value = today.toISOString().slice(0, 10);
+    }
+}
+
+async function loadZoomRecordings() {
+    const statusEl = document.getElementById('zoomStatus');
+    const listEl = document.getElementById('zoomList');
+    const from = document.getElementById('zoomFrom').value;
+    const to = document.getElementById('zoomTo').value;
+
+    statusEl.textContent = 'Loading recordings from Zoom...';
+    listEl.innerHTML = '';
+
+    try {
+        const { data, error } = await db.functions.invoke('zoom-list-recordings', {
+            body: { from, to }
+        });
+        if (error) throw error;
+        if (data?.error) throw new Error(data.error);
+
+        renderZoomRecordings(data.meetings || []);
+        statusEl.textContent = `Found ${data.meetings?.length || 0} meeting(s) between ${from} and ${to}.`;
+    } catch (err) {
+        statusEl.textContent = `Error: ${err.message}`;
+        listEl.innerHTML = `<div class="empty-state"><p>Could not load recordings. Check that Zoom secrets are set and the function is deployed.</p></div>`;
+    }
+}
+
+function renderZoomRecordings(meetings) {
+    const listEl = document.getElementById('zoomList');
+    if (!meetings.length) {
+        listEl.innerHTML = '<div class="empty-state"><p>No recordings in this date range</p></div>';
+        return;
+    }
+    listEl.innerHTML = meetings.map(m => {
+        const perParticipant = (m.recording_files || []).filter(f =>
+            f.recording_type === 'audio_only' && f.participant_audio_user_name);
+        const anyAudio = (m.recording_files || []).filter(f => f.recording_type === 'audio_only');
+        const speakerCount = perParticipant.length;
+        const speakerNames = perParticipant.map(f => f.participant_audio_user_name).join(', ');
+        const canImport = anyAudio.length > 0;
+        const label = speakerCount
+            ? `${speakerCount} per-participant tracks: ${speakerNames}`
+            : (anyAudio.length ? 'Single mixed audio (will diarize)' : 'No audio files');
+        const startStr = m.start_time ? new Date(m.start_time).toLocaleString() : '';
+        const safeUuid = (m.uuid || '').replace(/'/g, "\\'");
+        return `
+            <div class="interview-item" style="padding: 12px; border-bottom: 1px solid #333;">
+                <div style="display: flex; justify-content: space-between; gap: 12px;">
+                    <div style="flex: 1;">
+                        <strong>${escapeHtml(m.topic || '(no topic)')}</strong>
+                        <div class="hint">${startStr} &middot; ${Math.round((m.duration || 0))} min</div>
+                        <div class="hint">${escapeHtml(label)}</div>
+                    </div>
+                    <button class="btn btn-primary"
+                        ${canImport ? '' : 'disabled'}
+                        onclick="importZoomRecording('${safeUuid}', this)">
+                        IMPORT
+                    </button>
+                </div>
+            </div>
+        `;
+    }).join('');
+}
+
+async function importZoomRecording(meetingUuid, btn) {
+    if (!confirm('Import this Zoom meeting? Per-participant audio will be transcribed separately and the audio deleted after.')) return;
+    const provider = document.getElementById('zoomProviderSelect').value;
+    btn.disabled = true;
+    btn.textContent = 'IMPORTING...';
+    const statusEl = document.getElementById('zoomStatus');
+    statusEl.textContent = 'Importing... this can take a few minutes for multi-speaker meetings.';
+    try {
+        const { data, error } = await db.functions.invoke('zoom-import-recording', {
+            body: { meeting_uuid: meetingUuid, provider, uploaded_by: currentUser.id }
+        });
+        if (error) throw error;
+        if (data?.error) throw new Error(data.error);
+        statusEl.textContent = `Imported! ${data.files_processed} file(s), ${data.segments} segments, speakers: ${(data.speakers || []).join(', ')}`;
+        btn.textContent = 'IMPORTED';
+        loadInterviews();
+    } catch (err) {
+        statusEl.textContent = `Import failed: ${err.message}`;
+        btn.disabled = false;
+        btn.textContent = 'IMPORT';
+    }
+}
+
+function escapeHtml(s) {
+    return String(s ?? '').replace(/[&<>"']/g, c => ({
+        '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+    }[c]));
+}
+
 // Make functions available globally for onclick handlers
 window.openTaggerModal = openTaggerModal;
 window.viewTranscript = viewTranscript;
+window.importZoomRecording = importZoomRecording;
 window.showNewParticipantModal = showNewParticipantModal;
 window.resendKey = resendKey;
 window.suspendParticipant = suspendParticipant;
