@@ -1,31 +1,40 @@
 # Project Brief
 
-## The Feels - DBT Skills Tracker
+## The Feels — Quest 3 Mixed-Reality Walk (native build)
 
-A web application for tracking emotions and DBT (Dialectical Behavior Therapy) skills. Users can log their feelings using an interactive feelings wheel, track intensity levels (1-5), record DBT skills used, and generate weekly diary cards for their therapy work.
+The Feels is a mixed-reality art installation for the **Meta Quest 3S**. The wearer
+walks a fixed **~445.8 m** real-world path; the headset's passthrough view is tinted
+by whichever logged emotion they are currently "inside." It turns the diary owner's
+emotional history into an embodied, walkable timeline.
 
-It also includes an immersive companion experience: a Meta Quest 3 passthrough-AR walk through the diary owner's entire emotional history, plus a live spectator view onlookers can watch on their phones via a QR code.
+This memory bank documents the **native Unity build** — the installation piece. It
+supersedes the earlier WebXR prototype (`vr.html`), which is now reference-only.
 
-## Core Features
-- Interactive feelings wheel with hierarchical emotion selection
-- Intensity tracking (1-5 scale)
-- DBT skill selection from common DBT techniques
-- Weekly diary card generation with drag-and-drop entry organization
-- PDF export of diary cards
-- User authentication via Supabase
-- Change-password action in the app header
-- **VR/AR kiosk** (`vr.html`): a passthrough-AR walk on Meta Quest 3 through every logged feeling
-- **Live spectator view** (`live.html`): a synced companion view onlookers watch in real time
-- **QR page** (`qr.html`): scannable code that sends onlookers to the spectator view
+## The two halves of "The Feels"
+1. **Diary app** (`index.html`) — the original web DBT diary card: log feelings on a
+   wheel, rate intensity, generate PDFs. This is the DATA SOURCE. Still live, unchanged.
+2. **MR walk** (`Unity/`) — THIS project. A sideloaded native Quest app that reads that
+   same diary data and renders it as a color-tinted passthrough walk.
 
-## Tech Stack
-- HTML/CSS/JavaScript (vanilla)
-- Supabase for authentication and database
-- html2canvas + jsPDF for PDF generation
-- A-Frame 1.6.0 + WebXR (`immersive-ar`) for the VR kiosk
+## Core concept (artist-confirmed)
+- One viewer, in the headset, walking a real ~445.8 m outdoor path.
+- ~413 logged diary entries become back-to-back color zones along that path; zone
+  length ∝ how long that feeling was actually felt.
+- The real world is washed/tinted with the current emotion's family color; opacity ∝
+  intensity (intensity × 10%).
+- Progress is a distance-walked ODOMETER: starts at 0 on launch, accumulates horizontal
+  head movement, can begin ANYWHERE. NOT GPS, NOT a fixed start point.
+- The "real prize": a Meta Depth-API surface tint that paints the color onto the ACTUAL
+  near surfaces you see (strongest up close, fading with distance), instead of a flat
+  film. The flat wash is the proven fallback.
 
-## Files
-- `index.html` - main diary card app
-- `vr.html` - Meta Quest 3 passthrough-AR kiosk experience
-- `live.html` - live spectator companion view
-- `qr.html` - QR code page linking onlookers to the spectator view
+## Must-haves for the installation
+- **Auto-launch** when the headset powers on (it's an unattended kiosk piece).
+- **Zero UI** in the final build — no debug readout, no menus; just the walk.
+- **Uninterrupted walking** — the guardian boundary must not stop the wearer.
+- **True 1× walking scale** (walk the real 445.8 m), not the dev-time 20× smoke-test scale.
+
+## Who / where
+- Artist: Danyela Brown (Bard College, db7613@bard.edu).
+- Built on a MacBook Air (Apple Silicon / arm64), Unity closed, headless batch builds.
+- Sideloaded to one Quest 3S over adb.

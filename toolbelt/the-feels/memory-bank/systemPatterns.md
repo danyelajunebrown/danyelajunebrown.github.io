@@ -1,75 +1,71 @@
 # System Patterns
 
-## Architecture
-Two standalone HTML pages, vanilla JavaScript, all client-side. No build step.
-- `index.html` — the diary card app
-- `vr.html` — the Meta Quest 3 passthrough-AR kiosk
+## Architecture (native Unity app)
+One scene, one MonoBehaviour you place; everything else self-wires.
 
-## Diary App (`index.html`)
+**Assets/Scripts/**
+- **TheFeelsData.cs** — SDK-independent data model. `EmotionColors` (feeling→family→
+  color), `FeelsPath` (haversine length over a 14-point GPX polyline = ~445.8 m),
+  `SegmentBuilder` (entries→duration-proportional segments), `FeelingSegment` struct.
+- **FeelsDataLoader.cs** — MonoBehaviour. Anonymous read-only Supabase fetch of
+  `diary_entries`; builds the segment list; `SegmentAtMeters(m)` returns the emotion
+  you're "inside."
+- **FeelsExperience.cs** — THE component. Drop it on one empty GameObject; it
+  `[RequireComponent]`s FeelsDataLoader. Per frame: odometer → segment → tint + debug
+  readout + adb heartbeat. Also stands up the Depth API.
 
-### Authentication
-- Supabase Auth for user management; session persisted by the SDK
-- Change-password action in the header calls `supabase.auth.updateUser({ password })`
+**Assets/Resources/**
+- **FeelsDepthTint.shader** (`TheFeels/DepthTint`) — the tint. Depth-live path tints
+  real surfaces by proximity; `#else` path is the flat wash. Under Resources/ so it
+  can't be stripped from the APK.
+- **FeelsTint.shader** — older flat-only shader, kept as a fallback in the load chain.
 
-### Feelings Wheel
-- SVG-based rotating wheel, touch + mouse drag
-- Hierarchical emotion selection (inner/middle/outer rings)
-- `emotionWheelData` defines 7 families, each with a color, middle, and outer emotions
+**Assets/Editor/**
+- **FeelsBuild.cs** — headless Android build entry (`FeelsBuild.Android`).
+- **FeelsDepthSetup.cs** — headless enable of the two OpenXR features the Depth API
+  needs (Meta Quest: Occlusion + Session).
 
-### Diary Card Generation
-- Weekly report with date-range selection
-- Drag-and-drop entry reorganization (updates timestamps in DB)
-- Entries grouped by day of week
+**Assets/Plugins/Android/AndroidManifest.xml** — declares
+`com.oculus.permission.USE_SCENE` + supported devices (quest3s).
 
-### PDF Generation (fixed)
-- Hide alerts → expand container → html2canvas at scrollWidth/scrollHeight
-- jsPDF landscape A4, content centered both axes
+## Rendering pattern (the tint)
+- ONE quad, parented to the head camera, 1 m in front (`washDistance`), scale 40,
+  `ZTest Always` → a full-FOV color film that's never clipped.
+- Material = FeelsDepthTint; `_Color` set each frame to (emotion color, opacity =
+  intensity × 0.1).
+- The shader reprojects each pixel's world position into Meta's environment-depth
+  texture and reads the real surface distance there:
+  - **depth live** (HARD/SOFT_OCCLUSION keyword on): `prox =
+    saturate((_MaxDist − realDist) / _MaxDist)`; near surfaces strong, far/empty clear.
+    Floored at `_MinTint` so it's never fully blank.
+  - **depth not live** (`#else`): flat wash at `_FlatFloor` (uniform film).
+- The keyword is toggled GLOBALLY by `EnvironmentDepthManager` only once depth is
+  actually streaming. `depth=on` in the heartbeat only means the manager was created —
+  it does NOT prove frames are flowing or the keyword is set.
 
-## VR/AR Kiosk (`vr.html`)
+## Odometer (progress model) — artist-confirmed
+- `_meters = clamp(_meters + horizontalHeadDisplacement * metersScale, 0, 445.8)`.
+  `d.y` zeroed (vertical ignored).
+- Starts at 0 on every fresh launch; accumulates movement in ANY direction; resets only
+  on relaunch. Can begin anywhere on the path.
+- `metersScale`: code default **1** (true walk); the SCENE serializes **20** (dev
+  smoke-test value that amplifies pacing in a small room). Set to 1 for the install.
+- Direction model: oldest entry (Sept 2025) sits at meters=0; walking accumulates
+  toward "now."
+- Known robustness gap: a tracking glitch/teleport inflates `d.magnitude` and can jump
+  the odometer (saw 4 zone changes in 0.125 s). Should clamp per-frame displacement.
 
-### Stack
-- A-Frame 1.6.0, WebXR `immersive-ar` (passthrough), `referenceSpaceType: local-floor`
+## Data flow
+- Supabase `diary_entries` (feeling, intensity, timestamp, user_id), fetched
+  oldest→newest, anon read-only RLS.
+- `SegmentBuilder`: duration[i] = ts[i+1] − ts[i] (last → now); segment arc-length ∝
+  duration; color from family map; opacity = intensity × 0.1.
+- Same backend + same user_id as the WebXR prototype — the data layer was ported from
+  `vr.html` and validated against live data (411 entries, 75 feelings, 0 fallbacks,
+  2026-06-08). Count grows as new feelings are logged.
 
-### Concept
-- The wearer physically walks a ~172.5m real-world path
-  (start `42.003567,-73.921784` → end `42.003286,-73.923837`, haversine distance)
-- Every `diary_entries` row becomes a back-to-back block along the path
-- Block length ∝ how long that feeling was felt = next entry's timestamp minus
-  this one's; the most recent entry extends to "now"
-- The headset's own SLAM tracking measures distance walked; progress = the
-  walker's displacement projected onto the captured start→end direction
-- No GPS (Quest 3 has none) and no auto-movement — the walk is fully wearer-driven
-
-### Rendering
-- The `feels-walk` A-Frame component reads head position each tick, finds the
-  current emotion block, and crossfades a camera-parented translucent plane
-  (the "color wash") to that emotion's color
-- Color from `emotionWheelData`; wash opacity scales with intensity (1-5)
-- The current emotion's name floats ahead, repositioned on each zone change
-- NOTE: a translucent wash over bright passthrough content reads weaker than
-  over dark content (compositing contrast), so daylight scenes mute the color
-
-### Data access (no stored password)
-- Reads `diary_entries` anonymously, scoped by `KIOSK_USER_ID`
-- Supabase RLS policy "Kiosk anon read-only": grants `anon` SELECT on
-  `diary_entries` where `user_id = ee04c688-d857-45f8-849c-2f072053cf28`
-- Read-only — nobody can insert/edit/delete even with the public anon key
-- Re-pulls every 60s so a newly logged feeling reshapes the path live
-
-## Live Spectator View (`live.html` + `qr.html`)
-- Onlookers cannot get the real passthrough video (WebXR blocks camera access),
-  so the spectator view is a synced companion, not a literal video stream
-- `vr.html` broadcasts the wearer's path progress (a 0-1 fraction) over a
-  Supabase Realtime channel `feels-live`, ~4x/sec
-- `live.html` loads the same timeline itself (read-only RLS), subscribes to the
-  channel, and floods the phone screen with the wearer's current emotion color +
-  name, plus a dot moving along the full year-long path bar
-- Payload is just `{ progress }` — `live.html` derives emotion/color/date locally
-- `qr.html` renders a QR pointing to `live.html` for onlookers to scan
-- Goes idle ("waiting for the walk" / "paused") if no signal for 6s
-
-## Data Flow
-- All emotion data in Supabase `diary_entries` (feeling, intensity, timestamp, user_id)
-- Diary app: fetched by date range, grouped by weekday client-side
-- Kiosk + spectator: full history fetched oldest→newest, converted to proportional
-  path blocks; spectator position arrives via Realtime broadcast
+## Emotion → color (7 families)
+happy `#FFE680` · surprised `#DDA0DD` · disgusted `#90EE90` · bad `#D3D3D3` ·
+fearful `#FFB347` · angry `#FF6B6B` · sad `#87CEEB`. Dual-family feelings resolved
+explicitly (overwhelmed→fearful; inferior/disappointed/embarrassed→sad) so edit order
+can't flip them.

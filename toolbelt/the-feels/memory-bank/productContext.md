@@ -1,35 +1,42 @@
 # Product Context
 
-## Purpose
-This application helps users track their emotional states and coping skills for DBT therapy. The diary card feature lets users visualize their emotional patterns over a week and share them with therapists.
+## Why this exists
+The Feels makes someone's emotional history *walkable*. Instead of reading a year of
+diary entries, you put on the headset and physically walk through them: each emotion
+floods the real world around you with its color, for as long as that feeling actually
+lasted. It's an embodied, durational portrait of a person's interior life.
 
-The VR/AR kiosk turns the same data into an embodied experience: the diary owner's whole year of feelings becomes a physical walk, so a viewer can literally move through someone's emotional timeline. A live spectator view lets bystanders share that moment from their own phones — when someone is in the headset, everyone gets to feel along.
+## The artist's intent
+- The piece is felt, not operated. The viewer should never see a menu, a dialog, or
+  debug text — only the walk and the color.
+- The color belongs to the *real world*, not a screen. Passthrough MR (not opaque VR)
+  is essential: you are tinting reality, not replacing it. The Depth-API surface tint
+  (color on real surfaces) is the truest expression of this; the flat wash is the safe
+  fallback.
+- The path is real and specific (~445.8 m, a measured outdoor route). Walking the true
+  distance matters — the duration of the walk mirrors the duration of the feelings.
 
-## User Experience Goals
+## Experience goals
+- **Put on headset → it's already running.** Auto-launch on power-on; no laptop, no
+  controller, no Quest menu.
+- **Start anywhere.** The odometer begins at 0 wherever the wearer is standing; they
+  just start walking. No "go to the start point" instruction.
+- **Walk freely.** No guardian wall interrupts the path.
+- **One color at a time.** The current emotion tints the world until the wearer crosses
+  into the next zone.
+- **Intensity reads as opacity.** Stronger feelings = more saturated tint.
 
-### Diary app (`index.html`)
-- Simple, intuitive feelings selection via spinning wheel
-- Clear visual feedback for intensity and skills
-- Easy-to-use weekly diary card with drag-and-drop
-- Reliable PDF export for sharing with therapists
-- Self-service password changes
+## Success criteria
+- Headset powers on → the piece is running, in passthrough, tinting the world — no
+  human setup.
+- Emotion color changes as the wearer walks the real path, in the right order (oldest
+  feeling first).
+- The emotion color is reliably VISIBLE (never blank) — and, when depth is feeding,
+  concentrated on nearby real surfaces.
+- No UI artifacts, no boundary interruptions, no stored secrets.
 
-### VR kiosk (`vr.html`)
-- Zero UI / no dialogues — a single tap to begin, then only the walk
-- The wearer controls all movement by physically walking; nothing moves them
-- Each emotion floods the passthrough view with its color until the next zone
-- Block length is proportional to how long that feeling was actually felt
-
-### Spectator view (`live.html` / `qr.html`)
-- Onlookers scan a QR and instantly share the wearer's current emotion
-- Mirrors the color flood, emotion name, and position on the year-long path
-- Not literal headset video (WebXR blocks the passthrough camera) — a synced
-  companion view of the experience's emotional content
-- Unlimited simultaneous viewers, no extra hardware
-
-## Success Criteria
-- Diary: full content captured in PDF, centered, no UI artifacts
-- Kiosk: emotion colors track the wearer's real position along the path
-- Kiosk: data refreshes live so a newly logged feeling reshapes the path
-- Spectator: color and path dot track the wearer in real time
-- No credentials stored in any public file
+## What it is NOT (anymore)
+- Not WebXR / A-Frame (`vr.html` was the prototype; this is native).
+- Not a spectator/QR experience in the native build (the WebXR `live.html` / `qr.html`
+  spectator view is not part of the installation piece).
+- Not GPS-driven (Quest has no GPS; position is head-tracking odometry).

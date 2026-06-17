@@ -1,59 +1,48 @@
 # Progress
 
-## Project Status
-- [x] Basic DBT Skills Tracker functionality complete
-- [x] Feelings wheel interaction working
-- [x] User authentication with Supabase
-- [x] Diary card generation with drag-and-drop
-- [x] PDF generation - fixed
-- [x] Change-password action in app header
-- [x] VR/AR kiosk (`vr.html`) built
-- [x] Live spectator view (`live.html` + `qr.html`) built
-- [ ] VR kiosk verified on a real Meta Quest 3 / real path
-- [ ] Spectator broadcast verified end-to-end (headset -> live.html)
+## Status (2026-06-12): native MR walk RUNS; depth gradient + kiosk polish open
 
-## VR/AR Kiosk - BUILT
+## Working on real hardware
+- [x] Native Unity 6 Quest app builds headless → installs → runs on Quest 3S
+- [x] Passthrough MR view
+- [x] ~413 diary entries load from Supabase (anon read-only) → segments over 445.8 m
+- [x] Odometer advances with real walking; emotion changes by zone, oldest first
+- [x] Emotion family colors verified on-device (7 families, 0 fallbacks)
+- [x] Opacity = intensity × 0.1
+- [x] Flat color wash reliably visible over passthrough
+- [x] Depth API subsystem stands up (EnvironmentDepthManager created, HardOcclusion)
+- [x] Scene permission (USE_SCENE) granted; OpenXR Occlusion+Session features enabled headless
+- [x] Path length derived (haversine ~445.8 m over 14-pt GPX)
 
-### Done
-- [x] A-Frame 1.6.0 passthrough-AR scene
-- [x] Pull every `diary_entries` row, oldest → newest
-- [x] Duration model: block length ∝ (next timestamp − this timestamp);
-      most recent entry extends to "now"
-- [x] Path scaled to 172.5m (haversine distance of the two real coordinates)
-- [x] Wearer-controlled movement via headset SLAM tracking; progress projected
-      onto the captured start→end direction (no GPS, no auto-glide)
-- [x] Per-emotion color flood of the passthrough view; opacity ∝ intensity (1-5)
-- [x] Floating emotion name, repositioned on each zone change
-- [x] Single-tap kiosk start, no other UI
-- [x] Live refresh every 60s
-- [x] Colors sourced from `emotionWheelData`; 3 free-text feelings aliased
+## In progress
+- [~] Never-blank `_MinTint` floor — edited in shader + FeelsExperience; NOT yet
+  built/installed/confirmed
 
-### Auth / security
-- [x] Removed embedded password; kiosk uses read-only RLS instead
-- [x] RLS policy "Kiosk anon read-only" added in Supabase (verified: 399 rows)
-- [x] Leaked password rotated; old one confirmed dead
-- [x] Change-password feature added to `index.html`
+## Open — the depth "real prize"
+- [ ] **Meta environment depth produces 0 frames** → depth surface-tint can't compute
+  (falls back to flat wash). ROOT CAUSE UNSOLVED. Leading suspicion: broken spatial
+  Space data; try rebuilding Space Setup on the headset.
+- [ ] Confirm the true near-surface gradient renders once frames flow
+- [ ] Tune `tintReachMeters` / `_MaxDist` and `minTint` to taste on the real path
 
-### Live spectator view
-- [x] `vr.html` broadcasts path progress over Supabase Realtime (~4x/sec)
-- [x] `live.html` subscribes, floods screen with current emotion + path dot
-- [x] `qr.html` renders a scannable QR linking to `live.html`
-- [ ] Verify Realtime broadcast actually reaches spectators end-to-end
+## Open — installation polish (the 3 tracked tasks)
+- [ ] **Auto-launch on power-on** (Task #1) — BOOT_COMPLETED receiver, or Quest
+  Single-App/Kiosk Mode
+- [ ] **Strip debug readout + set metersScale = 1** for the true 445.8 m walk (Task #2)
+- [ ] **Disable guardian boundary** for uninterrupted walking (Task #3) — persistent
+  in-headset Boundary toggle (debug props don't hold)
+- [ ] Rename package id off the default URP template (optional, cosmetic)
+- [ ] Clamp per-frame odometer displacement so a tracking glitch can't jump it
 
-### Remaining / to verify
-- [ ] Real Quest 3 walk-through on the physical path
-- [ ] Confirm SLAM tracking holds over ~172m
-- [ ] Tune color-wash opacity if it washes out in daylight
-- [ ] (Optional) Quest OS-level kiosk lockdown
+## Resolved this stretch
+- [x] "No storage for roomscale" = spurious glitch (106 GB free), not real disk
+- [x] Black screen when paused = mCurrentFocus null → `am start` relaunch
+- [x] Guardian debug flags don't affect depth (tested, ruled out)
+- [x] Identified "colors far / translucent near" as the flat-wash perception effect,
+      not depth
 
-## PDF Generation Fix - COMPLETED (prior work)
-- [x] Alerts hidden before capture
-- [x] Container expanded; html2canvas uses scroll dimensions
-- [x] Aspect-ratio scaling, content centered both axes
-
-## Implementation Details
-- `index.html` - diary app; PDF function `downloadDiaryCardPDF()`,
-  change-password `handleChangePassword()`
-- `vr.html` - kiosk; `feels-walk` A-Frame component drives the color flood
-- Backend: Supabase project `bczevwhzlammcjomuqrg`, table `diary_entries`
-- ~399 entries spanning Sep 2025 – May 2026
+## Superseded (WebXR prototype, now reference-only)
+- [x] `vr.html` A-Frame passthrough walk (172.5 m, GPS-projected) — replaced by the
+      native app
+- [x] `live.html` / `qr.html` spectator view — not part of the native installation
+- [x] `index.html` diary app — STILL LIVE; it's the data source

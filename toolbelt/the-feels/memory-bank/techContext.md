@@ -1,57 +1,63 @@
 # Tech Context
 
-## Technologies Used
+## Engine / toolchain
+- **Unity 6 LTS 6000.0.76f1**. Binary:
+  `/Applications/Unity/Hub/Editor/6000.0.76f1/Unity.app/Contents/MacOS/Unity`
+- URP 17.0.4, IL2CPP, ARM64. Build target: Android (Quest).
+- Meta XR SDK (`com.meta.xr.sdk.core`) + `com.unity.xr.meta-openxr`. Depth via the
+  `Meta.XR.EnvironmentDepth` namespace (`EnvironmentDepthManager`).
+- **adb**:
+  `/Applications/Unity/Hub/Editor/6000.0.76f1/PlaybackEngines/AndroidPlayer/SDK/platform-tools/adb`
 
-### Frontend
-- **HTML5** - Four standalone single-page documents
-- **CSS3** - Flexbox, grid, animations
-- **Vanilla JavaScript** - All application logic
+## Project location (MIND THE SPACE)
+`/Users/danyelabrown/Desktop/danyelajunebrown GITHUB/danyelajunebrown.github.io-main/toolbelt/the-feels/Unity`
+— "danyelajunebrown GITHUB" has a space; ALWAYS quote the path.
 
-### External Libraries (all CDN, no npm build)
-- **Supabase JS SDK** (v2.39.7) - Auth, database, Realtime broadcast
-- **html2canvas** (v1.4.1) - DOM to canvas capture for PDF
-- **jsPDF** (v2.5.1) - PDF generation
-- **A-Frame** (v1.6.0) - WebXR framework for the VR/AR kiosk
-- **qrcodejs** (v1.0.0) - QR code rendering for `qr.html`
+## Build & deploy (all headless, Unity CLOSED)
+- **Build APK:** `Unity -batchmode -quit -projectPath "<PROJ>" -buildTarget Android
+  -executeMethod FeelsBuild.Android -logFile <log>` → `~/Desktop/TheFeels.apk`
+- **Enable Depth (one-time / idempotent):** `Unity -batchmode -quit -projectPath
+  "<PROJ>" -executeMethod FeelsDepthSetup.Enable -logFile <log>` (enables the OpenXR
+  Occlusion + Session features for Android; exits 0 on success).
+- **Install:** `adb -s 340YC10G8R0ZLP install -r ~/Desktop/TheFeels.apk`
+- **Launch:** `adb -s 340YC10G8R0ZLP shell am start -n
+  com.UnityTechnologies.com.unity.template.urpblank/com.unity3d.player.UnityPlayerGameActivity`
+- **KEY INSIGHT:** because builds are headless with the Editor CLOSED, scene / asset /
+  manifest / `.cs` / `.shader` files can be safely HAND-EDITED directly while Unity is
+  closed — no GUI round-trip needed.
 
-### Development Environment
-- Visual Studio Code, Git
-- Browser-based testing (Chrome/Safari) for the diary app
-- Meta Quest 3 browser for the VR kiosk (WebXR needs HTTPS — i.e. deployed)
+## Device
+- Quest 3S, serial **340YC10G8R0ZLP**.
+- Package **com.UnityTechnologies.com.unity.template.urpblank**, activity
+  **com.unity3d.player.UnityPlayerGameActivity** (default URP-template ids, not yet
+  renamed).
+- App pauses off-head (proximity sensor); a paused app can be KILLED by the OS (saw
+  APP_CMD_LOW_MEMORY) — must be on-head to run/measure.
 
-## Setup
-- `index.html`, `vr.html`, `live.html`, `qr.html` — each with embedded CSS and JS
-- CDN-loaded dependencies
-- Hosted on GitHub Pages (`danyelajunebrown.github.io/toolbelt/the-feels/`)
-- Supabase project `bczevwhzlammcjomuqrg` for backend
+## On-device verification
+- Heartbeat tags `[FeelsXP]` / `[TheFeels]`. Pull with:
+  `adb -s 340YC10G8R0ZLP logcat -d -v time | grep -i feels`. System spam rolls the ring
+  buffer fast — heartbeats (every ~2 s) may already be gone; relaunch or dump promptly.
+- Depth frame telemetry: MRSS `FramesetTelemetry` (system log) — line
+  `stereo/depth/color: avail: X/Y/Z`; the middle number Y = depth frames. **Y=0 =
+  environment depth producing nothing** (the current blocker).
 
-## Supabase
-- Table `diary_entries`: feeling, intensity, dbt_skill, timestamp, user_id
-- RLS enabled. Policies:
-  - Owner policies for the diary app (authenticated users see their own rows)
-  - "Kiosk anon read-only": `anon` SELECT scoped to the kiosk owner's user_id
-- Kiosk owner user_id: `ee04c688-d857-45f8-849c-2f072053cf28`
+## Backend (Supabase) — unchanged from the web app
+- Project `bczevwhzlammcjomuqrg`, table `diary_entries`.
+- Kiosk user_id `ee04c688-d857-45f8-849c-2f072053cf28`.
+- Anon key is EMBEDDED in `FeelsDataLoader.cs`: PUBLIC by design, RLS read-only (anon
+  SELECT only, scoped to that user_id). SAFE to commit. No other secrets in code.
 
-## Browser / Device APIs
-- Canvas API (html2canvas + the spectator timeline bar), Drag-and-Drop, Touch
-- LocalStorage (via Supabase session)
-- **WebXR** `immersive-ar` — passthrough + inside-out SLAM head tracking on Quest 3
-- **Supabase Realtime** broadcast channel `feels-live` — carries the wearer's
-  path progress to spectators (ephemeral, no DB writes, anon key)
+## Path data
+- 14-point GPX polyline (recorded 2026-06-09), haversine length **~445.8 m**
+  (straight-line endpoints ~375 m, elevation net ~0). Replace `FeelsPath.Pts` to
+  re-measure; the length recomputes automatically.
 
-## Constraints
-- WebXR requires HTTPS and a user gesture to enter an immersive session
-- Quest 3 has no GPS; position comes only from on-device SLAM tracking
-- SLAM tracking is built for room-scale — reliability over a ~172m walk is
-  unverified and must be tested on the real path
-- A web page cannot make itself the only app on the headset; true kiosk lockdown
-  is a Quest OS / device-management setting
-- WebXR blocks page access to the passthrough camera; the spectator view is a
-  synced companion render, not literal headset video
-- Realtime broadcast must be enabled on the Supabase project for `live.html` to
-  receive updates (untested end-to-end)
-
-## Security Notes
-- The Supabase anon key is public by design (safe in client code)
-- No user password is stored in any file (kiosk uses read-only RLS instead)
-- An earlier commit briefly embedded a password; it has since been rotated/killed
+## Constraints / do-not-touch
+- Do NOT edit Meta SDK code: `Library/PackageCache/...`, `OVRProjectSetupXRTasks.cs`,
+  `OVRBuild.cs`.
+- Quest has no GPS — position is head-tracking odometry only.
+- A sideloaded app can't make itself the only app from code; true kiosk = Quest OS
+  Single-App/Kiosk Mode or a BOOT_COMPLETED receiver.
+- Never commit unless explicitly asked. The working tree has unrelated uncommitted
+  portfolio changes — stage specific files only, NEVER `git add -A`.
