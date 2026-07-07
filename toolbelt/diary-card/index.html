@@ -713,7 +713,7 @@
             <div class="error-alert" id="errorAlert"></div>
 
             <div class="header">
-                <h1>DBT Skills Tracker</h1>
+                <h1>All The Feels</h1>
                 <p>Track your feelings and coping skills</p>
             </div>
 
@@ -784,7 +784,7 @@
                         </div>
 
                         <div class="form-group">
-                            <label for="skill">DBT Skill Used</label>
+                            <label for="skill">Skill Used</label>
                             <select id="skill" required>
                                 <option value="">Select a skill...</option>
                                 <option value="Half Smile">Half Smile</option>
@@ -1363,12 +1363,23 @@
                 if (result.error) {
                     throw result.error;
                 }
-                
-                if (result.data.user) {
+
+                // Only treat the user as logged in if we actually have a session.
+                // On sign-up with email confirmation enabled, Supabase returns a
+                // user but no session — dropping them into the app then makes every
+                // insert fail RLS (auth.uid() is null). Guard against that here.
+                if (result.data.session && result.data.user) {
                     currentUser = result.data.user;
-                    showSuccess(isLogin ? 'Logged in successfully!' : 'Account created! Please check your email to verify.');
+                    showSuccess(isLogin ? 'Logged in successfully!' : 'Account created!');
                     showApp();
                     await loadReports();
+                } else if (!isLogin) {
+                    // Signed up but no session -> email confirmation is required.
+                    showSuccess('Account created! Please check your email to confirm, then log in.');
+                    switchAuthMode(true);
+                    authForm.reset();
+                } else {
+                    throw new Error('Could not start a session. Please try again.');
                 }
             } catch (error) {
                 showError(error.message);
@@ -1438,7 +1449,7 @@
             }
             
             if (!skillSelect.value) {
-                showError('Please select a DBT skill');
+                showError('Please select a skill');
                 return;
             }
             
@@ -1672,7 +1683,7 @@
                 displayEndDate.setDate(displayEndDate.getDate() - 1);
                 
                 let htmlContent = `
-                    <div class="template-header">DBT Skills Diary Card</div>
+                    <div class="template-header">All The Feels Diary Card</div>
                     <div class="week-dates">Last 7 Days: ${startDate.toLocaleDateString()} - ${displayEndDate.toLocaleDateString()}</div>
                     
                     <table class="diary-template">
@@ -2011,7 +2022,7 @@
 
             // Build clean PDF-friendly HTML
             let htmlContent = `
-                <div style="text-align: center; margin-bottom: 15px; font-weight: bold; font-size: 18px;">DBT Skills Diary Card</div>
+                <div style="text-align: center; margin-bottom: 15px; font-weight: bold; font-size: 18px;">All The Feels Diary Card</div>
                 <div style="text-align: center; margin-bottom: 15px; font-size: 14px;">Week: ${startDate.toLocaleDateString()} - ${displayEndDate.toLocaleDateString()}</div>
 
                 <table style="width: 100%; border-collapse: collapse; font-size: 11px;">
