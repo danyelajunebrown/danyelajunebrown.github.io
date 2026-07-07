@@ -248,8 +248,8 @@
         // Config — drawing data now lives in Supabase (no GitHub token needed).
         // The anon key is public by design; RLS in drawing-schema.sql scopes it.
         const CONFIG = {
-            SUPABASE_URL: 'https://ezttcqgkegfikrmftlmo.supabase.co',
-            SUPABASE_ANON_KEY: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImV6dHRjcWdrZWdmaWtybWZ0bG1vIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjYwNzM4OTcsImV4cCI6MjA4MTY0OTg5N30.pEnSBfcJB7rgdZWrHkdT4snqbKhgd71-ZSWOPH0kxeo',
+            SUPABASE_URL: 'https://hbhorkrfndwsnwdhxotd.supabase.co',
+            SUPABASE_ANON_KEY: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhiaG9ya3JmbmR3c253ZGh4b3RkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkzOTY5MjYsImV4cCI6MjA5NDk3MjkyNn0._Ionsd9MiK4yrPKGpyUi_ygamHzacchfNf2Xa6V6OXw',
             DRAWING_ID: 'main',
             SEED_PATH: 'drawing_data.json', // bundled initial map, used until first Supabase save
             AUTO_SAVE_DELAY: 5 * 60 * 1000 // 5 minutes of inactivity
@@ -314,6 +314,19 @@
             }
 
             // Supabase persistence
+            // Load the bundled JSON map (no token needed). Used to seed a fresh
+            // Supabase table AND as a fallback whenever Supabase is unreachable.
+            async function loadSeed() {
+                const seed = await fetch(CONFIG.SEED_PATH)
+                    .then(r => r.ok ? r.json() : null)
+                    .catch(() => null);
+                if (seed && Array.isArray(seed) && seed.length) {
+                    hasUnsavedChanges = true; // persist the seed to Supabase on next save
+                    return seed;
+                }
+                return null;
+            }
+
             async function loadDrawing() {
                 try {
                     setStatus('Loading...', 'saving');
@@ -330,13 +343,10 @@
                         return data.paths;
                     }
 
-                    // No Supabase row yet — seed from the bundled JSON file (no token needed).
+                    // No Supabase row yet — seed from the bundled JSON file.
                     // The first auto-save will move this data into Supabase.
-                    const seed = await fetch(CONFIG.SEED_PATH)
-                        .then(r => r.ok ? r.json() : null)
-                        .catch(() => null);
-                    if (seed && Array.isArray(seed) && seed.length) {
-                        hasUnsavedChanges = true; // persist the seed to Supabase on next save
+                    const seed = await loadSeed();
+                    if (seed) {
                         setStatus('Loaded initial map', '');
                         return seed;
                     }
@@ -345,6 +355,13 @@
                     return null;
                 } catch (e) {
                     console.error('Load error:', e);
+                    // Supabase unreachable (e.g. project paused) — fall back to the
+                    // bundled map so the drawing still renders offline.
+                    const seed = await loadSeed();
+                    if (seed) {
+                        setStatus('Supabase unavailable - loaded bundled map', 'error');
+                        return seed;
+                    }
                     setStatus('Error loading - using local backup', 'error');
                     return null;
                 }
