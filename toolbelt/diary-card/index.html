@@ -869,7 +869,7 @@
                 inset 0 6px 20px rgba(255,255,255,0.6),
                 inset 0 -16px 34px rgba(60,30,110,0.30),
                 0 16px 38px rgba(118,75,162,0.42);
-            border: 2px solid rgba(255,255,255,0.5);
+            border: 2px solid rgba(255,255,255,0.45);
         }
         .wheel-wrapper::after { inset: 0; }
         .emotion-wheel-container::after {
@@ -878,7 +878,8 @@
             transform: translate(-50%, -50%);
         }
 
-        /* Slow drifting light sweep across the dome (GPU transform) */
+        /* Oil-slick multichrome rim that slowly flows around the dome.
+           A conic gradient masked to a thin ring, rotated on the GPU. */
         .wheel-wrapper::before,
         .emotion-wheel-container::before {
             content: '';
@@ -886,24 +887,78 @@
             border-radius: 50%;
             pointer-events: none;
             z-index: 2;
-            overflow: hidden;
-            background: linear-gradient(115deg, transparent 40%, rgba(255,255,255,0.35) 50%, transparent 60%);
-            -webkit-mask: radial-gradient(closest-side, #000 98%, transparent);
-            mask: radial-gradient(closest-side, #000 98%, transparent);
+            background: conic-gradient(from 0deg, #3BB9FF, #7DF9FF, #764ba2, #F368E0, #F28500, #58D68D, #3BB9FF);
+            -webkit-mask: radial-gradient(closest-side, transparent calc(100% - 7px), #000 calc(100% - 6px));
+            mask: radial-gradient(closest-side, transparent calc(100% - 7px), #000 calc(100% - 6px));
+            filter: saturate(1.15) drop-shadow(0 0 6px rgba(118,75,162,0.35));
             will-change: transform;
-            animation: domeSheen 8s ease-in-out infinite;
+            animation: domeSpin 16s linear infinite;
         }
-        .wheel-wrapper::before { inset: 0; }
+        .wheel-wrapper::before { inset: -3px; }
         .emotion-wheel-container::before {
-            width: 250px; height: 250px;
+            width: 256px; height: 256px;
             left: 50%; top: 50%;
-            margin: -125px 0 0 -125px;
+            margin: -128px 0 0 -128px;
         }
-        @keyframes domeSheen {
-            0%   { transform: translateX(-40%); opacity: 0; }
-            25%  { opacity: 0.9; }
-            60%  { transform: translateX(40%); opacity: 0; }
-            100% { transform: translateX(40%); opacity: 0; }
+        @keyframes domeSpin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* ===================================================================
+           Y2K oil-slick layer — liquid-chrome title, pixel-mono micro-labels,
+           and an intensity slider that color-maps calm-aqua -> hot-bubblegum.
+           Bold spent on the wheel rim + title; everything else stays quiet.
+        =================================================================== */
+        .header h1 {
+            font-family: ui-rounded, 'SF Pro Rounded', 'Baloo 2', system-ui, sans-serif;
+            font-weight: 800;
+            letter-spacing: -0.02em;
+            /* liquid-metal: chrome -> aqua -> grape -> bubblegum */
+            background: linear-gradient(180deg, #f8f8ff 0%, #dbe2e9 34%, #7df9ff 48%, #667eea 64%, #f368e0 100%);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            filter: drop-shadow(0 1px 0 rgba(255,255,255,0.7)) drop-shadow(0 4px 7px rgba(118,75,162,0.4));
+        }
+
+        .form-group label {
+            font-family: ui-monospace, 'SF Mono', 'Cascadia Mono', Menlo, monospace;
+            text-transform: uppercase;
+            letter-spacing: 0.12em;
+            font-size: 0.72rem;
+            font-weight: 700;
+            color: #5b4a8a;
+        }
+
+        /* Higher specificity than the .form-group input glass rule so the
+           oil-slick track wins (calm aqua -> hot bubblegum by intensity). */
+        .form-group input.intensity-slider {
+            -webkit-appearance: none;
+            appearance: none;
+            padding: 0;
+            border: none;
+            height: 10px;
+            border-radius: 6px;
+            background: linear-gradient(90deg, #3BB9FF 0%, #58D68D 30%, #F4D03F 55%, #F28500 78%, #F368E0 100%);
+            box-shadow: inset 0 1px 3px rgba(0,0,0,0.25), inset 0 -1px 0 rgba(255,255,255,0.45);
+        }
+        .intensity-slider::-webkit-slider-thumb {
+            width: 26px;
+            height: 26px;
+            background:
+                radial-gradient(closest-side at 38% 30%, #fff, rgba(255,255,255,0) 55%),
+                linear-gradient(160deg, #f8f8ff, #cdd6e0 55%, #9fb4c7);
+            border: 2px solid rgba(255,255,255,0.85);
+            box-shadow: 0 3px 8px rgba(0,0,0,0.3);
+        }
+        .intensity-slider::-moz-range-thumb {
+            width: 26px;
+            height: 26px;
+            background:
+                radial-gradient(closest-side at 38% 30%, #fff, rgba(255,255,255,0) 55%),
+                linear-gradient(160deg, #f8f8ff, #cdd6e0 55%, #9fb4c7);
+            border: 2px solid rgba(255,255,255,0.85);
+            box-shadow: 0 3px 8px rgba(0,0,0,0.3);
         }
 
         /* Visible keyboard focus (does not affect mouse users) */
