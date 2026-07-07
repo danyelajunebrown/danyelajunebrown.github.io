@@ -1,7 +1,7 @@
 -- ============================================
 -- JDCatBS INTERACTIVE MAP — DRAWING DATA
 -- Run this once in Supabase Dashboard > SQL Editor
--- (project ezttcqgkegfikrmftlmo).
+-- (project hbhorkrfndwsnwdhxotd).
 -- Replaces the old GitHub-API auto-save that required an exposed token.
 -- ============================================
 
