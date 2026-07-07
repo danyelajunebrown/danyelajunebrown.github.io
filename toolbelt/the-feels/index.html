@@ -709,16 +709,298 @@
                 height: 200px;
             }
         }
+        /* ===================================================================
+           Live camera background — same architecture as the landing site
+           (getUserMedia -> full-viewport <video object-fit:cover>). The user
+           literally becomes the background; a palette-tinted scrim keeps the
+           glass cards legible and on-brand.
+        =================================================================== */
+        #cameraBg {
+            position: fixed;
+            inset: 0;
+            width: 100vw;
+            height: 100vh;
+            object-fit: cover;
+            transform: scaleX(-1); /* mirror so it reads like looking at yourself */
+            z-index: -2;
+            background: #555;
+            filter: saturate(1.08);
+        }
+        #bgScrim {
+            position: fixed;
+            inset: 0;
+            z-index: -1;
+            pointer-events: none;
+            background:
+                radial-gradient(130% 90% at 50% 0%, rgba(118,75,162,0.30), transparent 62%),
+                linear-gradient(135deg, rgba(102,126,234,0.38) 0%, rgba(118,75,162,0.48) 100%);
+            -webkit-backdrop-filter: blur(3px);
+            backdrop-filter: blur(3px);
+        }
+
+        /* ===================================================================
+           Glassy jelly theme — translucent, glossy, with a slow drifting
+           specular highlight so the light feels alive (per the jelly-candy ref).
+           Appended last so these rules win over the base styles above.
+        =================================================================== */
+        .card {
+            background-color: rgba(255, 255, 255, 0.48);
+            background-image:
+                linear-gradient(180deg, rgba(255,255,255,0.85) 0%, rgba(255,255,255,0) 42%),
+                radial-gradient(150% 65% at 18% -12%, rgba(255,255,255,0.6), rgba(255,255,255,0) 60%);
+            background-repeat: no-repeat;
+            -webkit-backdrop-filter: blur(26px) saturate(180%);
+            backdrop-filter: blur(26px) saturate(180%);
+            border: 1px solid rgba(255,255,255,0.6);
+            border-radius: 30px;
+            box-shadow:
+                0 26px 60px rgba(31, 20, 60, 0.30),
+                inset 0 2px 0 rgba(255,255,255,0.95),
+                inset 0 -22px 46px rgba(118,75,162,0.12);
+        }
+
+        /* Jelly buttons: colored gradient + bright top gloss + colored glow,
+           with a specular streak that slowly sweeps across. */
+        .submit-btn,
+        .step-btn.primary,
+        .auth-tab.active {
+            position: relative;
+            overflow: hidden;
+            color: #fff;
+            border: 1px solid rgba(255,255,255,0.55);
+            background-repeat: no-repeat;
+            background-image:
+                linear-gradient(180deg, rgba(255,255,255,0.65) 0%, rgba(255,255,255,0.06) 44%, rgba(255,255,255,0) 62%),
+                linear-gradient(135deg, #7b8cff 0%, #8a5cc4 100%);
+            box-shadow:
+                0 10px 26px rgba(118,75,162,0.45),
+                inset 0 2px 3px rgba(255,255,255,0.9),
+                inset 0 -9px 18px rgba(60,30,110,0.32);
+        }
+        .submit-btn { border-radius: 18px; }
+        .submit-btn::after,
+        .step-btn.primary::after {
+            content: '';
+            position: absolute;
+            top: -60%;
+            left: 0;
+            width: 38%;
+            height: 220%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.55), transparent);
+            pointer-events: none;
+            will-change: transform;
+            transform: translateX(-220%) rotate(18deg);
+            animation: jellyStreak 6.5s ease-in-out infinite;
+        }
+        .step-btn.primary::after { animation-delay: 1.6s; }
+        @keyframes jellyStreak {
+            0%   { transform: translateX(-220%) rotate(18deg); opacity: 0; }
+            12%  { opacity: 0.85; }
+            50%  { transform: translateX(430%) rotate(18deg); opacity: 0; }
+            100% { transform: translateX(430%) rotate(18deg); opacity: 0; }
+        }
+        .submit-btn:hover:not(:disabled),
+        .step-btn.primary:hover {
+            transform: translateY(-2px);
+            box-shadow:
+                0 16px 34px rgba(118,75,162,0.5),
+                inset 0 2px 3px rgba(255,255,255,0.95),
+                inset 0 -9px 18px rgba(60,30,110,0.32);
+        }
+
+        /* Glassy inputs, panels and pill containers */
+        .form-group input,
+        .form-group select {
+            background: rgba(255,255,255,0.55);
+            border: 1px solid rgba(255,255,255,0.65);
+            box-shadow: inset 0 1px 2px rgba(255,255,255,0.85),
+                        inset 0 -3px 8px rgba(118,75,162,0.10);
+            -webkit-backdrop-filter: blur(6px);
+            backdrop-filter: blur(6px);
+        }
+        .user-info,
+        .auth-tabs,
+        .report-item,
+        .share-btn {
+            background: rgba(255,255,255,0.35);
+            border: 1px solid rgba(255,255,255,0.5);
+            -webkit-backdrop-filter: blur(10px);
+            backdrop-filter: blur(10px);
+            box-shadow: inset 0 1px 0 rgba(255,255,255,0.7);
+        }
+        .logout-btn {
+            background: rgba(255,255,255,0.35);
+            -webkit-backdrop-filter: blur(8px);
+            backdrop-filter: blur(8px);
+        }
+
+        /* Give the wheel assets a glossy, floating feel */
+        .feelings-wheel-container img,
+        .emotion-wheel-container img,
+        #emotionWheelImage,
+        #feelingsWheel {
+            filter: drop-shadow(0 10px 22px rgba(118,75,162,0.42)) saturate(1.12);
+        }
+
+        /* Fix the WebKit backdrop-filter seam on the small pill container:
+           drop the blur here (keep it on the big cards) and give the active
+           tab its own compositing layer. */
+        .auth-tabs {
+            -webkit-backdrop-filter: none;
+            backdrop-filter: none;
+            background: rgba(102, 126, 234, 0.14);
+        }
+
+        /* ===================================================================
+           Gel dome — pulls the (untouched) feelings wheel into the glass
+           universe: a circular aqua bezel with a specular highlight and a
+           slow light sweep laid OVER the wheel. pointer-events:none keeps the
+           drag-to-select interaction perfectly intact.
+        =================================================================== */
+        .emotion-wheel-container,
+        .wheel-wrapper { position: relative; }
+
+        /* Static glass bezel + top-left specular */
+        .wheel-wrapper::after,
+        .emotion-wheel-container::after {
+            content: '';
+            position: absolute;
+            border-radius: 50%;
+            pointer-events: none;
+            background:
+                radial-gradient(closest-side at 36% 26%, rgba(255,255,255,0.7), rgba(255,255,255,0) 58%),
+                radial-gradient(closest-side at 50% 50%, rgba(255,255,255,0) 62%, rgba(118,75,162,0.20) 100%);
+            box-shadow:
+                inset 0 6px 20px rgba(255,255,255,0.6),
+                inset 0 -16px 34px rgba(60,30,110,0.30),
+                0 16px 38px rgba(118,75,162,0.42);
+            border: 2px solid rgba(255,255,255,0.45);
+        }
+        .wheel-wrapper::after { inset: 0; }
+        .emotion-wheel-container::after {
+            width: 250px; height: 250px;
+            left: 50%; top: 50%;
+            transform: translate(-50%, -50%);
+        }
+
+        /* Oil-slick multichrome rim that slowly flows around the dome.
+           A conic gradient masked to a thin ring, rotated on the GPU. */
+        .wheel-wrapper::before,
+        .emotion-wheel-container::before {
+            content: '';
+            position: absolute;
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 2;
+            background: conic-gradient(from 0deg, #3BB9FF, #7DF9FF, #764ba2, #F368E0, #F28500, #58D68D, #3BB9FF);
+            -webkit-mask: radial-gradient(closest-side, transparent calc(100% - 7px), #000 calc(100% - 6px));
+            mask: radial-gradient(closest-side, transparent calc(100% - 7px), #000 calc(100% - 6px));
+            filter: saturate(1.15) drop-shadow(0 0 6px rgba(118,75,162,0.35));
+            will-change: transform;
+            animation: domeSpin 16s linear infinite;
+        }
+        .wheel-wrapper::before { inset: -3px; }
+        .emotion-wheel-container::before {
+            width: 256px; height: 256px;
+            left: 50%; top: 50%;
+            margin: -128px 0 0 -128px;
+        }
+        @keyframes domeSpin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* ===================================================================
+           Y2K oil-slick layer — liquid-chrome title, pixel-mono micro-labels,
+           and an intensity slider that color-maps calm-aqua -> hot-bubblegum.
+           Bold spent on the wheel rim + title; everything else stays quiet.
+        =================================================================== */
+        .header h1 {
+            font-family: ui-rounded, 'SF Pro Rounded', 'Baloo 2', system-ui, sans-serif;
+            font-weight: 800;
+            letter-spacing: -0.02em;
+            /* liquid-metal: chrome -> aqua -> grape -> bubblegum */
+            background: linear-gradient(180deg, #f8f8ff 0%, #dbe2e9 34%, #7df9ff 48%, #667eea 64%, #f368e0 100%);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            filter: drop-shadow(0 1px 0 rgba(255,255,255,0.7)) drop-shadow(0 4px 7px rgba(118,75,162,0.4));
+        }
+
+        .form-group label {
+            font-family: ui-monospace, 'SF Mono', 'Cascadia Mono', Menlo, monospace;
+            text-transform: uppercase;
+            letter-spacing: 0.12em;
+            font-size: 0.72rem;
+            font-weight: 700;
+            color: #5b4a8a;
+        }
+
+        /* Higher specificity than the .form-group input glass rule so the
+           oil-slick track wins (calm aqua -> hot bubblegum by intensity). */
+        .form-group input.intensity-slider {
+            -webkit-appearance: none;
+            appearance: none;
+            padding: 0;
+            border: none;
+            height: 10px;
+            border-radius: 6px;
+            background: linear-gradient(90deg, #3BB9FF 0%, #58D68D 30%, #F4D03F 55%, #F28500 78%, #F368E0 100%);
+            box-shadow: inset 0 1px 3px rgba(0,0,0,0.25), inset 0 -1px 0 rgba(255,255,255,0.45);
+        }
+        .intensity-slider::-webkit-slider-thumb {
+            width: 26px;
+            height: 26px;
+            background:
+                radial-gradient(closest-side at 38% 30%, #fff, rgba(255,255,255,0) 55%),
+                linear-gradient(160deg, #f8f8ff, #cdd6e0 55%, #9fb4c7);
+            border: 2px solid rgba(255,255,255,0.85);
+            box-shadow: 0 3px 8px rgba(0,0,0,0.3);
+        }
+        .intensity-slider::-moz-range-thumb {
+            width: 26px;
+            height: 26px;
+            background:
+                radial-gradient(closest-side at 38% 30%, #fff, rgba(255,255,255,0) 55%),
+                linear-gradient(160deg, #f8f8ff, #cdd6e0 55%, #9fb4c7);
+            border: 2px solid rgba(255,255,255,0.85);
+            box-shadow: 0 3px 8px rgba(0,0,0,0.3);
+        }
+
+        /* Visible keyboard focus (does not affect mouse users) */
+        button:focus-visible,
+        a:focus-visible,
+        input:focus-visible,
+        select:focus-visible,
+        #wheelWrapper:focus-visible {
+            outline: 3px solid #ffd54a;
+            outline-offset: 2px;
+            border-radius: 10px;
+        }
+        #wheelWrapper { outline-offset: 6px; }
+
+        @media (prefers-reduced-motion: reduce) {
+            .card,
+            .submit-btn::after,
+            .step-btn.primary::after,
+            .wheel-wrapper::before,
+            .emotion-wheel-container::before,
+            .emotion-wheel-container img { animation: none !important; }
+            .wheel-wrapper::before,
+            .emotion-wheel-container::before { opacity: 0; }
+        }
     </style>
 </head>
 <body>
+    <!-- Live camera background: the user becomes the backdrop (same as landing site) -->
+    <video autoplay playsinline muted id="cameraBg"></video>
+    <div id="bgScrim"></div>
     <div class="container">
         <div class="card">
-            <div class="success-alert" id="successAlert"></div>
-            <div class="error-alert" id="errorAlert"></div>
+            <div class="success-alert" id="successAlert" role="status" aria-live="polite"></div>
+            <div class="error-alert" id="errorAlert" role="alert" aria-live="assertive"></div>
 
             <div class="header">
-                <h1>DBT Skills Tracker</h1>
+                <h1>All The Feels</h1>
                 <p>Track your feelings and coping skills</p>
             </div>
 
@@ -730,18 +1012,18 @@
                 
                 <div class="auth-form">
                     <div class="auth-tabs">
-                        <button class="auth-tab active" id="loginTab">Login</button>
-                        <button class="auth-tab" id="signupTab">Sign Up</button>
+                        <button type="button" class="auth-tab active" id="loginTab" aria-pressed="true">Login</button>
+                        <button type="button" class="auth-tab" id="signupTab" aria-pressed="false">Sign Up</button>
                     </div>
                     
                     <form id="authForm">
                         <div class="form-group">
                             <label for="authEmail">Email</label>
-                            <input type="email" id="authEmail" required>
+                            <input type="email" id="authEmail" required autocomplete="email" autocapitalize="none" spellcheck="false">
                         </div>
                         <div class="form-group">
                             <label for="authPassword">Password</label>
-                            <input type="password" id="authPassword" required>
+                            <input type="password" id="authPassword" required autocomplete="current-password" minlength="6">
                         </div>
                         <button type="submit" class="submit-btn" id="authSubmitBtn">Login</button>
                     </form>
@@ -764,12 +1046,12 @@
                         <div class="form-group">
                             <label>Select Your Feeling</label>
                             <div class="feelings-wheel-container">
-                                <div class="wheel-wrapper">
+                                <div class="wheel-wrapper" id="wheelWrapper" tabindex="0" role="slider" aria-label="Feelings wheel. Drag, or use the left and right arrow keys, to rotate and select a feeling." aria-valuetext="No feeling selected">
                                     <div class="selection-notch"></div>
                                     <svg class="feelings-wheel" id="feelingsWheel" viewBox="0 0 500 500">
                                     </svg>
                                 </div>
-                                <div class="selected-feeling" id="selectedFeeling">Rotate the wheel to select a feeling</div>
+                                <div class="selected-feeling" id="selectedFeeling" role="status" aria-live="polite">Rotate the wheel to select a feeling</div>
                             </div>
                         </div>
                         <div class="step-navigation">
@@ -785,14 +1067,14 @@
                             <label for="intensity">Intensity Level</label>
                             <div class="intensity-container">
                                 <span>1</span>
-                                <input type="range" id="intensity" class="intensity-slider" min="1" max="5" value="1">
+                                <input type="range" id="intensity" class="intensity-slider" min="1" max="5" value="1" aria-describedby="intensityDisplay">
                                 <span>5</span>
                             </div>
                             <div class="intensity-display" id="intensityDisplay">Current: 1 - Very Mild</div>
                         </div>
 
                         <div class="form-group">
-                            <label for="skill">DBT Skill Used</label>
+                            <label for="skill">Skill Used</label>
                             <select id="skill" required>
                                 <option value="">Select a skill...</option>
                                 <option value="Half Smile">Half Smile</option>
@@ -1064,7 +1346,25 @@
         const dateModal = document.getElementById('dateModal');
         const reportModal = document.getElementById('reportModal');
 
+        // Live camera background — mirrors the landing site's getUserMedia setup.
+        // Fire-and-forget: if the camera is denied/unavailable, the CSS gradient
+        // fallback stays and the app is fully usable.
+        async function startCameraBackground() {
+            const video = document.getElementById('cameraBg');
+            if (!video || !navigator.mediaDevices?.getUserMedia) return;
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({
+                    video: { facingMode: 'user' },
+                    audio: false
+                });
+                video.srcObject = stream;
+            } catch (error) {
+                console.warn('Camera background unavailable:', error);
+            }
+        }
+
         async function init() {
+            startCameraBackground();
             const { data: { user } } = await supabaseClient.auth.getUser();
             if (user) {
                 currentUser = user;
@@ -1281,6 +1581,36 @@
                 if (e.target === dateModal) hideDateModal();
                 if (e.target === reportModal) hideReportModal();
             });
+
+            // Keyboard access for the feelings wheel: arrows rotate/select,
+            // Enter/Space advances (reuses the same rotation + selection logic).
+            const wheelWrapper = document.getElementById('wheelWrapper');
+            if (wheelWrapper) {
+                wheelWrapper.addEventListener('keydown', (e) => {
+                    const step = 6; // degrees per key press
+                    if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
+                        wheelRotation += step;
+                    } else if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
+                        wheelRotation -= step;
+                    } else if ((e.key === 'Enter' || e.key === ' ') && selectedFeeling) {
+                        e.preventDefault();
+                        showStep(2);
+                        return;
+                    } else {
+                        return;
+                    }
+                    e.preventDefault();
+                    feelingsWheel.style.transform = `rotate(${wheelRotation}deg)`;
+                    updateSelectedFeeling();
+                });
+            }
+
+            // Escape closes whichever modal is open.
+            document.addEventListener('keydown', (e) => {
+                if (e.key !== 'Escape') return;
+                if (dateModal.style.display === 'block') hideDateModal();
+                if (reportModal.style.display === 'block') hideReportModal();
+            });
         }
 
         function updateSelectedFeeling() {
@@ -1308,16 +1638,19 @@
                               possibleSelections.find(item => item.ring === "inner");
             }
             
+            const wheelWrapper = document.getElementById('wheelWrapper');
             if (selectedData) {
                 selectedFeeling = selectedData.feeling;
                 selectedFeelingDisplay.textContent = selectedData.feeling;
                 selectedFeelingDisplay.style.color = selectedData.color;
                 document.getElementById('nextToDetails').disabled = false;
+                if (wheelWrapper) wheelWrapper.setAttribute('aria-valuetext', selectedData.feeling + ' selected');
             } else {
                 selectedFeeling = null;
                 selectedFeelingDisplay.textContent = 'Rotate the wheel to select a feeling';
                 selectedFeelingDisplay.style.color = '#667eea';
                 document.getElementById('nextToDetails').disabled = true;
+                if (wheelWrapper) wheelWrapper.setAttribute('aria-valuetext', 'No feeling selected');
             }
         }
 
@@ -1344,14 +1677,21 @@
 
         function switchAuthMode(login) {
             isLogin = login;
+            const passwordInput = document.getElementById('authPassword');
             if (login) {
                 loginTab.classList.add('active');
                 signupTab.classList.remove('active');
+                loginTab.setAttribute('aria-pressed', 'true');
+                signupTab.setAttribute('aria-pressed', 'false');
                 authSubmitBtn.textContent = 'Login';
+                if (passwordInput) passwordInput.setAttribute('autocomplete', 'current-password');
             } else {
                 loginTab.classList.remove('active');
                 signupTab.classList.add('active');
+                loginTab.setAttribute('aria-pressed', 'false');
+                signupTab.setAttribute('aria-pressed', 'true');
                 authSubmitBtn.textContent = 'Sign Up';
+                if (passwordInput) passwordInput.setAttribute('autocomplete', 'new-password');
             }
         }
 
@@ -1373,12 +1713,22 @@
                 if (result.error) {
                     throw result.error;
                 }
-                
-                if (result.data.user) {
+
+                // Only treat the user as logged in if we actually have a session.
+                // On sign-up with email confirmation enabled, Supabase returns a
+                // user but no session — dropping them into the app then makes every
+                // insert fail RLS (auth.uid() is null). Guard against that here.
+                if (result.data.session && result.data.user) {
                     currentUser = result.data.user;
-                    showSuccess(isLogin ? 'Logged in successfully!' : 'Account created! Please check your email to verify.');
+                    showSuccess(isLogin ? 'Logged in successfully!' : 'Account created!');
                     showApp();
                     await loadReports();
+                } else if (!isLogin) {
+                    showSuccess('Account created! Please check your email to confirm, then log in.');
+                    switchAuthMode(true);
+                    authForm.reset();
+                } else {
+                    throw new Error('Could not start a session. Please try again.');
                 }
             } catch (error) {
                 showError(error.message);
@@ -1470,7 +1820,7 @@
             }
             
             if (!skillSelect.value) {
-                showError('Please select a DBT skill');
+                showError('Please select a skill');
                 return;
             }
             
@@ -1704,7 +2054,7 @@
                 displayEndDate.setDate(displayEndDate.getDate() - 1);
                 
                 let htmlContent = `
-                    <div class="template-header">DBT Skills Diary Card</div>
+                    <div class="template-header">All The Feels Diary Card</div>
                     <div class="week-dates">Last 7 Days: ${startDate.toLocaleDateString()} - ${displayEndDate.toLocaleDateString()}</div>
                     
                     <table class="diary-template">
@@ -1974,7 +2324,7 @@
         pdf.addImage(imgData, 'PNG', x, y, imgWidth, imgHeight);
         
         const today = new Date();
-        const filename = `DBT_Diary_Card_${today.getFullYear()}-${(today.getMonth()+1).toString().padStart(2,'0')}-${today.getDate().toString().padStart(2,'0')}.pdf`;
+        const filename = `All_The_Feels_Diary_Card_${today.getFullYear()}-${(today.getMonth()+1).toString().padStart(2,'0')}-${today.getDate().toString().padStart(2,'0')}.pdf`;
         
         pdf.save(filename);
         
