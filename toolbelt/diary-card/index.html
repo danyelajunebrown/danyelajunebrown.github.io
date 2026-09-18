@@ -705,22 +705,9 @@
             }
         }
         /* ===================================================================
-           Live camera background — same architecture as the landing site
-           (getUserMedia -> full-viewport <video object-fit:cover>). The user
-           literally becomes the background; a palette-tinted scrim keeps the
-           glass cards legible and on-brand.
+           Background scrim — a palette-tinted wash over the body gradient that
+           gives the glass cards something with depth to sit against.
         =================================================================== */
-        #cameraBg {
-            position: fixed;
-            inset: 0;
-            width: 100vw;
-            height: 100vh;
-            object-fit: cover;
-            transform: scaleX(-1); /* mirror so it reads like looking at yourself */
-            z-index: -2;
-            background: #555;
-            filter: saturate(1.08);
-        }
         #bgScrim {
             position: fixed;
             inset: 0;
@@ -729,8 +716,6 @@
             background:
                 radial-gradient(130% 90% at 50% 0%, rgba(118,75,162,0.30), transparent 62%),
                 linear-gradient(135deg, rgba(102,126,234,0.38) 0%, rgba(118,75,162,0.48) 100%);
-            -webkit-backdrop-filter: blur(3px);
-            backdrop-filter: blur(3px);
         }
 
         /* ===================================================================
@@ -986,8 +971,6 @@
     </style>
 </head>
 <body>
-    <!-- Live camera background: the user becomes the backdrop (same as landing site) -->
-    <video autoplay playsinline muted id="cameraBg"></video>
     <div id="bgScrim"></div>
     <div class="container">
         <div class="card">
@@ -1337,25 +1320,7 @@
         const dateModal = document.getElementById('dateModal');
         const reportModal = document.getElementById('reportModal');
 
-        // Live camera background — mirrors the landing site's getUserMedia setup.
-        // Fire-and-forget: if the camera is denied/unavailable, the CSS gradient
-        // fallback stays and the app is fully usable.
-        async function startCameraBackground() {
-            const video = document.getElementById('cameraBg');
-            if (!video || !navigator.mediaDevices?.getUserMedia) return;
-            try {
-                const stream = await navigator.mediaDevices.getUserMedia({
-                    video: { facingMode: 'user' },
-                    audio: false
-                });
-                video.srcObject = stream;
-            } catch (error) {
-                console.warn('Camera background unavailable:', error);
-            }
-        }
-
         async function init() {
-            startCameraBackground();
             const { data: { user } } = await supabaseClient.auth.getUser();
             if (user) {
                 currentUser = user;
