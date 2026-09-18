@@ -2049,15 +2049,6 @@
                     htmlContent += `</tr>`;
                 }
                 
-                const trackingCategories = ['ENERGY', 'SLEEP', 'EATING', 'EXERCISE'];
-                trackingCategories.forEach(category => {
-                    htmlContent += `<tr>`;
-                    htmlContent += `<td class="category-label">${category}</td>`;
-                    for (let i = 0; i < 7; i++) {
-                        htmlContent += `<td class="data-cell"></td>`;
-                    }
-                    htmlContent += `</tr>`;
-                });
                 
                 htmlContent += `</tbody></table>`;
                 
@@ -2372,16 +2363,6 @@
                 htmlContent += `</tr>`;
             }
 
-            // Tracking rows
-            const trackingRows = ['ENERGY', 'SLEEP', 'EATING', 'EXERCISE'];
-            trackingRows.forEach(label => {
-                htmlContent += `<tr>`;
-                htmlContent += `<td style="border: 1px solid #333; padding: 8px; background: #f0f0f0; font-weight: bold; font-size: 10px;">${label}</td>`;
-                for (let i = 0; i < 7; i++) {
-                    htmlContent += `<td style="border: 1px solid #333; padding: 8px; height: 30px;"></td>`;
-                }
-                htmlContent += `</tr>`;
-            });
 
             htmlContent += `</tbody></table>`;
 

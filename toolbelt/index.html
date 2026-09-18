@@ -1733,15 +1733,6 @@
                     htmlContent += `</tr>`;
                 }
                 
-                const trackingCategories = ['ENERGY', 'SLEEP', 'EATING', 'EXERCISE'];
-                trackingCategories.forEach(category => {
-                    htmlContent += `<tr>`;
-                    htmlContent += `<td class="category-label">${category}</td>`;
-                    for (let i = 0; i < 7; i++) {
-                        htmlContent += `<td class="data-cell"></td>`;
-                    }
-                    htmlContent += `</tr>`;
-                });
                 
                 htmlContent += `</tbody></table>`;
                 
