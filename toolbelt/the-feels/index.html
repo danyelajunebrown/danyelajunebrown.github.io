@@ -710,22 +710,9 @@
             }
         }
         /* ===================================================================
-           Live camera background — same architecture as the landing site
-           (getUserMedia -> full-viewport <video object-fit:cover>). The user
-           literally becomes the background; a palette-tinted scrim keeps the
-           glass cards legible and on-brand.
+           Background scrim — a palette-tinted wash over the body gradient that
+           gives the glass cards something with depth to sit against.
         =================================================================== */
-        #cameraBg {
-            position: fixed;
-            inset: 0;
-            width: 100vw;
-            height: 100vh;
-            object-fit: cover;
-            transform: scaleX(-1); /* mirror so it reads like looking at yourself */
-            z-index: -2;
-            background: #555;
-            filter: saturate(1.08);
-        }
         #bgScrim {
             position: fixed;
             inset: 0;
@@ -734,8 +721,6 @@
             background:
                 radial-gradient(130% 90% at 50% 0%, rgba(118,75,162,0.30), transparent 62%),
                 linear-gradient(135deg, rgba(102,126,234,0.38) 0%, rgba(118,75,162,0.48) 100%);
-            -webkit-backdrop-filter: blur(3px);
-            backdrop-filter: blur(3px);
         }
 
         /* ===================================================================
@@ -991,8 +976,6 @@
     </style>
 </head>
 <body>
-    <!-- Live camera background: the user becomes the backdrop (same as landing site) -->
-    <video autoplay playsinline muted id="cameraBg"></video>
     <div id="bgScrim"></div>
     <div class="container">
         <div class="card">
@@ -1346,25 +1329,7 @@
         const dateModal = document.getElementById('dateModal');
         const reportModal = document.getElementById('reportModal');
 
-        // Live camera background — mirrors the landing site's getUserMedia setup.
-        // Fire-and-forget: if the camera is denied/unavailable, the CSS gradient
-        // fallback stays and the app is fully usable.
-        async function startCameraBackground() {
-            const video = document.getElementById('cameraBg');
-            if (!video || !navigator.mediaDevices?.getUserMedia) return;
-            try {
-                const stream = await navigator.mediaDevices.getUserMedia({
-                    video: { facingMode: 'user' },
-                    audio: false
-                });
-                video.srcObject = stream;
-            } catch (error) {
-                console.warn('Camera background unavailable:', error);
-            }
-        }
-
         async function init() {
-            startCameraBackground();
             const { data: { user } } = await supabaseClient.auth.getUser();
             if (user) {
                 currentUser = user;
@@ -2259,33 +2224,34 @@
         successAlertEl.style.display = 'none';
         errorAlertEl.style.display = 'none';
         
-        // PHASE 2: Expand container for full capture
-        const originalStyles = {
-            overflow: reportText.style.overflow,
-            maxHeight: reportText.style.maxHeight,
-            height: reportText.style.height
-        };
-        reportText.style.overflow = 'visible';
-        reportText.style.maxHeight = 'none';
-        reportText.style.height = 'auto';
-        
-        const scrollWidth = reportText.scrollWidth;
-        const scrollHeight = reportText.scrollHeight;
-        
-        // Capture full content
-        const canvas = await html2canvas(reportText, {
-            scale: 2,
-            useCORS: true,
-            logging: false,
-            backgroundColor: '#ffffff',
-            windowWidth: scrollWidth,
-            windowHeight: scrollHeight
-        });
-        
-        // Restore styles
-        reportText.style.overflow = originalStyles.overflow;
-        reportText.style.maxHeight = originalStyles.maxHeight;
-        reportText.style.height = originalStyles.height;
+        // PHASE 2: Render a copy of the card off-screen at a fixed desktop width.
+        // Capturing the on-screen preview crops the table to the modal's width
+        // on narrow screens (phones cut off at FRI), so never capture it directly.
+        const captureWidth = 1100;
+        const offscreen = document.createElement('div');
+        offscreen.style.cssText = `position: absolute; left: -99999px; top: 0; width: ${captureWidth}px;`;
+        const clone = reportText.cloneNode(true);
+        clone.removeAttribute('id');
+        clone.style.cssText = 'width: 100%; max-height: none; height: auto; overflow: visible; box-sizing: border-box;';
+        offscreen.appendChild(clone);
+        document.body.appendChild(offscreen);
+
+        let canvas;
+        try {
+            canvas = await html2canvas(clone, {
+                scale: 2,
+                useCORS: true,
+                logging: false,
+                backgroundColor: '#ffffff',
+                width: clone.scrollWidth,
+                height: clone.scrollHeight,
+                windowWidth: captureWidth + 100
+            });
+        } finally {
+            document.body.removeChild(offscreen);
+        }
+
+        // Restore alerts
         successAlertEl.style.display = successDisplay;
         errorAlertEl.style.display = errorDisplay;
         
@@ -2294,9 +2260,10 @@
         const pdf = new jsPDF({
             orientation: 'landscape',
             unit: 'mm',
-            format: 'a4'
+            format: 'a4',
+            compress: true
         });
-        
+
         const pageWidth = pdf.internal.pageSize.getWidth();
         const pageHeight = pdf.internal.pageSize.getHeight();
         const margin = 10;
@@ -2320,8 +2287,9 @@
         const x = (pageWidth - imgWidth) / 2;
         const y = (pageHeight - imgHeight) / 2;
         
-        const imgData = canvas.toDataURL('image/png');
-        pdf.addImage(imgData, 'PNG', x, y, imgWidth, imgHeight);
+        // JPEG, not PNG: a full-page PNG made ~8.5 MB PDFs, too big to email
+        const imgData = canvas.toDataURL('image/jpeg', 0.85);
+        pdf.addImage(imgData, 'JPEG', x, y, imgWidth, imgHeight);
         
         const today = new Date();
         const filename = `All_The_Feels_Diary_Card_${today.getFullYear()}-${(today.getMonth()+1).toString().padStart(2,'0')}-${today.getDate().toString().padStart(2,'0')}.pdf`;
