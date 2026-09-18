@@ -489,7 +489,7 @@
             font-size: 12px;
             line-height: 1.4;
             max-height: 600px;
-            overflow-y: auto;
+            overflow: auto;
             border: 2px solid #333;
         }
 
@@ -497,6 +497,8 @@
             width: 100%;
             border-collapse: collapse;
             margin: 0;
+            table-layout: fixed;
+            min-width: 760px; /* phones scroll sideways instead of crushing 7 days */
         }
 
         .diary-template th,
@@ -515,7 +517,7 @@
         }
 
         .day-header {
-            width: 14%;
+            width: 13.43%; /* 7 days share what the time axis leaves: (100% - 6%) / 7 */
             font-weight: bold;
             background-color: #e8e8e8;
         }
@@ -544,6 +546,65 @@
         .drop-zone.drag-over {
             border-color: #667eea;
             background-color: rgba(102, 126, 234, 0.1);
+        }
+
+        /* ---- 24-hour day columns ----------------------------------------
+           Each day column is midnight (top) to midnight (bottom). Entries sit
+           at the time they happened; layoutDayTracks() nudges crowded entries
+           apart and squeezes them to fit, but never makes the column taller. */
+        .diary-template {
+            --day-h: 620px;
+        }
+        .diary-template th.time-axis-head {
+            width: 6%;
+        }
+        .diary-template td.time-axis,
+        .diary-template td.day-track {
+            height: var(--day-h);
+            padding: 0;
+            position: relative;
+            /* faint line every 3 hours */
+            background-image: repeating-linear-gradient(
+                to bottom,
+                transparent 0,
+                transparent calc(var(--day-h) / 8 - 1px),
+                rgba(0,0,0,0.09) calc(var(--day-h) / 8 - 1px),
+                rgba(0,0,0,0.09) calc(var(--day-h) / 8)
+            );
+        }
+        .diary-template td.time-axis {
+            background-color: #f0f0f0;
+        }
+        .hour-label {
+            position: absolute;
+            right: 4px;
+            transform: translateY(-50%);
+            font-size: 9px;
+            color: #777;
+            white-space: nowrap;
+        }
+        .hour-label.first { transform: none; }
+        .hour-label.last { transform: translateY(-100%); }
+        .day-track .drop-zone {
+            position: absolute;
+            inset: 0;
+            min-height: 0;
+            padding: 0;
+        }
+        .day-track .entry-item {
+            position: absolute;
+            left: 4px;
+            right: 4px;
+            margin: 0;
+            overflow: hidden;
+            box-sizing: border-box;
+        }
+        .day-track .entry-item.compact .entry-intensity,
+        .day-track .entry-item.compact .entry-skill {
+            display: none;
+        }
+        .day-track .entry-item.compact {
+            padding: 3px 6px;
         }
 
         .entry-item {
@@ -2025,7 +2086,7 @@
                     <table class="diary-template">
                         <thead>
                             <tr>
-                                <th class="category-label"></th>
+                                <th class="category-label time-axis-head"></th>
                                 <th class="day-header">MON</th>
                                 <th class="day-header">TUE</th>
                                 <th class="day-header">WED</th>
@@ -2037,55 +2098,32 @@
                         </thead>
                         <tbody>`;
                 
-                const maxEntriesPerDay = Math.max(...Object.values(dayGroups).map(entries => entries.length), 3);
-                
-                for (let row = 0; row < maxEntriesPerDay; row++) {
-                    htmlContent += `<tr>`;
-                    htmlContent += `<td class="category-label">${row === 0 ? 'EMOTIONS' : ''}</td>`;
-                    
-                    ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN'].forEach(day => {
-                        htmlContent += `<td class="data-cell">`;
-                        htmlContent += `<div class="drop-zone" data-day="${day}">`;
-                        
-                        if (dayGroups[day][row]) {
-                            const entryId = dayGroups[day][row];
-                            const entry = editableEntries[entryId];
-                            const time = new Date(entry.timestamp).toLocaleTimeString('en-US', {
-                                hour: '2-digit',
-                                minute: '2-digit',
-                                hour12: true
-                            });
-                            
-                            const emotionColor = getEmotionColor(entry.feeling);
-                            const opacity = entry.intensity * 0.2;
-                            const r = parseInt(emotionColor.slice(1, 3), 16);
-                            const g = parseInt(emotionColor.slice(3, 5), 16);
-                            const b = parseInt(emotionColor.slice(5, 7), 16);
-                            const bgColor = `rgba(${r}, ${g}, ${b}, ${opacity})`;
-                            
-                            htmlContent += `
-                                <div class="entry-item" draggable="true" data-entry-id="${entryId}" style="background: ${bgColor} !important; border: 1px solid rgba(0,0,0,0.2);">
-                                    <div class="drag-handle">⋮⋮</div>
-                                    <div class="entry-time">${time}</div>
-                                    <div class="entry-feeling">${entry.feeling}</div>
-                                    <div class="entry-intensity">Intensity: ${entry.intensity}/5</div>
-                                    <div class="entry-skill">Skill: ${entry.dbt_skill}</div>
-                                </div>
-                            `;
-                        }
-                        
-                        htmlContent += `</div>`;
-                        htmlContent += `</td>`;
+                // One row: a time axis, then each day as a midnight-to-midnight track
+                const hourLabels = ['12a', '3a', '6a', '9a', '12p', '3p', '6p', '9p', '12a'];
+                htmlContent += `<tr><td class="category-label time-axis">`;
+                hourLabels.forEach((label, i) => {
+                    const edge = i === 0 ? ' first' : (i === hourLabels.length - 1 ? ' last' : '');
+                    htmlContent += `<span class="hour-label${edge}" style="top: ${(i / 8) * 100}%;">${label}</span>`;
+                });
+                htmlContent += `</td>`;
+
+                ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN'].forEach(day => {
+                    htmlContent += `<td class="data-cell day-track">`;
+                    htmlContent += `<div class="drop-zone" data-day="${day}">`;
+                    dayGroups[day].forEach(entryId => {
+                        htmlContent += entryItemHTML(entryId);
                     });
-                    htmlContent += `</tr>`;
-                }
-                
-                
+                    htmlContent += `</div></td>`;
+                });
+                htmlContent += `</tr>`;
+
                 htmlContent += `</tbody></table>`;
-                
-                document.getElementById('reportText').innerHTML = htmlContent;
+
+                const reportText = document.getElementById('reportText');
+                reportText.innerHTML = htmlContent;
                 setupDragAndDrop();
                 reportModal.style.display = 'block';
+                layoutDayTracks(reportText);
             } catch (error) {
                 console.error('Error generating report:', error);
                 showError('Error generating report. Please try again.');
@@ -2154,48 +2192,88 @@
                 draggedElement.remove();
             }
             
-            const dropZones = document.querySelectorAll(`[data-day="${targetDay}"]`);
-            let targetDropZone = null;
-            
-            for (const zone of dropZones) {
-                if (zone.children.length === 0) {
-                    targetDropZone = zone;
-                    break;
-                }
-                targetDropZone = zone;
-            }
-            
+            const reportText = document.getElementById('reportText');
+            const targetDropZone = reportText.querySelector(`.drop-zone[data-day="${targetDay}"]`);
+
             if (targetDropZone) {
-                const time = new Date(entry.timestamp).toLocaleTimeString('en-US', {
-                    hour: '2-digit',
-                    minute: '2-digit',
-                    hour12: true
-                });
-                
-                const emotionColor = getEmotionColor(entry.feeling);
-                const opacity = entry.intensity * 0.2;
-                const r = parseInt(emotionColor.slice(1, 3), 16);
-                const g = parseInt(emotionColor.slice(3, 5), 16);
-                const b = parseInt(emotionColor.slice(5, 7), 16);
-                const bgColor = `rgba(${r}, ${g}, ${b}, ${opacity})`;
-                
-                const newEntryElement = document.createElement('div');
-                newEntryElement.className = 'entry-item';
-                newEntryElement.draggable = true;
-                newEntryElement.dataset.entryId = entryId;
-                newEntryElement.style.background = bgColor;
-                newEntryElement.style.border = '1px solid rgba(0,0,0,0.2)';
-                newEntryElement.innerHTML = `
+                targetDropZone.insertAdjacentHTML('beforeend', entryItemHTML(entryId));
+                layoutDayTracks(reportText);
+                updateEntryDay(entryId, targetDay, entry.timestamp);
+            }
+        }
+
+        window.addEventListener('resize', () => {
+            if (reportModal.style.display === 'block') {
+                layoutDayTracks(document.getElementById('reportText'));
+            }
+        });
+
+        function entryItemHTML(entryId) {
+            const entry = editableEntries[entryId];
+            const date = new Date(entry.timestamp);
+            const time = date.toLocaleTimeString('en-US', {
+                hour: '2-digit',
+                minute: '2-digit',
+                hour12: true
+            });
+            const minutes = date.getHours() * 60 + date.getMinutes();
+
+            const emotionColor = getEmotionColor(entry.feeling);
+            const opacity = entry.intensity * 0.2;
+            const r = parseInt(emotionColor.slice(1, 3), 16);
+            const g = parseInt(emotionColor.slice(3, 5), 16);
+            const b = parseInt(emotionColor.slice(5, 7), 16);
+            const bgColor = `rgba(${r}, ${g}, ${b}, ${opacity})`;
+
+            return `
+                <div class="entry-item" draggable="true" data-entry-id="${entryId}" data-minutes="${minutes}" style="background: ${bgColor} !important; border: 1px solid rgba(0,0,0,0.2);">
                     <div class="drag-handle">⋮⋮</div>
                     <div class="entry-time">${time}</div>
                     <div class="entry-feeling">${entry.feeling}</div>
                     <div class="entry-intensity">Intensity: ${entry.intensity}/5</div>
                     <div class="entry-skill">Skill: ${entry.dbt_skill}</div>
-                `;
-                
-                targetDropZone.appendChild(newEntryElement);
-                updateEntryDay(entryId, targetDay, entry.timestamp);
-            }
+                </div>
+            `;
+        }
+
+        // Place each entry at its time of day within its day column. The top
+        // of a card marks when it happened. Crowded entries are pushed apart in
+        // time order, slid up if they'd run past midnight, and squeezed (details
+        // hidden, then height capped) if they still don't fit.
+        function layoutDayTracks(root) {
+            const GAP = 2;
+            root.querySelectorAll('.day-track .drop-zone').forEach(zone => {
+                const H = zone.clientHeight;
+                if (!H) return; // not rendered yet
+                const items = [...zone.querySelectorAll('.entry-item')]
+                    .sort((a, b) => a.dataset.minutes - b.dataset.minutes);
+                if (!items.length) return;
+
+                items.forEach(el => {
+                    el.classList.remove('compact');
+                    el.style.height = '';
+                });
+                const room = H - GAP * (items.length - 1);
+                const total = () => items.reduce((sum, el) => sum + el.offsetHeight, 0);
+                if (total() > room) {
+                    items.forEach(el => el.classList.add('compact'));
+                }
+                if (total() > room) {
+                    const h = Math.floor(room / items.length);
+                    items.forEach(el => { el.style.height = `${h}px`; });
+                }
+
+                const heights = items.map(el => el.offsetHeight);
+                const tops = items.map(el => (el.dataset.minutes / 1440) * H);
+                for (let i = 0; i < tops.length; i++) {
+                    if (i > 0) tops[i] = Math.max(tops[i], tops[i - 1] + heights[i - 1] + GAP);
+                }
+                for (let i = tops.length - 1; i >= 0; i--) {
+                    const limit = i === tops.length - 1 ? H - heights[i] : tops[i + 1] - heights[i] - GAP;
+                    tops[i] = Math.max(0, Math.min(tops[i], limit));
+                }
+                items.forEach((el, i) => { el.style.top = `${tops[i]}px`; });
+            });
         }
 
         async function downloadDiaryCardPDF() {
@@ -2226,6 +2304,8 @@
         clone.style.cssText = 'width: 100%; max-height: none; height: auto; overflow: visible; box-sizing: border-box;';
         offscreen.appendChild(clone);
         document.body.appendChild(offscreen);
+        // Cards reflow at the wider width, so re-place them on the timeline
+        layoutDayTracks(clone);
 
         let canvas;
         try {
@@ -2234,8 +2314,9 @@
                 useCORS: true,
                 logging: false,
                 backgroundColor: '#ffffff',
-                width: clone.scrollWidth,
-                height: clone.scrollHeight,
+                // offset*, not scroll*: scroll sizes leave out the border and clipped the right edge
+                width: clone.offsetWidth,
+                height: clone.offsetHeight,
                 windowWidth: captureWidth + 100
             });
         } finally {
