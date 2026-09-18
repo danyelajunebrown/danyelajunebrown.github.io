@@ -25,6 +25,28 @@
   }
   button { font: inherit; color: inherit; background: none; border: 0; padding: 0; cursor: pointer; }
 
+  /* ---------- eyewall (the ground) ---------- */
+  #wall {
+    position: fixed; inset: 0; z-index: 0;
+    width: 100%; height: 100%; display: block;
+    background: var(--ground);
+    opacity: .62;            /* the list has to stay readable over it */
+    pointer-events: none;    /* never eats a click meant for a title */
+  }
+  #cam { position: fixed; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
+  header, main { position: relative; z-index: 1; }
+  li button { text-shadow: 0 0 18px #000, 0 0 6px #000; }
+  #look {
+    position: fixed; z-index: 1;
+    left: clamp(20px, 6vw, 96px); bottom: max(22px, env(safe-area-inset-bottom));
+    font-size: 12px; letter-spacing: .04em; color: var(--dim);
+    border-bottom: 1px solid #2a2a28; padding-bottom: 2px;
+    transition: opacity .6s;
+  }
+  #look span { display: block; font-size: 10px; letter-spacing: .02em; color: #4a4a48; margin-top: 3px; }
+  #look:hover { color: var(--ink); }
+  #look[hidden] { display: none; }
+
   /* ---------- index ---------- */
   header { display: flex; justify-content: space-between; gap: 1em; flex-wrap: wrap; color: var(--dim); margin-bottom: 14vh; }
   header h1, header p { font-size: inherit; font-weight: 400; margin: 0; }
@@ -102,6 +124,11 @@
 </head>
 <body>
 
+<!-- eyewall: the viewer's own eyes on the wall, only while they look at the lens.
+     Everything stays on their device — nothing is uploaded, recorded or sent. -->
+<canvas id="wall" aria-hidden="true"></canvas>
+<video id="cam" autoplay muted playsinline aria-hidden="true"></video>
+
 <header>
   <h1>Danyela June Brown</h1>
   <p>Selected Projects</p>
@@ -110,6 +137,8 @@
 <main>
   <ol id="list"></ol>
 </main>
+
+<button id="look" hidden title="Your camera stays on your device: nothing is uploaded, recorded or sent.">look at me <span>nothing leaves your device</span></button>
 
 <div id="viewer" hidden>
   <div id="stage"></div>
@@ -175,7 +204,7 @@ const PROJECTS = [
     year: "", medium: "", venue: "", credits: "", text: "",
     media: [
       { type: "image", src: "media/all-the-feels-1.jpg" },
-      // TODO: most recent weekly diary-card report goes here
+      { type: "image", src: "media/all-the-feels-report-1.jpg", caption: "diary card, 12–18 September 2026" },
     ],
   },
   {
@@ -315,6 +344,181 @@ viewer.addEventListener("touchend", (e) => {
   if (Math.abs(dx) > 50) step(dx < 0 ? 1 : -1);
   x0 = null;
 });
+</script>
+
+<script type="module">
+/*
+  eyewall — the page's ground.
+
+  Finds every face the camera sees and paints only the eyes, and only while they
+  are pointed at the lens. Look away, look down or blink and they stop. The video
+  never leaves this device: no upload, no recording, no server. The detector and
+  its model are fetched from a CDN the first time a viewer opts in, so a viewer
+  who never taps "look at me" downloads nothing and sees plain black.
+
+  Values are the ones settled in the prototype; there are no on-screen controls.
+*/
+const TOL = 0.34;      // how far a look may depart from the lens before it stops
+const STRETCH = 1.0;   // vertical spread of eyes across the wall
+const SIZE = 1.3;      // eye size on the wall
+const FEATHER = 0.6;   // softness of each eye's edge
+
+const wall = document.getElementById("wall");
+const wctx = wall.getContext("2d");
+const video = document.getElementById("cam");
+const lookBtn = document.getElementById("look");
+const eyeC = document.createElement("canvas");
+const ectx = eyeC.getContext("2d");
+const viewerEl = document.getElementById("viewer");
+
+const EYES = [
+  { iris: 468, outer: 33,  inner: 133, side: "Left"  },
+  { iris: 473, outer: 362, inner: 263, side: "Right" },
+];
+const NOSE = 1, EDGE_L = 234, EDGE_R = 454;
+
+let landmarker = null, running = false, lastTs = -1;
+
+function fitWall() {
+  const dpr = Math.min(devicePixelRatio || 1, 2);
+  wall.width = Math.round(innerWidth * dpr);
+  wall.height = Math.round(innerHeight * dpr);
+}
+fitWall();
+addEventListener("resize", fitWall);
+addEventListener("orientationchange", () => setTimeout(fitWall, 300));
+
+const bsMap = (bs) => {
+  const m = {};
+  for (const c of bs?.categories || []) m[c.categoryName] = c.score;
+  return m;
+};
+
+// head yaw from nose/edge asymmetry: 0 frontal, ±1 profile
+function headYaw(lm) {
+  const n = lm[NOSE], l = lm[EDGE_L], r = lm[EDGE_R];
+  const dL = Math.hypot(n.x - l.x, n.y - l.y);
+  const dR = Math.hypot(n.x - r.x, n.y - r.y);
+  return (dR - dL) / (dR + dL + 1e-6);
+}
+
+// 0 = straight at the lens; grows as the look departs
+function gazeScore(lm, b) {
+  const eh = Math.max(b.eyeLookOutLeft || 0, b.eyeLookInLeft || 0, b.eyeLookOutRight || 0, b.eyeLookInRight || 0);
+  const ev = Math.max(b.eyeLookUpLeft || 0, b.eyeLookDownLeft || 0, b.eyeLookUpRight || 0, b.eyeLookDownRight || 0);
+  return Math.abs(headYaw(lm)) * 1.7 + eh * 0.9 + ev * 0.7;
+}
+
+function drawEye(cx, cy, halfW) {
+  const vw = video.videoWidth, vh = video.videoHeight;
+  const sw = halfW * 2 * vw;
+  const sh = sw * 0.62;
+  if (sw < 3 || sh < 3) return;
+  const sx = cx * vw - sw / 2;
+  const sy = cy * vh - sh / 2;
+
+  const cw = Math.max(4, Math.round(Math.min(sw, 420)));
+  const ch = Math.max(4, Math.round(cw * (sh / sw)));
+  if (eyeC.width !== cw || eyeC.height !== ch) { eyeC.width = cw; eyeC.height = ch; }
+
+  ectx.globalCompositeOperation = "source-over";
+  ectx.clearRect(0, 0, cw, ch);
+  ectx.drawImage(video, sx, sy, sw, sh, 0, 0, cw, ch);
+  ectx.globalCompositeOperation = "destination-in";
+  ectx.save();
+  ectx.translate(cw / 2, ch / 2);
+  ectx.scale(1, ch / cw);
+  const g = ectx.createRadialGradient(0, 0, 0, 0, 0, cw / 2);
+  g.addColorStop(0, "rgba(0,0,0,1)");
+  g.addColorStop(FEATHER, "rgba(0,0,0,1)");
+  g.addColorStop(1, "rgba(0,0,0,0)");
+  ectx.fillStyle = g;
+  ectx.fillRect(-cw / 2, -cw / 2, cw, cw);
+  ectx.restore();
+
+  const W = wall.width, H = wall.height;
+  const dw = halfW * 2 * W * SIZE;
+  wctx.save();
+  wctx.globalCompositeOperation = "screen";
+  wctx.translate((1 - cx) * W, (0.5 + (cy - 0.5) * STRETCH) * H);
+  wctx.scale(-1, 1);          // mirrored, so a viewer meets their own eye
+  wctx.drawImage(eyeC, -dw / 2, -(dw * (sh / sw)) / 2, dw, dw * (sh / sw));
+  wctx.restore();
+}
+
+function loop() {
+  if (!running) return;
+  // a project is open full screen: nothing to paint behind it
+  if (!viewerEl.hidden) { requestAnimationFrame(loop); return; }
+
+  if (video.readyState >= 2 && video.currentTime !== lastTs) {
+    lastTs = video.currentTime;
+    const res = landmarker.detectForVideo(video, performance.now());
+
+    wctx.setTransform(1, 0, 0, 1, 0, 0);
+    wctx.globalCompositeOperation = "source-over";
+    wctx.fillStyle = "#000";
+    wctx.fillRect(0, 0, wall.width, wall.height);
+
+    const faces = res.faceLandmarks || [];
+    const shapes = res.faceBlendshapes || [];
+    for (let f = 0; f < faces.length; f++) {
+      const lm = faces[f], b = bsMap(shapes[f]);
+      if (gazeScore(lm, b) > TOL) continue;               // not looking: paint nothing
+      for (const e of EYES) {
+        if ((b["eyeBlink" + e.side] || 0) > 0.5) continue; // a closed eye is not a look
+        const iris = lm[e.iris], o = lm[e.outer], i = lm[e.inner];
+        if (!iris || !o || !i) continue;
+        drawEye(iris.x, iris.y, Math.hypot(o.x - i.x, o.y - i.y) * 0.8);
+      }
+    }
+  }
+  requestAnimationFrame(loop);
+}
+
+async function start() {
+  lookBtn.firstChild.textContent = "waking… ";
+  try {
+    const { FaceLandmarker, FilesetResolver } =
+      await import("https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/vision_bundle.mjs");
+    const fileset = await FilesetResolver.forVisionTasks(
+      "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/wasm");
+    landmarker = await FaceLandmarker.createFromOptions(fileset, {
+      baseOptions: {
+        modelAssetPath: "https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task",
+        delegate: "GPU",
+      },
+      runningMode: "VIDEO",
+      numFaces: 5,
+      outputFaceBlendshapes: true,
+      outputFacialTransformationMatrixes: false,
+    });
+    video.srcObject = await navigator.mediaDevices.getUserMedia({
+      audio: false,
+      video: { facingMode: { ideal: "user" }, width: { ideal: 1280 }, height: { ideal: 720 } },
+    });
+    await video.play();
+    lookBtn.hidden = true;
+    running = true;
+    loop();
+  } catch (e) {
+    // no camera, permission refused, or the CDN is unreachable: the page is simply black
+    running = false;
+    lookBtn.firstChild.textContent = "look at me ";
+    lookBtn.hidden = false;
+  }
+}
+
+lookBtn.addEventListener("click", start);
+
+// Offer it only where it can work, and start without asking again if this viewer
+// has already granted the camera on this site.
+if (navigator.mediaDevices?.getUserMedia) {
+  lookBtn.hidden = false;
+  navigator.permissions?.query({ name: "camera" })
+    .then((p) => { if (p.state === "granted") start(); })
+    .catch(() => {});
+}
 </script>
 </body>
 </html>
