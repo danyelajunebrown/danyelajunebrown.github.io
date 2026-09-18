@@ -29,9 +29,9 @@
 | Culture Circle | Projects/2026/JDCatBS/culture-circle/ | Supabase + Deepgram + SendGrid | Edge functions need deploy |
 | THE QUEUE | toolbelt/CoMmUnItY playlist/ | Firebase Realtime DB | Active |
 | Dance Clips | toolbelt/dance-clips/ | Node.js + Puppeteer | Local dev only |
-| Damages | toolbelt/damages/ | Flask + PostgreSQL | Scaffolded, not deployed |
+| Damages | toolbelt/for-damages/ | Flask + PostgreSQL | Scaffolded, not deployed |
 | Make It Cunt | toolbelt/make-it-cunt/ | Flask | Scaffolded, not deployed |
-| Gaze Study | Fuck You Looking At/ | Node.js + PostgreSQL | Scaffolded, not deployed |
+| Gaze Study | Projects/2025/Fuck You Looking At/ | Node.js + PostgreSQL | Scaffolded, not deployed |
 
 ## Key Files
 - `projects.html` — Portfolio single-file app

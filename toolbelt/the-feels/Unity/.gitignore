@@ -57,3 +57,7 @@ ExportedObj/
 # Crashlytics / OS junk
 crashlytics-build.properties
 .DS_Store
+
+# Unity editor scratch + Burst debug symbols
+/.utmp/
+/*_BurstDebugInformation_DoNotShip/
