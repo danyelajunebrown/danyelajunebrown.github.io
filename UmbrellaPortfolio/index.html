@@ -36,16 +36,6 @@
   #cam { position: fixed; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
   header, main { position: relative; z-index: 1; }
   li button { text-shadow: 0 0 18px #000, 0 0 6px #000; }
-  #look {
-    position: fixed; z-index: 1;
-    left: clamp(20px, 6vw, 96px); bottom: max(22px, env(safe-area-inset-bottom));
-    font-size: 12px; letter-spacing: .04em; color: var(--dim);
-    border-bottom: 1px solid #2a2a28; padding-bottom: 2px;
-    transition: opacity .6s;
-  }
-  #look span { display: block; font-size: 10px; letter-spacing: .02em; color: #4a4a48; margin-top: 3px; }
-  #look:hover { color: var(--ink); }
-  #look[hidden] { display: none; }
 
   /* ---------- index ---------- */
   header { display: flex; justify-content: space-between; gap: 1em; flex-wrap: wrap; color: var(--dim); margin-bottom: 14vh; }
@@ -54,16 +44,15 @@
 
   ol { list-style: none; margin: 0; padding: 0; }
   li button {
-    width: 100%;
-    display: flex; justify-content: space-between; align-items: baseline; gap: 1em;
+    display: block;
     padding: .28em 0;
-    font-size: clamp(26px, 4.4vw, 56px);
+    font-size: clamp(23px, 3.7vw, 46px);
     letter-spacing: -.02em;
-    line-height: 1.1;
+    line-height: 1.15;
     text-align: left;
     transition: color .25s;
   }
-  li .year { font-size: .5em; letter-spacing: 0; color: var(--dim); font-variant-numeric: tabular-nums; flex: none; }
+  li .year { color: var(--dim); font-variant-numeric: tabular-nums; }
   ol:hover li button, ol:focus-within li button { color: #3a3a39; }
   ol li button:hover, ol li button:focus-visible { color: var(--ink); outline: none; }
   ol li button:hover .year, ol li button:focus-visible .year { color: var(--ink); }
@@ -79,43 +68,51 @@
   #stage { position: absolute; inset: 0; }
   #stage img, #stage video, #stage iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; display: block; }
   #stage img, #stage video { object-fit: contain; }
-  #stage .nomedia { color: var(--dim); }
 
-  /* click-through zones. Images: whole halves. Video/embeds: thin edges, so the player stays usable. */
-  .zone { position: absolute; top: 0; bottom: 0; z-index: 2; }
-  .zone.prev { left: 0; cursor: w-resize; }
-  .zone.next { right: 0; cursor: e-resize; }
+  /* click-through: a chevron on each side says there is more to see.
+     Images take the whole half; video and embeds only the edge, so the player stays usable. */
+  .zone {
+    position: absolute; top: 0; bottom: 0; z-index: 2;
+    display: flex; align-items: center;
+    font-size: 34px; line-height: 1; color: var(--ink);
+    text-shadow: 0 0 12px #000, 0 0 4px #000;
+    opacity: .55; transition: opacity .25s;
+  }
+  .zone:hover, .zone:focus-visible { opacity: 1; outline: none; }
+  .zone.prev { left: 0; justify-content: flex-start; padding-left: 16px; }
+  .zone.next { right: 0; justify-content: flex-end; padding-right: 16px; }
   #viewer[data-kind="image"] .zone { width: 50%; }
-  #viewer[data-kind="embed"] .zone { width: 7%; top: 12%; bottom: 20%; }
+  #viewer[data-kind="embed"] .zone { width: 9%; top: 10%; bottom: 22%; }
   #viewer[data-single] .zone { display: none; }
 
-  /* details + chrome: appear on movement, fade when still */
+  /* details: a text overlay on the work, up while the pointer moves, gone when it rests */
   .chrome { position: absolute; z-index: 3; transition: opacity .5s; }
   #viewer.idle .chrome { opacity: 0; pointer-events: none; }
   #close { top: max(18px, env(safe-area-inset-top)); right: 22px; font-size: 13px; padding: 8px; color: var(--ink); text-shadow: 0 0 8px #000; }
   #count { top: max(26px, env(safe-area-inset-top)); left: 30px; font-size: 13px; color: var(--ink); text-shadow: 0 0 8px #000; font-variant-numeric: tabular-nums; }
   #details {
     left: 0; right: 0; bottom: 0;
-    padding: 18vh clamp(20px, 3vw, 40px) max(26px, env(safe-area-inset-bottom));
-    background: linear-gradient(transparent, rgba(0,0,0,.82));
+    padding: 20vh clamp(20px, 3vw, 40px) max(26px, env(safe-area-inset-bottom));
+    background: linear-gradient(transparent, rgba(0,0,0,.55) 42%, rgba(0,0,0,.86));
     pointer-events: none;
-    display: grid; grid-template-columns: minmax(0, 22em) minmax(0, 34em); gap: .4em 3em; align-items: end;
+    display: grid; grid-template-columns: minmax(0, 30em) minmax(0, 32em); gap: .3em 3em; align-items: end;
   }
-  #viewer[data-kind="embed"] #details { bottom: 64px; padding-top: 6vh; background: linear-gradient(transparent, rgba(0,0,0,.7)); }
-  #details h2 { font-size: 22px; font-weight: 400; letter-spacing: -.01em; margin: 0 0 .25em; }
-  #details dl { margin: 0; color: #c9c9c6; }
-  #details dl div { display: flex; gap: .6em; }
-  #details dt { color: var(--dim); min-width: 4.8em; }
-  #details dd { margin: 0; }
-  #details p { margin: 0; color: #d8d8d5; max-width: 34em; }
+  #viewer[data-kind="embed"] #details { bottom: 56px; padding-top: 8vh; }
+  #details h2 { font-size: 21px; font-weight: 400; letter-spacing: -.01em; margin: 0 0 .4em; }
+  #details h2 .year { color: var(--dim); }
+  #details p { margin: 0; }
+  #details .materials { color: #c9c9c6; }
+  #details .spec { color: var(--dim); font-variant-numeric: tabular-nums; margin-top: .25em; }
+  #details .text { color: #d8d8d5; max-width: 34em; }
   #details .caption { color: var(--dim); margin-top: .5em; }
 
   @media (max-width: 700px) {
-    #details { grid-template-columns: 1fr; padding-top: 10vh; }
+    #details { grid-template-columns: 1fr; padding-top: 12vh; gap: .6em; }
     #viewer[data-kind="image"] .zone { width: 35%; }
+    .zone { font-size: 26px; }
   }
   @media (hover: none) {
-    /* no hover on phones: details stay up until tapped away */
+    /* no hover on phones: the overlay stays up until tapped away */
     #viewer.idle .chrome { opacity: 1; pointer-events: auto; }
     #viewer.hush .chrome { opacity: 0; pointer-events: none; }
     #viewer.hush #close { opacity: 1; pointer-events: auto; }
@@ -138,12 +135,10 @@
   <ol id="list"></ol>
 </main>
 
-<button id="look" hidden title="Your camera stays on your device: nothing is uploaded, recorded or sent.">look at me <span>nothing leaves your device</span></button>
-
 <div id="viewer" hidden>
   <div id="stage"></div>
-  <button class="zone prev" aria-label="Previous view"></button>
-  <button class="zone next" aria-label="Next view"></button>
+  <button class="zone prev" aria-label="Previous view">‹</button>
+  <button class="zone next" aria-label="Next view">›</button>
   <div id="count" class="chrome"></div>
   <button id="close" class="chrome" aria-label="Close">Close ✕</button>
   <div id="details" class="chrome"></div>
@@ -153,7 +148,11 @@
 /*
   THE CONTENT. Edit here.
 
-  One entry per project, in the order they should be listed.
+  One entry per work, in the order they should be listed. Wording and formatting
+  follow Danyela's own portfolio PDF (Downloads/Danyela June brown_Portfolio.pdf):
+  title and year, then materials, then dimensions and running time, then the line
+  about the work.
+
   media is shown full screen in this order; more than one = click through.
     { type: "image",   src: "media/file.jpg" }
     { type: "video",   src: "media/file.mp4" }   (H.264 .mp4 — .MOV/HEVC won't play in Chrome)
@@ -164,44 +163,63 @@
 */
 const PROJECTS = [
   {
-    id: "dysaesthesia-aethiopica-asili",
-    title: "Dysaesthesia Aithiopica and Asili",   // spelling as on Danyela's YouTube upload
-    year: "",
-    medium: "",
-    venue: "",
-    credits: "",
-    text: "",
+    id: "dysaesthesia-aethiopica",
+    title: "dysaesthesia aethiopica",
+    year: "2025",
+    materials: "video performance, drywall, raspberry pi, viewfinder, video, lace frontal, Bestway inflatable raft, Yurugu (Marimba Ani), tripod, personal iPhone, work iPhone, charger bank, charger cable, McChicken, phonecall",
+    dims: "8” x 10” x 6”",
+    trt: "TRT: 06:00:00",
+    text: "Installation of epic Sawkill Creek voyage: reading aloud, rehearsing MFA crit on a speaker, and plummeting over damn",
     media: [
       { type: "youtube", id: "7huAtaUxn_c" },
       { type: "image", src: "media/dysaesthesia-aethiopica-1.jpg" },
+    ],
+  },
+  {
+    id: "asili",
+    title: "Asili",
+    year: "2025",
+    materials: "Bestway inflatable raft, lace frontal, carabiner, Gorilla glue, spray paint",
+    dims: "83” x 39” x 24”",
+    trt: "",
+    text: "set and costume pieces from dysaesthesia aethiopica; install photo from MFA 1st year show",
+    media: [
+      { type: "image", src: "media/asili-2.jpg", caption: "install photo, MFA 1st year show" },
       { type: "video", src: "media/asili.mp4" },
-      { type: "image", src: "media/asili-2.jpg" },
     ],
   },
   {
     id: "studio-practice",
-    title: "Studio Practice",
+    title: "STUDIO PRACTICE",
     year: "2024",
-    medium: "",
-    venue: "",
-    credits: "",
-    text: "",
+    materials: "cam-performance, found boat, peg board, cordless drill, screws, Black Looks: Race and Representation (bell hooks)",
+    dims: "",
+    trt: "TRT: 03:00:00",
+    text: "Score: artist rows to lake center, assembles a sign on the starboard side, finishes reading Black Looks, returns to shore",
     media: [
       { type: "youtube", id: "BRNuK34OCKI", caption: "excerpt" },
     ],
   },
   {
     id: "rip-dream-johnson",
-    title: "RIP Dream Johnson",
-    year: "2025", medium: "", venue: "", credits: "", text: "",
+    title: "untitled (RIP Dream Johnson)",
+    year: "2025",
+    materials: "live performance, t-shirt, Modpodge, inkjet transfer, two plastic bags, polyester scarf, New Balance slides",
+    dims: "12.5” x 8.5” x 1”",
+    trt: "TRT: 02:15:00",
+    text: "Score: artist ties plastic bags over her locs and puts on Dream Johnson memorial t-shirt, hears something unkind, sprints to Rock Creek and floats to the Potomac River at Lock 0.",
     media: [
       { type: "youtube", id: "VL3bCHgXNmo" },
     ],
   },
   {
     id: "all-the-feels",
-    title: "All The Feels",
-    year: "", medium: "", venue: "", credits: "", text: "",
+    title: "untitled (all the feels)",
+    year: "2025",
+    materials: "diary card entries, HTML, CSS, JavaScript, Supabase",
+    dims: "",
+    trt: "TRT: 9/22/25—Ongoing",
+    text: "I have been tracking my emotions and use of re-regulation/mindfulness skills here. This is the past seven days worth of entries.",
     media: [
       { type: "image", src: "media/all-the-feels-1.jpg" },
       { type: "image", src: "media/all-the-feels-report-1.jpg", caption: "diary card, 12–18 September 2026" },
@@ -210,7 +228,11 @@ const PROJECTS = [
   {
     id: "out-the-doll-house-ii",
     title: "Out The Doll House II",
-    year: "", medium: "", venue: "", credits: "", text: "",
+    year: "",          // TODO(Danyela): not in the portfolio PDF — year, materials, dims, TRT, line
+    materials: "",
+    dims: "",
+    trt: "",
+    text: "",
     media: [
       { type: "youtube", id: "ETBAGdcVCH8", caption: "excerpt" },
     ],
@@ -223,12 +245,13 @@ const list = $("#list"), viewer = $("#viewer"), stage = $("#stage"),
 let current = null, index = 0, idleTimer = 0;
 
 const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+const titleLine = (p) => esc(p.title) + (p.year ? ` <span class="year">(${esc(p.year)})</span>` : "");
 
 // ---------- index ----------
 for (const p of PROJECTS) {
   const li = document.createElement("li");
   const b = document.createElement("button");
-  b.innerHTML = `<span class="title">${esc(p.title)}</span><span class="year">${esc(p.year)}</span>`;
+  b.innerHTML = titleLine(p);
   if (!p.media.length) b.dataset.empty = "";
   b.addEventListener("click", () => { if (p.media.length) location.hash = p.id; });
   li.append(b);
@@ -238,8 +261,7 @@ for (const p of PROJECTS) {
 // ---------- viewer ----------
 function render() {
   const p = current, m = p.media[index];
-  const kind = m.type === "image" ? "image" : "embed";
-  viewer.dataset.kind = kind;
+  viewer.dataset.kind = m.type === "image" ? "image" : "embed";
   viewer.toggleAttribute("data-single", p.media.length < 2);
   count.textContent = p.media.length > 1 ? `${index + 1} / ${p.media.length}` : "";
 
@@ -265,16 +287,15 @@ function render() {
     stage.append(f);
   }
 
-  const rows = [["Medium", p.medium], ["Venue", p.venue], ["Credits", p.credits]]
-    .filter(([, v]) => v)
-    .map(([k, v]) => `<div><dt>${k}</dt><dd>${esc(v)}</dd></div>`).join("");
+  const spec = [p.dims, p.trt].filter(Boolean).join("  |  ");
   details.innerHTML = `
     <div>
-      <h2>${esc(p.title)}</h2>
-      ${p.year ? `<dl><div><dt>Year</dt><dd>${esc(p.year)}</dd></div>${rows}</dl>` : rows ? `<dl>${rows}</dl>` : ""}
+      <h2>${titleLine(p)}</h2>
+      ${p.materials ? `<p class="materials">${esc(p.materials)}</p>` : ""}
+      ${spec ? `<p class="spec">${esc(spec)}</p>` : ""}
     </div>
     <div>
-      ${p.text ? `<p>${esc(p.text)}</p>` : ""}
+      ${p.text ? `<p class="text">${esc(p.text)}</p>` : ""}
       ${m.caption ? `<p class="caption">${esc(m.caption)}</p>` : ""}
     </div>`;
 
@@ -304,7 +325,7 @@ function close() {
   document.body.style.overflow = "";
 }
 
-// Hash = which project is open, so the browser back button closes it.
+// Hash = which work is open, so the browser back button closes it.
 function route() {
   const p = PROJECTS.find((x) => x.id === location.hash.slice(1) && x.media.length);
   p ? (p !== current && open(p)) : current && close();
@@ -314,18 +335,18 @@ route();
 
 function leave() { history.length > 1 && location.hash ? history.back() : (location.hash = ""); }
 
-// details show while the pointer moves, fade when it rests
+// the overlay shows while the pointer moves and fades when it rests
 function wake() {
   viewer.classList.remove("idle");
   clearTimeout(idleTimer);
-  idleTimer = setTimeout(() => viewer.classList.add("idle"), 2200);
+  idleTimer = setTimeout(() => viewer.classList.add("idle"), 2400);
 }
 viewer.addEventListener("mousemove", wake);
 
 $(".zone.prev").addEventListener("click", () => step(-1));
 $(".zone.next").addEventListener("click", () => step(1));
 $("#close").addEventListener("click", leave);
-// phones: tapping the middle of an image toggles the details
+// phones: tapping the middle of an image toggles the overlay
 stage.addEventListener("click", () => viewer.classList.toggle("hush"));
 
 addEventListener("keydown", (e) => {
@@ -348,13 +369,15 @@ viewer.addEventListener("touchend", (e) => {
 
 <script type="module">
 /*
-  eyewall — the page's ground.
+  eyewall — the page's ground, and the condition of the page.
 
   Finds every face the camera sees and paints only the eyes, and only while they
   are pointed at the lens. Look away, look down or blink and they stop. The video
-  never leaves this device: no upload, no recording, no server. The detector and
-  its model are fetched from a CDN the first time a viewer opts in, so a viewer
-  who never taps "look at me" downloads nothing and sees plain black.
+  never leaves this device: no upload, no recording, no server.
+
+  It asks on load, the way the landing page of danyelajunebrown.github.io does.
+  There is nothing to opt into and no button to miss; refusing the camera leaves
+  the list on plain black.
 
   Values are the ones settled in the prototype; there are no on-screen controls.
 */
@@ -366,7 +389,6 @@ const FEATHER = 0.6;   // softness of each eye's edge
 const wall = document.getElementById("wall");
 const wctx = wall.getContext("2d");
 const video = document.getElementById("cam");
-const lookBtn = document.getElementById("look");
 const eyeC = document.createElement("canvas");
 const ectx = eyeC.getContext("2d");
 const viewerEl = document.getElementById("viewer");
@@ -438,17 +460,18 @@ function drawEye(cx, cy, halfW) {
 
   const W = wall.width, H = wall.height;
   const dw = halfW * 2 * W * SIZE;
+  const dh = dw * (sh / sw);
   wctx.save();
   wctx.globalCompositeOperation = "screen";
   wctx.translate((1 - cx) * W, (0.5 + (cy - 0.5) * STRETCH) * H);
   wctx.scale(-1, 1);          // mirrored, so a viewer meets their own eye
-  wctx.drawImage(eyeC, -dw / 2, -(dw * (sh / sw)) / 2, dw, dw * (sh / sw));
+  wctx.drawImage(eyeC, -dw / 2, -dh / 2, dw, dh);
   wctx.restore();
 }
 
 function loop() {
   if (!running) return;
-  // a project is open full screen: nothing to paint behind it
+  // a work is open full screen: nothing to paint behind it
   if (!viewerEl.hidden) { requestAnimationFrame(loop); return; }
 
   if (video.readyState >= 2 && video.currentTime !== lastTs) {
@@ -477,8 +500,15 @@ function loop() {
 }
 
 async function start() {
-  lookBtn.firstChild.textContent = "waking… ";
   try {
+    // ask for the camera first, so the permission dialog appears as the page
+    // loads rather than after a detector download
+    video.srcObject = await navigator.mediaDevices.getUserMedia({
+      audio: false,
+      video: { facingMode: { ideal: "user" }, width: { ideal: 1280 }, height: { ideal: 720 } },
+    });
+    await video.play();
+
     const { FaceLandmarker, FilesetResolver } =
       await import("https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/vision_bundle.mjs");
     const fileset = await FilesetResolver.forVisionTasks(
@@ -493,32 +523,16 @@ async function start() {
       outputFaceBlendshapes: true,
       outputFacialTransformationMatrixes: false,
     });
-    video.srcObject = await navigator.mediaDevices.getUserMedia({
-      audio: false,
-      video: { facingMode: { ideal: "user" }, width: { ideal: 1280 }, height: { ideal: 720 } },
-    });
-    await video.play();
-    lookBtn.hidden = true;
     running = true;
     loop();
   } catch (e) {
-    // no camera, permission refused, or the CDN is unreachable: the page is simply black
+    // refused camera, no camera, or the CDN is unreachable: the page is simply black
     running = false;
-    lookBtn.firstChild.textContent = "look at me ";
-    lookBtn.hidden = false;
+    if (video.srcObject) { video.srcObject.getTracks().forEach((t) => t.stop()); video.srcObject = null; }
   }
 }
 
-lookBtn.addEventListener("click", start);
-
-// Offer it only where it can work, and start without asking again if this viewer
-// has already granted the camera on this site.
-if (navigator.mediaDevices?.getUserMedia) {
-  lookBtn.hidden = false;
-  navigator.permissions?.query({ name: "camera" })
-    .then((p) => { if (p.state === "granted") start(); })
-    .catch(() => {});
-}
+if (navigator.mediaDevices?.getUserMedia) start();
 </script>
 </body>
 </html>
