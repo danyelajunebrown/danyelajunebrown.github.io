@@ -156,7 +156,8 @@
   media is shown full screen in this order; more than one = click through.
     { type: "image",   src: "media/file.jpg" }
     { type: "video",   src: "media/file.mp4" }   (H.264 .mp4 — .MOV/HEVC won't play in Chrome)
-    { type: "youtube", id:  "VIDEO_ID" }
+    { type: "site",    src: "https://…" }      a live page, running inside the view
+    { type: "youtube", id:  "VIDEO_ID" }       (leaves YouTube's logo and channel on the work)
     { type: "vimeo",   id:  "VIDEO_ID" }
   Any media item can carry a caption: "…" (e.g. the angle, or who shot it).
   Leave a field "" and it simply won't appear.
@@ -170,8 +171,9 @@ const PROJECTS = [
     dims: "8” x 10” x 6”",
     trt: "TRT: 06:00:00",
     text: "Installation of epic Sawkill Creek voyage: reading aloud, rehearsing MFA crit on a speaker, and plummeting over damn",
+    // self-hosted, not YouTube: no logo, no channel name, no way out to the channel
     media: [
-      { type: "youtube", id: "7huAtaUxn_c" },
+      { type: "video", src: "media/dysaesthesia-aethiopica.mp4" },
       { type: "image", src: "media/dysaesthesia-aethiopica-1.jpg" },
     ],
   },
@@ -184,8 +186,7 @@ const PROJECTS = [
     trt: "",
     text: "set and costume pieces from dysaesthesia aethiopica; install photo from MFA 1st year show",
     media: [
-      { type: "image", src: "media/asili-2.jpg", caption: "install photo, MFA 1st year show" },
-      { type: "video", src: "media/asili.mp4" },
+      { type: "video", src: "media/asili.mp4" },   // the video on loop, nothing else
     ],
   },
   {
@@ -214,7 +215,7 @@ const PROJECTS = [
   },
   {
     id: "all-the-feels",
-    title: "untitled (all the feels)",
+    title: "All The Feels",
     year: "2025",
     materials: "diary card entries, HTML, CSS, JavaScript, Supabase",
     dims: "",
@@ -223,6 +224,8 @@ const PROJECTS = [
     media: [
       { type: "image", src: "media/all-the-feels-1.jpg" },
       { type: "image", src: "media/all-the-feels-report-1.jpg", caption: "diary card, 12–18 September 2026" },
+      { type: "site", src: "https://danyelajunebrown.github.io/toolbelt/the-feels/index.html",
+        caption: "the live app" },
     ],
   },
   {
@@ -276,6 +279,13 @@ function render() {
     Object.assign(v, { src: m.src, controls: true, loop: true, playsInline: true });
     stage.append(v);
     v.play().catch(() => { v.muted = true; v.play().catch(() => {}); });
+  } else if (m.type === "site") {
+    // a live page as a view of the work — it runs, it is not a picture of running
+    const f = document.createElement("iframe");
+    f.src = m.src;
+    f.allow = "camera; microphone; fullscreen";
+    f.title = p.title;
+    stage.append(f);
   } else if (m.type === "youtube" || m.type === "vimeo") {
     const f = document.createElement("iframe");
     f.src = m.type === "youtube"
